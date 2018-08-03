@@ -1,0 +1,23 @@
+{
+  "resources": [
+    {
+      "name": "default-role",
+      "resource_type": "iam_role",
+      "role_arn": "arn:aws:iam::422346647762:role/casval-dev",
+      "role_name": "casval-dev"
+    },
+    {
+      "name": "api_handler",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:ap-northeast-1:422346647762:function:casval-dev"
+    },
+    {
+      "name": "rest_api",
+      "resource_type": "rest_api",
+      "rest_api_id": "54ar8zjkqi",
+      "rest_api_url": "https://54ar8zjkqi.execute-api.ap-northeast-1.amazonaws.com/api/"
+    }
+  ],
+  "schema_version": "2.0",
+  "backend": "api"
+}

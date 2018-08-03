@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "app_name": "casval",
+  "stages": {
+    "local": {
+      "environment_variables": {
+        "ORIGIN": "http://localhost:8080"
+      }
+    },
+    "dev": {
+      "api_gateway_stage": "api",
+      "environment_variables": {
+        "ORIGIN": "https://s3"
+      }
+    }
+  }
+}
