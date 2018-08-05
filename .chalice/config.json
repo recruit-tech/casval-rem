@@ -4,13 +4,15 @@
   "stages": {
     "local": {
       "environment_variables": {
-        "ORIGIN": "http://localhost:8080"
+        "ORIGIN": "http://localhost:8080",
+        "JWT_SECRET": "your-256-bit-secret"
       }
     },
     "dev": {
       "api_gateway_stage": "api",
       "environment_variables": {
-        "ORIGIN": "https://s3"
+        "ORIGIN": "https://s3",
+        "JWT_SECRET": "your-256-bit-secret"
       }
     }
   }
