@@ -1,7 +1,7 @@
-def auth():
+def authenticate():
     response = {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-                 ".eyJzY29wZSI6IjNjZDcwOGNlZmQ1ODQwMWY5ZDQzZmY5NTNmMDYzNDY3IiwiZXhwIjoxNTE1MTUxNTE1fQ"
-                 ".UNb9VCWBhVcJgtA1dGl-4QWcBXhfxKgaJuxqIdsBDyc"
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
+        ".eyJzY29wZSI6IioiLCJleHAiOjE2MDIyNTU2MDB9"
+        ".zvz-IMMCXA_VCwElPE3BsrpPVnicSw0YFdsDi4wjyeo"
     }
     return response

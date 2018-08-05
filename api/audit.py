@@ -106,9 +106,9 @@ def delete(audit_id):
 
 def tokens(audit_id):
     response = {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-                 ".eyJzY29wZSI6IjNjZDcwOGNlZmQ1ODQwMWY5ZDQzZmY5NTNmMDYzNDY3IiwiZXhwIjoxNTE1MTUxNTE1fQ"
-                 ".UNb9VCWBhVcJgtA1dGl-4QWcBXhfxKgaJuxqIdsBDyc"
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
+                 ".eyJzY29wZSI6IjNjZDcwOGNlZmQ1ODQwMWY5ZDQzZmY5NTNmMDYzNDY3IiwiZXhwIjoxNjAyMjU1NjAwfQ._"
+                 "-oZkuBL5yj8_bjioz1YQHicZkrjp7JBR0DpO6yNFew"
     }
     return response
 
