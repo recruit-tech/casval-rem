@@ -1,7 +1,7 @@
 def index():
     response = [
         {
-            "name": "コーポレートサイト GET",
+            "name": "コーポレートサイト",
             "contacts": [
                 {
                     "name": "nishimunea",
