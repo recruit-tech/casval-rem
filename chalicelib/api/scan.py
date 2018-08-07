@@ -1,3 +1,5 @@
+import boto3
+
 def get(scan_id):
     response = {
         "target": "127.0.0.1",
@@ -71,6 +73,16 @@ def post():
 
 
 def patch(scan_id):
+
+    sqs = boto3.client('sqs')
+    r = sqs.send_message(
+        QueueUrl=url,
+        DelaySeconds=0,
+        MessageBody=(
+            json.dumps(body)
+        )
+    )
+
     response = {
         "target": "127.0.0.1",
         "audit": {

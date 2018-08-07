@@ -22,9 +22,10 @@ def index(app):
     if params is not None:
         try:
             mode = AuditMode[params["mode"]]
+            count = int(params.get("count", AUDIT_GET_DEFAULT_COUNT))
 
-            if 0 < int(params["count"]) <= AUDIT_LIST_MAX_COUNT:
-                count = int(params["count"])
+            if count > AUDIT_LIST_MAX_COUNT:
+                count = AUDIT_LIST_MAX_COUNT
             try:
                 item = audit_get_id(params["before"])
                 keys = Key('status').eq(
