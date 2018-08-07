@@ -1,7 +1,7 @@
 import os
 from chalicelib.api import audit
 from chalicelib.api import scan
-from chalicelib.api import auth
+from chalicelib.api import authn
 from chalicelib.api import vuln
 from chalicelib import authorizer
 from chalice import Chalice
@@ -110,8 +110,8 @@ def scan_schedule_cancel(scan_id):
 
 
 @app.route('/auth', methods=['POST'], cors=cors_config)
-def auth():
-    return auth.authenticate()
+def authenticate():
+    return authn.authenticate()
 
 
 @app.route('/vulns', methods=['GET'], cors=cors_config, authorizer=authorize)
