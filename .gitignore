@@ -132,3 +132,6 @@ crash.log
 # .tfvars files are managed as part of configuration and so should be included in
 # version control.
 *.tfvars
+
+# Terraform scripts in this repository automatically generate environment dependent .py files in the directory.
+chalicelib/env/
