@@ -3,9 +3,12 @@ from chalicelib.api import audit
 from chalicelib.api import scan
 from chalicelib.api import authn
 from chalicelib.api import vuln
+from chalicelib.env import *
 from chalicelib import authorizer
 from chalice import Chalice
 from chalice import CORSConfig
+
+import logging
 
 app = Chalice(app_name='casval')
 app.debug = True
@@ -15,7 +18,6 @@ cors_config = CORSConfig(
     allow_headers=['Authorization'],
     max_age=3600,
 )
-
 
 @app.authorizer()
 def authorize(auth_request):
