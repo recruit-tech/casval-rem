@@ -134,5 +134,5 @@ crash.log
 *.tfvars
 
 # Terraform scripts in this repository automatically generate environment dependent .py files in the directory.
-chalicelib/env/*
-!__init__.py
+chalicelib/awsenv/*
+!chalicelib/awsenv/__init__.py
