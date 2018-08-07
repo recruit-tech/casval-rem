@@ -17,7 +17,7 @@ def index(app):
 
     mode: AuditMode = AuditMode.unsubmitted
     count: int = AUDIT_GET_DEFAULT_COUNT
-    keys: Key = Key('status').eq(mode.name)
+    keys: Key = Key("status").eq(mode.name)
 
     if params is not None:
         try:
@@ -28,14 +28,10 @@ def index(app):
                 count = AUDIT_LIST_MAX_COUNT
             try:
                 item = audit_get_id(params["before"])
-                keys = Key('status').eq(
-                    mode.name
-                ) & Key('updated_at').lt(
-                    item['Item']['updated_at']
-                )
+                keys = Key("status").eq(mode.name) & Key("updated_at").lt(item["Item"]["updated_at"])
 
             except ClientError as ce:
-                if ce.response['Error']['Code'] == 'ResourceNotFoundException':
+                if ce.response["Error"]["Code"] == "ResourceNotFoundException":
                     raise NotFoundError("Audit is NotFound")
 
         except KeyError as e:
@@ -46,31 +42,21 @@ def index(app):
         return resp
 
     except ClientError as ce:
-        if ce.response['Error']['Code'] == 'ResourceNotFoundException':
+        if ce.response["Error"]["Code"] == "ResourceNotFoundException":
             raise NotFoundError("Audit is NotFound")
 
 
 def get(audit_id):
     response = {
         "name": "コーポレートサイト",
-        "contacts": [
-            {
-                "name": "nishimunea",
-                "email": "nishimunea@example.jp"
-            }
-        ],
+        "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
         "id": "3cd708cefd58401f9d43ff953f063467",
-        "scans": [
-            "21d6cd7b33e84fbf9a2898f4ea7f90cc"
-        ],
+        "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
         "submitted": False,
         "rejected_reason": "深刻な脆弱性が修正されていません",
-        "restricted_by": {
-            "ip": True,
-            "password": False
-        },
+        "restricted_by": {"ip": True, "password": False},
         "created_at": "2018-10-10 23:59:59",
-        "updated_at": "2018-10-10 23:59:59"
+        "updated_at": "2018-10-10 23:59:59",
     }
     return response
 
@@ -78,24 +64,14 @@ def get(audit_id):
 def post():
     response = {
         "name": "コーポレートサイト",
-        "contacts": [
-            {
-                "name": "nishimunea",
-                "email": "nishimunea@example.jp"
-            }
-        ],
+        "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
         "id": "3cd708cefd58401f9d43ff953f063467",
-        "scans": [
-            "21d6cd7b33e84fbf9a2898f4ea7f90cc"
-        ],
+        "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
         "submitted": False,
         "rejected_reason": "深刻な脆弱性が修正されていません",
-        "restricted_by": {
-            "ip": True,
-            "password": False
-        },
+        "restricted_by": {"ip": True, "password": False},
         "created_at": "2018-10-10 23:59:59",
-        "updated_at": "2018-10-10 23:59:59"
+        "updated_at": "2018-10-10 23:59:59",
     }
     return response
 
@@ -103,24 +79,14 @@ def post():
 def patch(audit_id):
     response = {
         "name": "コーポレートサイト",
-        "contacts": [
-            {
-                "name": "nishimunea",
-                "email": "nishimunea@example.jp"
-            }
-        ],
+        "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
         "id": "3cd708cefd58401f9d43ff953f063467",
-        "scans": [
-            "21d6cd7b33e84fbf9a2898f4ea7f90cc"
-        ],
+        "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
         "submitted": False,
         "rejected_reason": "深刻な脆弱性が修正されていません",
-        "restricted_by": {
-            "ip": True,
-            "password": False
-        },
+        "restricted_by": {"ip": True, "password": False},
         "created_at": "2018-10-10 23:59:59",
-        "updated_at": "2018-10-10 23:59:59"
+        "updated_at": "2018-10-10 23:59:59",
     }
     return response
 
@@ -132,10 +98,10 @@ def delete(audit_id):
 def tokens(audit_id):
     response = {
         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-                 ".eyJzY29wZSI6IjNjZDcwOGNlZmQ1ODQwMWY"
-                 "5ZDQzZmY5NTNmMDYzNDY3IiwiZXhwIjoxNTE"
-                 "1MTUxNTE1fQ.UNb9VCWBhVcJgtA1dGl-4QWc"
-                 "BXhfxKgaJuxqIdsBDyc"
+        ".eyJzY29wZSI6IjNjZDcwOGNlZmQ1ODQwMWY"
+        "5ZDQzZmY5NTNmMDYzNDY3IiwiZXhwIjoxNTE"
+        "1MTUxNTE1fQ.UNb9VCWBhVcJgtA1dGl-4QWc"
+        "BXhfxKgaJuxqIdsBDyc"
     }
     return response
 

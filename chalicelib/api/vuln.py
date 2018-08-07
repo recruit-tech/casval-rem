@@ -4,7 +4,7 @@ def index():
             "oid": "1.3.6.1.4.1.25623.1.0.105879",
             "name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
             "fix_required": False,
-            "threat": "Log"
+            "threat": "Log",
         }
     ]
     return response
@@ -15,7 +15,7 @@ def get(oid):
         "oid": "1.3.6.1.4.1.25623.1.0.105879",
         "name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
         "fix_required": False,
-        "threat": "Log"
+        "threat": "Log",
     }
     return response
 
@@ -25,6 +25,6 @@ def patch(oid):
         "oid": "1.3.6.1.4.1.25623.1.0.105879",
         "name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
         "fix_required": False,
-        "threat": "Log"
+        "threat": "Log",
     }
     return response
