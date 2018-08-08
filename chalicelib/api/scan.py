@@ -9,6 +9,7 @@ from chalice import UnprocessableEntityError
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SQS_SCAN_WAITING = "ScanWaiting"
 
+
 def get(scan_id):
     response = {
         "target": "127.0.0.1",
