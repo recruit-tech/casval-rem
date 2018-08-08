@@ -1,16 +1,13 @@
 import boto3
 import json
 import pytz
-import logging
 
 from datetime import datetime
-
-from chalicelib.awsenv import *
 from chalice import BadRequestError
 from chalice import UnprocessableEntityError
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
+SQS_SCAN_WAITING = "ScanWaiting"
 
 def get(scan_id):
     response = {
@@ -111,12 +108,12 @@ def schedule(app, scan_id):
     if "end_at" not in body["schedule"]:
         raise BadRequestError("Request has no key `end_at`")
 
-    try: 
+    try:
         start_at = datetime.strptime(body["schedule"]["start_at"], DATETIME_FORMAT)
         start_at = start_at.replace(tzinfo=pytz.utc)
         end_at = datetime.strptime(body["schedule"]["end_at"], DATETIME_FORMAT)
         end_at = end_at.replace(tzinfo=pytz.utc)
-        jst = pytz.timezone('Asia/Tokyo')
+        jst = pytz.timezone("Asia/Tokyo")
         now = datetime.now(tz=pytz.utc).astimezone(jst)
     except Exception as e:
         raise BadRequestError(e)
@@ -136,7 +133,7 @@ def schedule(app, scan_id):
             "scan_id": scan_id,
         }
         sqs = boto3.resource("sqs")
-        queue = sqs.get_queue_by_name(QueueName="ScanWaiting")
+        queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
         result = queue.send_message(MessageBody=(json.dumps(message)))
     except Exception as e:
         raise UnprocessableEntityError(e)

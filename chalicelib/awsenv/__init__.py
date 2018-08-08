@@ -1,4 +1,0 @@
-from chalicelib.awsenv.scan_complete_queue import SCAN_COMPLETE_QUEUE_URL
-from chalicelib.awsenv.scan_failure_queue import SCAN_FAILURE_QUEUE_URL
-from chalicelib.awsenv.scan_ongoing_queue import SCAN_ONGOING_QUEUE_URL
-from chalicelib.awsenv.scan_waiting_queue import SCAN_WAITING_QUEUE_URL

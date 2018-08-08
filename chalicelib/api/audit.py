@@ -10,6 +10,7 @@ from chalicelib.audit_util import AUDIT_GET_DEFAULT_COUNT
 from chalicelib.audit_util import AUDIT_LIST_MAX_COUNT
 from chalicelib.audit_util import AuditMode
 
+
 def index(app):
     request = app.current_request
     params = request.query_params
