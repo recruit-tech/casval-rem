@@ -3,7 +3,6 @@ from chalicelib.api import audit
 from chalicelib.api import scan
 from chalicelib.api import authn
 from chalicelib.api import vuln
-from chalicelib.awsenv import *
 from chalicelib import authorizer
 from chalice import Chalice
 from chalice import CORSConfig
@@ -27,7 +26,7 @@ def audit_index():
 
 @app.route("/audit/{audit_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_get(audit_id):
-    if app.current_request.context["authorizer"]["scope"] == audit_id:
+    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
         return audit.get(audit_id)
 
 
@@ -39,13 +38,13 @@ def audit_post():
 
 @app.route("/audit/{audit_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def audit_patch(audit_id):
-    if app.current_request.context["authorizer"]["scope"] == audit_id:
-        return audit.patch(audit_id)
+    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
+        return audit.patch(app, audit_id)
 
 
 @app.route("/audit/{audit_id}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def audit_delete(audit_id):
-    if app.current_request.context["authorizer"]["scope"] == audit_id:
+    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
         return audit.delete(audit_id)
 
 
@@ -56,13 +55,13 @@ def audit_tokens(audit_id):
 
 @app.route("/audit/{audit_id}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_submit(audit_id):
-    if app.current_request.context["authorizer"]["scope"] == audit_id:
+    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
         return audit.submit(audit_id)
 
 
 @app.route("/audit/{audit_id}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def audit_submit_cancel(audit_id):
-    if app.current_request.context["authorizer"]["scope"] == audit_id:
+    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
         return audit.submit_cancel(audit_id)
 
 
@@ -78,7 +77,7 @@ def scan_post():
 
 @app.route("/scan/{scan_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def scan_patch(scan_id):
-    return scan.patch(scan_id)
+    return scan.patch(app, scan_id)
 
 
 @app.route("/scan/{scan_id}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
@@ -88,7 +87,7 @@ def scan_delete(scan_id):
 
 @app.route("/scan/{scan_id}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def scan_schedule(scan_id):
-    return scan.schedule(scan_id)
+    return scan.schedule(app, scan_id)
 
 
 @app.route("/scan/{scan_id}/schedule", methods=["DELETE"], cors=cors_config, authorizer=authorize)

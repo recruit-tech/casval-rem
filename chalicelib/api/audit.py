@@ -10,7 +10,6 @@ from chalicelib.audit_util import AUDIT_GET_DEFAULT_COUNT
 from chalicelib.audit_util import AUDIT_LIST_MAX_COUNT
 from chalicelib.audit_util import AuditMode
 
-
 def index(app):
     request = app.current_request
     params = request.query_params
@@ -97,11 +96,9 @@ def delete(audit_id):
 
 def tokens(audit_id):
     response = {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-        ".eyJzY29wZSI6IjNjZDcwOGNlZmQ1ODQwMWY"
-        "5ZDQzZmY5NTNmMDYzNDY3IiwiZXhwIjoxNTE"
-        "1MTUxNTE1fQ.UNb9VCWBhVcJgtA1dGl-4QWc"
-        "BXhfxKgaJuxqIdsBDyc"
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
+        ".eyJzY29wZSI6IioiLCJleHAiOjE2MDIyNTU2MDB9"
+        ".zvz-IMMCXA_VCwElPE3BsrpPVnicSw0YFdsDi4wjyeo"
     }
     return response
 

@@ -1,4 +1,15 @@
 import boto3
+import json
+import pytz
+import logging
+
+from datetime import datetime
+
+from chalicelib.awsenv import *
+from chalice import BadRequestError
+from chalice import UnprocessableEntityError
+
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def get(scan_id):
@@ -57,11 +68,7 @@ def post():
     return response
 
 
-def patch(scan_id):
-
-    sqs = boto3.client("sqs")
-    r = sqs.send_message(QueueUrl=url, DelaySeconds=0, MessageBody=(json.dumps(body)))
-
+def patch(app, scan_id):
     response = {
         "target": "127.0.0.1",
         "audit": {"id": "3cd708cefd58401f9d43ff953f063467"},
@@ -93,7 +100,47 @@ def delete(scan_id):
     return {}
 
 
-def schedule(scan_id):
+def schedule(app, scan_id):
+    # Chalice raises an exception internally if a request is an invalid JSON
+    body = app.current_request.json_body
+
+    if "schedule" not in body:
+        raise BadRequestError("Request has no key `schedule`")
+    if "start_at" not in body["schedule"]:
+        raise BadRequestError("Request has no key `start_at`")
+    if "end_at" not in body["schedule"]:
+        raise BadRequestError("Request has no key `end_at`")
+
+    try: 
+        start_at = datetime.strptime(body["schedule"]["start_at"], DATETIME_FORMAT)
+        start_at = start_at.replace(tzinfo=pytz.utc)
+        end_at = datetime.strptime(body["schedule"]["end_at"], DATETIME_FORMAT)
+        end_at = end_at.replace(tzinfo=pytz.utc)
+        jst = pytz.timezone('Asia/Tokyo')
+        now = datetime.now(tz=pytz.utc).astimezone(jst)
+    except Exception as e:
+        raise BadRequestError(e)
+
+    if end_at <= start_at:
+        raise BadRequestError("`end_at` in the request is equal or earlier than `start_at`")
+    if end_at <= now:
+        raise BadRequestError("`end_at` in the request has elapsed")
+
+    # ToDo: store schedule to DynamoDB
+
+    try:
+        message = {
+            "target": "127.0.0.1",
+            "start_at": body["schedule"]["start_at"],
+            "end_at": body["schedule"]["end_at"],
+            "scan_id": scan_id,
+        }
+        sqs = boto3.resource("sqs")
+        queue = sqs.get_queue_by_name(QueueName="ScanWaiting")
+        result = queue.send_message(MessageBody=(json.dumps(message)))
+    except Exception as e:
+        raise UnprocessableEntityError(e)
+
     response = {
         "target": "127.0.0.1",
         "audit": {"id": "3cd708cefd58401f9d43ff953f063467"},
