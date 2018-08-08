@@ -3,8 +3,9 @@ from chalicelib.api import audit
 from chalicelib.api import scan
 from chalicelib.api import authn
 from chalicelib.api import vuln
+from chalicelib.batch import cron
 from chalicelib import authorizer
-from chalice import Chalice
+from chalice import Chalice, Rate
 from chalice import CORSConfig
 
 app = Chalice(app_name="casval")
@@ -113,3 +114,16 @@ def vulnerability_get(oid):
 @app.route("/vulns/{oid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def vulnerability_patch(oid):
     return vuln.patch(oid)
+
+
+@app.schedule(Rate(1, unit=Rate.HOURS))
+def scan_scheduler():
+    return cron.scan_scheduler(app)
+
+
+# For debugging purposes
+
+
+@app.route("/batch")
+def scan_scheduler_for_debug():
+    return cron.scan_scheduler(app)
