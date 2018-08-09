@@ -1,7 +1,9 @@
+import os
 import boto3
 import json
 import pytz
 
+from chalicelib.core.scanner import Scanner
 from datetime import datetime
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -13,6 +15,7 @@ SQS_SCAN_FAILURE = "ScanFailure"
 
 def scan_launcher(app):
     try:
+        scanner = Scanner(os.environ["SCANNER"])
         sqs = boto3.resource("sqs")
         waiting_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
         ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
@@ -38,8 +41,8 @@ def scan_launcher(app):
                     if start_at <= base_time:
                         app.log.debug("message processed: " + message.message_id)
                         if end_at > base_time:
-                            # ToDo: Set scan to OpenVas and get scan ID
-                            body["scanner"] = {"name": "openvas", "host": "127.0.0.1", "port": 80, "id": "ID"}
+                            result = scanner.launch(body["target"])
+                            body["scanner"] = result
                             ongoing_queue.send_message(MessageBody=json.dumps(body))
                         else:
                             body[
