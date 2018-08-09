@@ -121,6 +121,8 @@ def schedule(app, scan_id):
 
     if end_at <= start_at:
         raise BadRequestError("`end_at` in the request is equal or earlier than `start_at`")
+    if start_at <= now:
+        raise BadRequestError("`start_at` in the request has elapsed")
     if end_at <= now:
         raise BadRequestError("`end_at` in the request has elapsed")
 
