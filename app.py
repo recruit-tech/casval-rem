@@ -117,13 +117,23 @@ def vulnerability_patch(oid):
 
 
 @app.schedule(Rate(1, unit=Rate.HOURS))
-def scan_scheduler():
-    return cron.scan_scheduler(app)
+def scan_launcher():
+    return cron.scan_launcher(app)
+
+
+@app.schedule(Rate(3, unit=Rate.MINUTES))
+def scan_processor():
+    return cron.scan_processor(app)
 
 
 # For debugging purposes
 
 
-@app.route("/batch")
-def scan_scheduler_for_debug():
-    return cron.scan_scheduler(app)
+@app.route("/batch/launcher")
+def scan_launcher_for_debug():
+    return cron.scan_launcher(app)
+
+
+@app.route("/batch/processor")
+def scan_processor_for_debug():
+    return cron.scan_processor(app)
