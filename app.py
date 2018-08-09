@@ -1,9 +1,9 @@
 import os
-from chalicelib.api import audit
-from chalicelib.api import scan
-from chalicelib.api import authn
-from chalicelib.api import vuln
-from chalicelib.batch import cron
+from chalicelib.apis import audit
+from chalicelib.apis import scan
+from chalicelib.apis import authn
+from chalicelib.apis import vuln
+from chalicelib.batches import cron_jobs
 from chalicelib import authorizer
 from chalice import Chalice, Rate
 from chalice import CORSConfig
@@ -118,12 +118,12 @@ def vulnerability_patch(oid):
 
 @app.schedule(Rate(1, unit=Rate.HOURS))
 def scan_launcher():
-    return cron.scan_launcher(app)
+    return cron_jobs.scan_launcher(app)
 
 
 @app.schedule(Rate(3, unit=Rate.MINUTES))
 def scan_processor():
-    return cron.scan_processor(app)
+    return cron_jobs.scan_processor(app)
 
 
 # For debugging purposes
@@ -131,9 +131,9 @@ def scan_processor():
 
 @app.route("/batch/launcher")
 def scan_launcher_for_debug():
-    return cron.scan_launcher(app)
+    return cron_jobs.scan_launcher(app)
 
 
 @app.route("/batch/processor")
 def scan_processor_for_debug():
-    return cron.scan_processor(app)
+    return cron_jobs.scan_processor(app)
