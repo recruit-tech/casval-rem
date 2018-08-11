@@ -33,7 +33,7 @@ def audit_get(audit_id):
 @app.route("/audit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_post():
     # ToDo: Add scope verification
-    return audit.post()
+    return audit.post(app)
 
 
 @app.route("/audit/{audit_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)

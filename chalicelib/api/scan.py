@@ -1,13 +1,14 @@
+from chalice import BadRequestError
+from chalice import UnprocessableEntityError
+from datetime import datetime
+
 import boto3
 import json
 import pytz
 
-from datetime import datetime
-from chalice import BadRequestError
-from chalice import UnprocessableEntityError
-
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SQS_SCAN_WAITING = "ScanWaiting"
+
 
 def get(scan_id):
     response = {
@@ -134,7 +135,7 @@ def schedule(app, scan_id):
         }
         sqs = boto3.resource("sqs")
         queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
-        result = queue.send_message(MessageBody=(json.dumps(message)))
+        queue.send_message(MessageBody=(json.dumps(message)))
     except Exception as e:
         raise UnprocessableEntityError(e)
 
