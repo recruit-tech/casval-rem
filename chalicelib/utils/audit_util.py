@@ -34,11 +34,10 @@ class AuditMode(IntEnum):
 
 def validate_contacts(_contacts: ContentsType) -> ContentsType:
     contacts: ContentsType = []
-    for content in _contacts:
-        name = content["name"]
-        email = content["email"]
-        # ignore[16]はvalidate_emailがただの関数でなおかつアノテーションがないということに起因するバグ
-        if not validate_email(email):  # pyre-ignore[16]
+    for contact in _contacts:
+        name = contact["name"]
+        email = contact["email"]
+        if not validate_email(email):
             raise ValidationError("Invalid email: {0}".format(email))
 
         contacts.append({"name": validate_name(name), "email": email})
