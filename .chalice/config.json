@@ -9,7 +9,8 @@
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
         "AUDIT_LIST_MAX_COUNT":"300",
-        "SCANNER":"casval-openvas-dev"
+        "SCANNER":"casval-openvas-dev",
+        "STAGE":"dev"
       }
     },
     "dev": {
@@ -17,12 +18,13 @@
       "lambda_memory_size": 512,
       "lambda_timeout": 300,
       "environment_variables": {
-        "ORIGIN": "https://s3",
+        "ORIGIN": "http://localhost:8080",
         "JWT_SECRET": "your-256-bit-secret",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
         "AUDIT_LIST_MAX_COUNT":"300",
-        "SCANNER":"casval-openvas-dev"
+        "SCANNER":"casval-openvas-dev",
+        "STAGE":"dev"
       }
     }
   }

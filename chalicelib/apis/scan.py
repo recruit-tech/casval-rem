@@ -137,7 +137,7 @@ def schedule(app, scan_id):
         }
         sqs = boto3.resource("sqs")
         queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
-        result = queue.send_message(MessageBody=(json.dumps(message)))
+        queue.send_message(MessageBody=(json.dumps(message)))
     except Exception as e:
         raise UnprocessableEntityError(e)
 

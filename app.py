@@ -5,7 +5,7 @@ from chalicelib.apis import authn
 from chalicelib.apis import vuln
 from chalicelib.batches import cron_jobs
 from chalicelib import authorizer
-from chalice import Chalice, Rate
+from chalice import Chalice, Cron
 from chalice import CORSConfig
 
 app = Chalice(app_name="casval")
@@ -116,14 +116,19 @@ def vulnerability_patch(oid):
     return vuln.patch(oid)
 
 
-@app.schedule(Rate(1, unit=Rate.HOURS))
-def scan_launcher():
+@app.schedule(Cron("0/1", "*", "*", "*", "?", "*"))
+def scan_launcher(event):
     return cron_jobs.scan_launcher(app)
 
 
-@app.schedule(Rate(3, unit=Rate.MINUTES))
-def scan_processor():
-    return cron_jobs.scan_processor(app)
+# @app.schedule(Cron('0/3', '*', '*', '*', '?', '*'))
+# def scan_processor(event):
+#    return cron_jobs.scan_processor(app)
+
+
+@app.lambda_function(name="scan_launcher_sub_process")
+def scan_launcher_sub_process(event, context):
+    return cron_jobs.scan_launcher_sub_process(event)
 
 
 # For debugging purposes

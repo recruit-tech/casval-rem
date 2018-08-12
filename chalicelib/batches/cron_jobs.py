@@ -2,6 +2,10 @@ import os
 import boto3
 import json
 import pytz
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 from chalicelib.core.scanner import Scanner
 from datetime import datetime
@@ -15,10 +19,8 @@ SQS_SCAN_FAILURE = "ScanFailure"
 
 def scan_launcher(app):
     try:
-        scanner = Scanner(os.environ["SCANNER"])
         sqs = boto3.resource("sqs")
         waiting_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
-        ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
         failure_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_FAILURE)
         jst = pytz.timezone("Asia/Tokyo")
         now = datetime.now(tz=pytz.utc).astimezone(jst)
@@ -30,9 +32,9 @@ def scan_launcher(app):
             if len(messages) is 0:
                 break
 
-            entries = []
             for message in messages:
                 try:
+                    entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
                     body = json.loads(message.body)
                     start_at = datetime.strptime(body["start_at"], DATETIME_FORMAT)
                     start_at = start_at.replace(tzinfo=pytz.utc)
@@ -41,27 +43,39 @@ def scan_launcher(app):
                     if start_at <= base_time:
                         app.log.debug("message processed: " + message.message_id)
                         if end_at > base_time:
-                            result = scanner.launch(body["target"])
-                            body["scanner"] = result
-                            ongoing_queue.send_message(MessageBody=json.dumps(body))
+                            # Launch scan asynchronously because it takes more than 10s each
+                            _launch(app, "scan_launcher_sub_process", {"entry": entry, "body": body})
                         else:
-                            body[
-                                "error"
-                            ] = "The scan could not be started since its completion deadline is soon or over."
-                            failure_queue.send_message(MessageBody=json.dumps(body))
-                        # Delete the message only when it has been processed
-                        entries.append({"Id": message.message_id, "ReceiptHandle": message.receipt_handle})
+                            raise Exception(
+                                "The scan could not be started since its completion deadline is soon or over."
+                            )
                 except Exception as e:
                     app.log.error(e)
                     body["error"] = str(e)
                     failure_queue.send_message(MessageBody=json.dumps(body))
-            if len(entries) is not 0:
-                waiting_queue.delete_messages(Entries=entries)
+                    waiting_queue.delete_messages(Entries=[entry])
 
     except Exception as e:
         app.log.error(e)
         raise e
     return
+
+
+def scan_launcher_sub_process(event):
+    try:
+        entry = event["entry"]
+        body = event["body"]
+        sqs = boto3.resource("sqs")
+        waiting_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
+        ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
+        scanner = Scanner(os.environ["SCANNER"])
+        result = scanner.launch(body["target"])
+        body["scanner"] = result
+        ongoing_queue.send_message(MessageBody=json.dumps(body))
+        waiting_queue.delete_messages(Entries=[entry])
+    except Exception as e:
+        logger.warning(e)
+    return None
 
 
 def scan_processor(app):
@@ -110,4 +124,11 @@ def scan_processor(app):
         app.log.error(e)
         raise e
 
+    return
+
+
+def _launch(app, func, payload):
+    func_name = "{app}-{stage}-{func}".format(app=app.app_name, stage=os.environ["STAGE"], func=func)
+    lmd = boto3.client("lambda")
+    lmd.invoke(FunctionName=func_name, InvocationType="Event", Payload=json.dumps(payload))
     return
