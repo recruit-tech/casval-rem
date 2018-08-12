@@ -8,7 +8,9 @@
         "JWT_SECRET": "your-256-bit-secret",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
-        "AUDIT_LIST_MAX_COUNT":"300"
+        "AUDIT_LIST_MAX_COUNT":"300",
+        "AHEAD_TIME":"9",
+        "AUDIT_NAME_MAX_LENGTH":"129"
       }
     },
     "dev": {
@@ -18,7 +20,9 @@
         "JWT_SECRET": "your-256-bit-secret",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
-        "AUDIT_LIST_MAX_COUNT":"300"
+        "AUDIT_LIST_MAX_COUNT":"300",
+        "AHEAD_TIME":"9",
+        "AUDIT_NAME_MAX_LENGTH":"129"
       }
     }
   }

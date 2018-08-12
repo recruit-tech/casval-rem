@@ -17,3 +17,5 @@ pytz==2018.5
 s3transfer==0.1.13
 six==1.11.0
 typing==3.6.4
+uuid==1.30
+validate-email==1.3

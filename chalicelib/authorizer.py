@@ -1,4 +1,5 @@
 from chalice import AuthResponse
+
 import jwt
 import os
 
