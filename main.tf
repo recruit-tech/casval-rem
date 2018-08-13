@@ -5,11 +5,11 @@ module "aws" {
 resource "null_resource" "chalice" {
   depends_on = ["module.aws"]
   provisioner "local-exec" {
-    command = "chalice deploy --stage dev"
+    command = "cp terraform.tfstate ./chalicelib/batches/ && chalice deploy --stage dev"
   }
   provisioner "local-exec" {
     when = "destroy"
-    command = "chalice delete"
+    command = "chalice delete && cp terraform.tfstate ./chalicelib/batches/"
   }
 }
 

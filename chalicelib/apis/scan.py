@@ -130,7 +130,7 @@ def schedule(app, scan_id):
 
     try:
         message = {
-            "target": "127.0.0.1",
+            "target": "csrf.jp",
             "start_at": body["schedule"]["start_at"],
             "end_at": body["schedule"]["end_at"],
             "scan_id": scan_id,

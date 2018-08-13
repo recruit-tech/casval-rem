@@ -4,9 +4,12 @@ from chalicelib.apis import scan
 from chalicelib.apis import authn
 from chalicelib.apis import vuln
 from chalicelib.batches import cron_jobs
+from chalicelib.batches import sqs_event_handlers
 from chalicelib import authorizer
 from chalice import Chalice, Cron
 from chalice import CORSConfig
+
+SQS_SCAN_COMPLETE = "ScanComplete"
 
 app = Chalice(app_name="casval")
 app.debug = True
@@ -121,7 +124,7 @@ def scan_launcher(event):
     return cron_jobs.scan_launcher(app)
 
 
-@app.schedule(Cron("0/1", "*", "*", "*", "?", "*"))
+@app.schedule(Cron("0/2", "*", "*", "*", "?", "*"))
 def scan_processor(event):
     return cron_jobs.scan_processor(app)
 
@@ -139,6 +142,11 @@ def async_scan_status_check(event, context):
 @app.lambda_function(name="async_scan_terminate")
 def async_scan_terminate(event, context):
     return cron_jobs.async_scan_terminate(event)
+
+
+@app.on_sqs_message(queue=SQS_SCAN_COMPLETE)
+def scan_completed_handler(event):
+    return sqs_event_handlers.scan_completed_handler(event)
 
 
 # For debugging purposes

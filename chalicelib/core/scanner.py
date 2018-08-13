@@ -7,23 +7,22 @@ class Scanner:
         self.name = name
 
     def launch(self, target):
-        return self.__invoke("launch", {"target": target})
+        result = self.__invoke("launch", {"target": target})
+        if "scan_id" not in result:
+            raise Exception(result)
+        return result
 
-    def is_completed(self, session):
-        self.__invoke("is_completed", session)
-        return True
+    def check_status(self, session):
+        return self.__invoke("check_status", session)
 
     def terminate(self, session):
-        self.__invoke("terminate", session)
-        return True
+        return self.__invoke("terminate", session)
 
     def get_report(self, session):
-        self.__invoke("get_report", session)
-        return {}
+        return self.__invoke("get_report", session)
 
     def parse_report(self, report):
-        # ToDo: process report xml
-        return {}
+        return self.__invoke("parse_report", report)
 
     def __invoke(self, func, payload):
         try:

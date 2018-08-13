@@ -1,3 +1,7 @@
+output "bucket" {
+  value = "${module.s3.bucket}"
+}
+
 output "subnet" {
   value = "${module.vpc.subnet}"
 }
@@ -7,6 +11,10 @@ output "security_group" {
 }
 
 provider "aws" {
+}
+
+module "s3" {
+  source = "./s3"
 }
 
 module "sqs" {
