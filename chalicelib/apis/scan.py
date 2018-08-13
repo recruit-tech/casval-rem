@@ -9,6 +9,7 @@ from chalice import UnprocessableEntityError
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SQS_SCAN_WAITING = "ScanWaiting"
 
+
 def get(scan_id):
     response = {
         "target": "127.0.0.1",
@@ -120,6 +121,8 @@ def schedule(app, scan_id):
 
     if end_at <= start_at:
         raise BadRequestError("`end_at` in the request is equal or earlier than `start_at`")
+    if start_at <= now:
+        raise BadRequestError("`start_at` in the request has elapsed")
     if end_at <= now:
         raise BadRequestError("`end_at` in the request has elapsed")
 
@@ -127,14 +130,14 @@ def schedule(app, scan_id):
 
     try:
         message = {
-            "target": "127.0.0.1",
+            "target": "csrf.jp",
             "start_at": body["schedule"]["start_at"],
             "end_at": body["schedule"]["end_at"],
             "scan_id": scan_id,
         }
         sqs = boto3.resource("sqs")
         queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
-        result = queue.send_message(MessageBody=(json.dumps(message)))
+        queue.send_message(MessageBody=(json.dumps(message)))
     except Exception as e:
         raise UnprocessableEntityError(e)
 
