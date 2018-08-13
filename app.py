@@ -121,14 +121,24 @@ def scan_launcher(event):
     return cron_jobs.scan_launcher(app)
 
 
-# @app.schedule(Cron('0/3', '*', '*', '*', '?', '*'))
-# def scan_processor(event):
-#    return cron_jobs.scan_processor(app)
+@app.schedule(Cron("0/1", "*", "*", "*", "?", "*"))
+def scan_processor(event):
+    return cron_jobs.scan_processor(app)
 
 
-@app.lambda_function(name="scan_launcher_sub_process")
-def scan_launcher_sub_process(event, context):
-    return cron_jobs.scan_launcher_sub_process(event)
+@app.lambda_function(name="async_scan_launch")
+def async_scan_launch(event, context):
+    return cron_jobs.async_scan_launch(event)
+
+
+@app.lambda_function(name="async_scan_status_check")
+def async_scan_status_check(event, context):
+    return cron_jobs.async_scan_status_check(event)
+
+
+@app.lambda_function(name="async_scan_terminate")
+def async_scan_terminate(event, context):
+    return cron_jobs.async_scan_terminate(event)
 
 
 # For debugging purposes

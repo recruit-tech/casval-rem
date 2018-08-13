@@ -33,8 +33,8 @@ def scan_launcher(app):
                 break
 
             for message in messages:
+                entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
                 try:
-                    entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
                     body = json.loads(message.body)
                     start_at = datetime.strptime(body["start_at"], DATETIME_FORMAT)
                     start_at = start_at.replace(tzinfo=pytz.utc)
@@ -43,8 +43,7 @@ def scan_launcher(app):
                     if start_at <= base_time:
                         app.log.debug("message processed: " + message.message_id)
                         if end_at > base_time:
-                            # Launch scan asynchronously because it takes more than 10s each
-                            _launch(app, "scan_launcher_sub_process", {"entry": entry, "body": body})
+                            async_call(app, "async_scan_launch", {"entry": entry, "body": body})
                         else:
                             raise Exception(
                                 "The scan could not be started since its completion deadline is soon or over."
@@ -61,7 +60,7 @@ def scan_launcher(app):
     return
 
 
-def scan_launcher_sub_process(event):
+def async_scan_launch(event):
     try:
         entry = event["entry"]
         body = event["body"]
@@ -69,8 +68,8 @@ def scan_launcher_sub_process(event):
         waiting_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
         ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
         scanner = Scanner(os.environ["SCANNER"])
-        result = scanner.launch(body["target"])
-        body["scanner"] = result
+        session = scanner.launch(body["target"])
+        body["session"] = session
         ongoing_queue.send_message(MessageBody=json.dumps(body))
         waiting_queue.delete_messages(Entries=[entry])
     except Exception as e:
@@ -82,7 +81,6 @@ def scan_processor(app):
     try:
         sqs = boto3.resource("sqs")
         ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
-        complete_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_COMPLETE)
         failure_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_FAILURE)
         jst = pytz.timezone("Asia/Tokyo")
         now = datetime.now(tz=pytz.utc).astimezone(jst)
@@ -93,32 +91,21 @@ def scan_processor(app):
                 break
 
             for message in messages:
+                entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
                 try:
                     body = json.loads(message.body)
                     end_at = datetime.strptime(body["end_at"], DATETIME_FORMAT)
                     end_at = end_at.replace(tzinfo=pytz.utc)
                     if end_at > now:
-                        # ToDo: Check OpenVas status
-                        result = True
-                        if result is True:
-                            complete_queue.send_message(MessageBody=message.body)
-                            ongoing_queue.delete_messages(
-                                Entries=[{"Id": message.message_id, "ReceiptHandle": message.receipt_handle}]
-                            )
+                        async_call(app, "async_scan_status_check", {"entry": entry, "body": body})
                     else:
-                        # ToDo: Stop OpenVas
-                        body["error"] = "The scan has been terminated since its completion deadline is over."
-                        failure_queue.send_message(MessageBody=json.dumps(body))
-                        ongoing_queue.delete_messages(
-                            Entries=[{"Id": message.message_id, "ReceiptHandle": message.receipt_handle}]
-                        )
+                        async_call(app, "async_scan_terminate", {"body": body})
+                        raise Exception("The scan has been terminated since its completion deadline is over.")
                 except Exception as e:
                     app.log.error(e)
                     body["error"] = str(e)
                     failure_queue.send_message(MessageBody=json.dumps(body))
-                    ongoing_queue.delete_messages(
-                        Entries=[{"Id": message.message_id, "ReceiptHandle": message.receipt_handle}]
-                    )
+                    ongoing_queue.delete_messages(Entries=[entry])
 
     except Exception as e:
         app.log.error(e)
@@ -127,7 +114,30 @@ def scan_processor(app):
     return
 
 
-def _launch(app, func, payload):
+def async_scan_status_check(event):
+    try:
+        scanner = Scanner(os.environ["SCANNER"])
+        if scanner.is_completed(event["body"]["session"]) is True:
+            sqs = boto3.resource("sqs")
+            ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
+            complete_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_COMPLETE)
+            complete_queue.send_message(MessageBody=json.dumps(event["body"]))
+            ongoing_queue.delete_messages(Entries=[event["entry"]])
+    except Exception as e:
+        logger.warning(e)
+    return None
+
+
+def async_scan_terminate(event):
+    try:
+        scanner = Scanner(os.environ["SCANNER"])
+        scanner.terminate(event["body"]["session"])
+    except Exception as e:
+        logger.warning(e)
+    return None
+
+
+def async_call(app, func, payload):
     func_name = "{app}-{stage}-{func}".format(app=app.app_name, stage=os.environ["STAGE"], func=func)
     lmd = boto3.client("lambda")
     lmd.invoke(FunctionName=func_name, InvocationType="Event", Payload=json.dumps(payload))

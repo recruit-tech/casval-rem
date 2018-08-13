@@ -7,9 +7,19 @@
       "role_name": "casval-dev"
     },
     {
-      "name": "scan_launcher_sub_process",
+      "name": "async_scan_launch",
       "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_launcher_sub_process"
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_launch"
+    },
+    {
+      "name": "async_scan_status_check",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_status_check"
+    },
+    {
+      "name": "async_scan_terminate",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_terminate"
     },
     {
       "name": "scan_launcher",
@@ -20,6 +30,16 @@
       "name": "scan_launcher-event",
       "resource_type": "cloudwatch_event",
       "rule_name": "casval-dev-scan_launcher-event"
+    },
+    {
+      "name": "scan_processor",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_processor"
+    },
+    {
+      "name": "scan_processor-event",
+      "resource_type": "cloudwatch_event",
+      "rule_name": "casval-dev-scan_processor-event"
     },
     {
       "name": "api_handler",

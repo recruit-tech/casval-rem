@@ -9,16 +9,16 @@ class Scanner:
     def launch(self, target):
         return self.__invoke("launch", {"target": target})
 
-    def is_completed(self, id):
-        self.__invoke("is_completed", {"id": id})
+    def is_completed(self, session):
+        self.__invoke("is_completed", session)
         return True
 
     def terminate(self, session):
-        self.__invoke("terminate", {"session": id})
+        self.__invoke("terminate", session)
         return True
 
-    def get_report(self, id):
-        self.__invoke("get_report", {"id": id})
+    def get_report(self, session):
+        self.__invoke("get_report", session)
         return {}
 
     def parse_report(self, report):
