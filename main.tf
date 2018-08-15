@@ -36,7 +36,7 @@ with open(file_path, "r") as file:
 SCRIPT
     environment {
       STAGE = "dev"
-      SUBNET="${module.aws.subnet}"
+      SUBNET="${module.aws.subnet_primary}"
       SECURITY_GROUP="${module.aws.security_group}"
     }
   }

@@ -119,12 +119,12 @@ def vulnerability_patch(oid):
     return vuln.patch(oid)
 
 
-@app.schedule(Cron("0/1", "*", "*", "*", "?", "*"))
+@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
 def scan_launcher(event):
     return cron_jobs.scan_launcher(app)
 
 
-@app.schedule(Cron("0/2", "*", "*", "*", "?", "*"))
+@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
 def scan_processor(event):
     return cron_jobs.scan_processor(app)
 
