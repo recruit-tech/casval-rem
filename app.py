@@ -1,11 +1,11 @@
 import os
 from chalicelib.apis import audit
 from chalicelib.apis import scan
-from chalicelib.apis import authn
+from chalicelib.apis import AuthenticationAPI
 from chalicelib.apis import vuln
 from chalicelib.batches import cron_jobs
 from chalicelib.batches import sqs_event_handlers
-from chalicelib import authorizer
+from chalicelib.core import authorizer
 from chalice import Chalice, Cron
 from chalice import CORSConfig
 
@@ -16,6 +16,7 @@ app.debug = True
 
 cors_config = CORSConfig(allow_origin=os.environ["ORIGIN"], allow_headers=["Authorization"], max_age=3600)
 
+# TODO: Distinguish id and uuid in API interfaces
 
 @app.authorizer()
 def authorize(auth_request):
@@ -24,6 +25,7 @@ def authorize(auth_request):
 
 @app.route("/audit", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_index():
+    # For administration users
     if app.current_request.context["authorizer"]["scope"] == "*":
         return audit.index(app)
 
@@ -31,13 +33,14 @@ def audit_index():
 @app.route("/audit/{audit_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_get(audit_id):
     if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.get(audit_id)
+        return audit.get(app, audit_id)
 
 
 @app.route("/audit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_post():
-    # ToDo: Add scope verification
-    return audit.post()
+    # For administration users
+    if app.current_request.context["authorizer"]["scope"] == "*":
+        return audit.post(app)
 
 
 @app.route("/audit/{audit_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
@@ -49,24 +52,24 @@ def audit_patch(audit_id):
 @app.route("/audit/{audit_id}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def audit_delete(audit_id):
     if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.delete(audit_id)
+        return audit.delete(app, audit_id)
 
 
 @app.route("/audit/{audit_id}/tokens", methods=["POST"], cors=cors_config)
 def audit_tokens(audit_id):
-    return audit.tokens(audit_id)
+    return audit.tokens(app, audit_id)
 
 
 @app.route("/audit/{audit_id}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_submit(audit_id):
     if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.submit(audit_id)
+        return audit.submit(app, audit_id)
 
 
 @app.route("/audit/{audit_id}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def audit_submit_cancel(audit_id):
     if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.submit_cancel(audit_id)
+        return audit.submit_cancel(app, audit_id)
 
 
 @app.route("/scan/{scan_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
@@ -101,7 +104,8 @@ def scan_schedule_cancel(scan_id):
 
 @app.route("/auth", methods=["POST"], cors=cors_config)
 def authenticate():
-    return authn.authenticate()
+    api = AuthenticationAPI(app)
+    return api.authenticate()
 
 
 @app.route("/vulns", methods=["GET"], cors=cors_config, authorizer=authorize)

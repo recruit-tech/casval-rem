@@ -50,7 +50,7 @@
       "name": "scan_completed_handler-sqs-event-source",
       "resource_type": "sqs_event",
       "queue_arn": "arn:aws:sqs:us-east-1:422346647762:ScanComplete",
-      "event_uuid": "e1ea7f41-b515-4447-9ef7-a2ecce1d0649",
+      "event_uuid": "84298842-fd97-40d1-955e-2b160f9c4d40",
       "queue": "ScanComplete",
       "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_completed_handler"
     },
@@ -67,8 +67,8 @@
     {
       "name": "rest_api",
       "resource_type": "rest_api",
-      "rest_api_id": "bazzx85hng",
-      "rest_api_url": "https://bazzx85hng.execute-api.us-east-1.amazonaws.com/api/"
+      "rest_api_id": "8ds16w06y7",
+      "rest_api_url": "https://8ds16w06y7.execute-api.us-east-1.amazonaws.com/api/"
     }
   ],
   "schema_version": "2.0",

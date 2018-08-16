@@ -5,12 +5,20 @@
     "local": {
       "environment_variables": {
         "ORIGIN": "http://localhost:8080",
+        "PASSWORD_SALT": "a93bae912d8740c0bfddb4ec33417bf7",
+        "PASSWORD_ITERATION": "1000",
+        "PERMITTED_IP_ADDRESS_RANGE": "127.0.0.0/8",
         "JWT_SECRET": "your-256-bit-secret",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
         "AUDIT_LIST_MAX_COUNT":"300",
         "SCANNER":"casval-openvas-dev",
-        "STAGE":"dev"
+        "STAGE":"dev",
+        "DB_NAME":"casval_dev",
+        "DB_ENDPOINT":"localhost",
+        "DB_USER":"root",
+        "DB_PASSWORD":"admin123",
+        "DB_PORT":"3306"
       }
     },
     "dev": {
@@ -19,12 +27,20 @@
       "lambda_timeout": 300,
       "environment_variables": {
         "ORIGIN": "http://localhost:8080",
+        "PASSWORD_SALT": "a93bae912d8740c0bfddb4ec33417bf7",
+        "PASSWORD_ITERATION": "1000",
+        "PERMITTED_IP_ADDRESS_RANGE": "0.0.0.0/0",
         "JWT_SECRET": "your-256-bit-secret",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
         "AUDIT_LIST_MAX_COUNT":"300",
         "SCANNER":"casval-openvas-dev",
-        "STAGE":"dev"
+        "STAGE":"dev",
+        "DB_NAME":"casval_dev",
+        "DB_ENDPOINT":"casval-aurora-cluster.cluster-ccykysrksugc.us-east-1.rds.amazonaws.com",
+        "DB_USER":"admin",
+        "DB_PASSWORD":"admin123",
+        "DB_PORT":"3306"
       }
     }
   }

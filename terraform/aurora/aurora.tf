@@ -9,6 +9,10 @@ resource "aws_rds_cluster_parameter_group" "tz" {
       name = "time_zone"
       value = "UTC"
      }
+    parameter {
+      name = "character_set_server"
+      value = "utf8mb4"
+     }
 }
 
 resource "aws_db_subnet_group" "default" {
