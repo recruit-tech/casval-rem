@@ -1,14 +1,15 @@
-import os
-import boto3
 import json
-import pytz
 import logging
+import os
+from datetime import datetime
+
+import boto3
+import pytz
+
+from chalicelib.core.scanner import Scanner
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-from chalicelib.core.scanner import Scanner
-from datetime import datetime
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SQS_SCAN_WAITING = "ScanWaiting"
@@ -33,10 +34,7 @@ def scan_launcher(app):
                 break
 
             for message in messages:
-                entry = {
-                    "Id": message.message_id,
-                    "ReceiptHandle": message.receipt_handle,
-                }
+                entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
                 try:
                     body = json.loads(message.body)
                     start_at = datetime.strptime(body["start_at"], DATETIME_FORMAT)
@@ -46,9 +44,7 @@ def scan_launcher(app):
                     if start_at <= base_time:
                         app.log.debug("message processed: " + message.message_id)
                         if end_at > base_time:
-                            async_call(
-                                app, "async_scan_launch", {"entry": entry, "body": body}
-                            )
+                            async_call(app, "async_scan_launch", {"entry": entry, "body": body})
                         else:
                             raise Exception(
                                 "The scan could not be started since its completion deadline is soon or over."
@@ -96,25 +92,16 @@ def scan_processor(app):
                 break
 
             for message in messages:
-                entry = {
-                    "Id": message.message_id,
-                    "ReceiptHandle": message.receipt_handle,
-                }
+                entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
                 try:
                     body = json.loads(message.body)
                     end_at = datetime.strptime(body["end_at"], DATETIME_FORMAT)
                     end_at = end_at.replace(tzinfo=pytz.utc)
                     if end_at > now:
-                        async_call(
-                            app,
-                            "async_scan_status_check",
-                            {"entry": entry, "body": body},
-                        )
+                        async_call(app, "async_scan_status_check", {"entry": entry, "body": body})
                     else:
                         async_call(app, "async_scan_terminate", {"body": body})
-                        raise Exception(
-                            "The scan has been terminated since its completion deadline is over."
-                        )
+                        raise Exception("The scan has been terminated since its completion deadline is over.")
                 except Exception as e:
                     app.log.error(e)
                     body["error"] = str(e)
@@ -130,18 +117,12 @@ def scan_processor(app):
 
 def async_scan_status_check(event):
     try:
-        logger.info(
-            "scan status check session: {session}".format(
-                session=event["body"]["session"]
-            )
-        )
+        logger.info("scan status check session: {session}".format(session=event["body"]["session"]))
         sqs = boto3.resource("sqs")
         body = event["body"]
         scanner = Scanner(os.environ["SCANNER"])
         status = scanner.check_status(body["session"])
-        logger.info(
-            "scan status: {status}({type})".format(status=status, type=type(status))
-        )
+        logger.info("scan status: {status}({type})".format(status=status, type=type(status)))
         if status == "complete":
             ongoing_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_ONGOING)
             complete_queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_COMPLETE)
@@ -168,11 +149,7 @@ def async_scan_terminate(event):
 
 
 def async_call(app, func, payload):
-    func_name = "{app}-{stage}-{func}".format(
-        app=app.app_name, stage=os.environ["STAGE"], func=func
-    )
+    func_name = "{app}-{stage}-{func}".format(app=app.app_name, stage=os.environ["STAGE"], func=func)
     lmd = boto3.client("lambda")
-    lmd.invoke(
-        FunctionName=func_name, InvocationType="Event", Payload=json.dumps(payload)
-    )
+    lmd.invoke(FunctionName=func_name, InvocationType="Event", Payload=json.dumps(payload))
     return

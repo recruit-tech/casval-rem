@@ -1,10 +1,13 @@
-import os
-import hashlib
 import binascii
-
+import hashlib
+import os
 from datetime import datetime
 
-from peewee_validates import Validator, StringField, BooleanField, ValidationError, DateTimeField, validate_email
+from peewee_validates import (BooleanField, DateTimeField, StringField,
+                              ValidationError, Validator, validate_email)
+
+
+PASSWORD_HASH_ALG = "sha256"
 
 
 def password_not_empty(field, data):
@@ -26,10 +29,12 @@ class AuditValidator(Validator):
     def get_password_hash(password):
         return binascii.hexlify(
             hashlib.pbkdf2_hmac(
-                'sha256', password.encode(), os.environ["PASSWORD_SALT"].encode(),
-                int(os.environ["PASSWORD_ITERATION"])
-                )
+                PASSWORD_HASH_ALG,
+                password.encode(),
+                os.environ["PASSWORD_SALT"].encode(),
+                int(os.environ["PASSWORD_ITERATION"]),
             )
+        ).decode("utf-8")
 
 
     def clean(self, data):
@@ -40,9 +45,7 @@ class AuditValidator(Validator):
 
 
     class Meta:
-        messages = {
-            'password_not_empty': 'Password must be provided when enforcing protection.'
-        }
+        messages = {"password_not_empty": "Password must be provided when enforcing protection."}
 
 
 class ContactValidator(Validator):

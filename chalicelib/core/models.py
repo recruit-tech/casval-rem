@@ -1,16 +1,17 @@
-from peewee import *
-
 import os
 import uuid
 from datetime import datetime
 
+from peewee import (BooleanField, CharField, DateTimeField, ForeignKeyField,
+                    Model, MySQLDatabase, TextField, UUIDField)
 
 db = MySQLDatabase(
     os.environ["DB_NAME"],
     user=os.environ["DB_USER"],
     password=os.environ["DB_PASSWORD"],
     host=os.environ["DB_ENDPOINT"],
-    port=int(os.environ["DB_PORT"]))
+    port=int(os.environ["DB_PORT"]),
+)
 
 
 class BaseModel(Model):
@@ -31,14 +32,14 @@ class Audit(BaseModel):
 
 
 class Contact(BaseModel):
-    audit_id = ForeignKeyField(Audit, backref='contacts', on_delete="CASCADE", on_update="CASCADE")
+    audit_id = ForeignKeyField(Audit, backref="contacts", on_delete="CASCADE", on_update="CASCADE")
     name = CharField()
     email = CharField()
 
 
 class Scan(BaseModel):
     uuid = UUIDField(unique=True, default=uuid.uuid4)
-    audit_id = ForeignKeyField(Audit, backref='scans', on_delete="CASCADE", on_update="CASCADE")
+    audit_id = ForeignKeyField(Audit, backref="scans", on_delete="CASCADE", on_update="CASCADE")
     target = CharField()
     start_at = DateTimeField(default=datetime.now)
     end_at = DateTimeField(default=datetime.now)

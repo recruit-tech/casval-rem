@@ -1,13 +1,13 @@
 from chalicelib.core.models import Audit, Contact, Scan, db
 
-class AuthenticationAPI:
 
+class AuthenticationAPI:
     def __init__(self, app):
         db.create_tables([Audit, Contact, Scan])
         self.app = app
 
-
     def authenticate(self):
+        # IP restriction required
         response = {
             "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
             ".eyJzY29wZSI6IioiLCJleHAiOjE2MDIyNTU2MDB9"

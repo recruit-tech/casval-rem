@@ -1,10 +1,9 @@
-import boto3
 import json
-import pytz
-
 from datetime import datetime
-from chalice import BadRequestError
-from chalice import UnprocessableEntityError
+
+import boto3
+import pytz
+from chalice import BadRequestError, UnprocessableEntityError
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SQS_SCAN_WAITING = "ScanWaiting"

@@ -1,75 +1,87 @@
 import os
-from chalicelib.apis import audit
-from chalicelib.apis import scan
-from chalicelib.apis import AuthenticationAPI
-from chalicelib.apis import vuln
-from chalicelib.batches import cron_jobs
-from chalicelib.batches import sqs_event_handlers
+
+from chalice import Chalice, CORSConfig, Cron
+
+from chalicelib import SQS_SCAN_COMPLETE
+from chalicelib.apis import AuditAPI, AuthenticationAPI, scan, vuln
+from chalicelib.batches import cron_jobs, sqs_event_handlers
 from chalicelib.core import authorizer
-from chalice import Chalice, Cron
-from chalice import CORSConfig
 
-SQS_SCAN_COMPLETE = "ScanComplete"
+CASVAL = "casval"
 
-app = Chalice(app_name="casval")
+app = Chalice(app_name=CASVAL)
 app.debug = True
+
 
 cors_config = CORSConfig(allow_origin=os.environ["ORIGIN"], allow_headers=["Authorization"], max_age=3600)
 
-# TODO: Distinguish id and uuid in API interfaces
 
 @app.authorizer()
 def authorize(auth_request):
     return authorizer.authorize(auth_request)
 
 
+# Audit API
+
+
 @app.route("/audit", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_index():
-    # For administration users
-    if app.current_request.context["authorizer"]["scope"] == "*":
-        return audit.index(app)
+    # For administration users only
+    if __authorized_scope() == "*":
+        audit_api = AuditAPI(app)
+        return audit_api.index()
 
 
-@app.route("/audit/{audit_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
-def audit_get(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.get(app, audit_id)
+@app.route("/audit/{audit_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
+def audit_get(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.get(audit_uuid)
 
 
 @app.route("/audit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_post():
-    # For administration users
-    if app.current_request.context["authorizer"]["scope"] == "*":
-        return audit.post(app)
+    # For administration users only
+    if __authorized_scope() == "*":
+        audit_api = AuditAPI(app)
+        return audit_api.post()
 
 
-@app.route("/audit/{audit_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
-def audit_patch(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.patch(app, audit_id)
+@app.route("/audit/{audit_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+def audit_patch(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.patch(audit_uuid)
 
 
-@app.route("/audit/{audit_id}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
-def audit_delete(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.delete(app, audit_id)
+@app.route("/audit/{audit_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+def audit_delete(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.delete(audit_uuid)
 
 
-@app.route("/audit/{audit_id}/tokens", methods=["POST"], cors=cors_config)
-def audit_tokens(audit_id):
-    return audit.tokens(app, audit_id)
+@app.route("/audit/{audit_uuid}/tokens", methods=["POST"], cors=cors_config)
+def audit_tokens(audit_uuid):
+    audit_api = AuditAPI(app)
+    return audit_api.tokens(audit_uuid)
 
 
-@app.route("/audit/{audit_id}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
-def audit_submit(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.submit(app, audit_id)
+@app.route("/audit/{audit_uuid}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
+def audit_submit(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.submit(audit_uuid)
 
 
-@app.route("/audit/{audit_id}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
-def audit_submit_cancel(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.submit_cancel(app, audit_id)
+@app.route("/audit/{audit_uuid}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+def audit_submit_cancel(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.submit_cancel(audit_uuid)
+
+
+# Scan API
 
 
 @app.route("/scan/{scan_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
@@ -102,25 +114,40 @@ def scan_schedule_cancel(scan_id):
     return scan.schedule_cancel(scan_id)
 
 
+# Authentication API
+
+
 @app.route("/auth", methods=["POST"], cors=cors_config)
 def authenticate():
-    api = AuthenticationAPI(app)
-    return api.authenticate()
+    authentication_api = AuthenticationAPI(app)
+    return authentication_api.authenticate()
+
+
+# Vulnerability API
 
 
 @app.route("/vulns", methods=["GET"], cors=cors_config, authorizer=authorize)
 def vulnerability_index():
-    return vuln.index()
+    # For administration users only
+    if __authorized_scope() == "*":
+        return vuln.index()
 
 
 @app.route("/vulns/{oid}", methods=["GET"], cors=cors_config, authorizer=authorize)
 def vulnerability_get(oid):
-    return vuln.get(oid)
+    # For administration users only
+    if __authorized_scope() == "*":
+        return vuln.get(oid)
 
 
 @app.route("/vulns/{oid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def vulnerability_patch(oid):
-    return vuln.patch(oid)
+    # For administration users only
+    if __authorized_scope() == "*":
+        return vuln.patch(oid)
+
+
+# Batch processes
 
 
 @app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
@@ -153,7 +180,7 @@ def scan_completed_handler(event):
     return sqs_event_handlers.scan_completed_handler(event)
 
 
-# For debugging purposes
+# For debugging purposes only
 
 
 @app.route("/batch/launcher")
@@ -164,3 +191,10 @@ def scan_launcher_for_debug():
 @app.route("/batch/processor")
 def scan_processor_for_debug():
     return cron_jobs.scan_processor(app)
+
+
+# Private functions
+
+
+def __authorized_scope():
+    return app.current_request.context["authorizer"]["scope"]
