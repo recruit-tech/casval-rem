@@ -8,11 +8,19 @@ logger.addHandler(logging.StreamHandler())
 
 
 class APIBase:
+
+    RESPONSE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
     def __init__(self, app):
         self.app = app
 
+    def _get_query_params(self):
+        params = self.app.current_request.query_params
+        return params if params is not None else {}
+
     def _get_request_body(self):
-        return self.app.current_request.json_body
+        body = self.app.current_request.json_body
+        return body if body is not None else {}
 
     def _is_access_permitted(self):
         try:

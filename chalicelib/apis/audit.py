@@ -4,10 +4,12 @@ import os
 
 import jwt
 from chalice import BadRequestError, NotFoundError, UnauthorizedError
+from peewee import fn
 
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit, Contact, db
-from chalicelib.core.validators import AuditValidator, ContactValidator
+from chalicelib.core.validators import (AuditPagenationValidator,
+                                        AuditValidator, ContactValidator)
 
 TOKEN_EXPIRATION_IN_HOUR = 3
 
@@ -17,18 +19,52 @@ class AuditAPI(APIBase):
         super().__init__(app)
 
     def index(self):
-        response = {
-            "name": "コーポレートサイト",
-            "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
-            "id": "3cd708cefd58401f9d43ff953f063467",
-            "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
-            "submitted": False,
-            "rejected_reason": "深刻な脆弱性が修正されていません",
-            "restricted_by": {"ip": True, "password": False},
-            "created_at": "2018-10-10 23:59:59",
-            "updated_at": "2018-10-10 23:59:59",
-        }
-        return response
+        try:
+            params = super()._get_query_params()
+            page_validator = AuditPagenationValidator()
+            page_validator.validate(params)
+            if page_validator.errors:
+                raise Exception(page_validator.errors)
+            count = page_validator.data["count"]
+            page = page_validator.data["page"]
+            submitted = False
+            if params.get("mode") == "submitted":
+                submitted = True
+
+            audits = (
+                Audit.select(
+                    Audit,
+                    fn.GROUP_CONCAT(Contact.name).alias("contact_names"),
+                    fn.GROUP_CONCAT(Contact.email).alias("contact_emails"),
+                )
+                .where(Audit.submitted == submitted)
+                .join(Contact, on=(Audit.id == Contact.audit_id))
+                .group_by(Audit.id)
+                .paginate(page, count)
+            )
+
+            response = []
+            for audit in audits.dicts():
+                entry = {}
+                entry["uuid"] = audit["uuid"].hex
+                entry["name"] = audit["name"]
+                entry["submitted"] = audit["submitted"]
+                entry["ip_restriction"] = audit["ip_restriction"]
+                entry["password_protection"] = audit["password_protection"]
+                entry["rejected_reason"] = audit["rejected_reason"]
+                # TODO: Change to UTC
+                entry["created_at"] = audit["created_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+                # TODO: Change to UTC
+                entry["updated_at"] = audit["updated_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+                entry["contact_names"] = audit["contact_names"].split(",")
+                entry["contact_emails"] = audit["contact_emails"].split(",")
+                response.append(entry)
+
+            return response
+
+        except Exception as e:
+            self.app.log.error(e)
+            raise BadRequestError(e)
 
     def get(self, audit_uuid):
         try:
@@ -48,7 +84,7 @@ class AuditAPI(APIBase):
                 audit_validator.validate({"name": body["name"]}, only=("name"))
                 if audit_validator.errors:
                     raise Exception(audit_validator.errors)
-                audit = Audit(name = audit_validator.data["name"])
+                audit = Audit(name=audit_validator.data["name"])
                 audit.save()
 
                 if "contacts" not in body or len(body["contacts"]) is 0:
@@ -213,8 +249,10 @@ class AuditAPI(APIBase):
             response["ip_restriction"] = audit["ip_restriction"]
             response["password_protection"] = audit["password_protection"]
             response["rejected_reason"] = audit["rejected_reason"]
-            response["created_at"] = audit["created_at"].strftime("%Y-%m-%d %H:%M:%S")  # TODO: Change to UTC
-            response["updated_at"] = audit["updated_at"].strftime("%Y-%m-%d %H:%M:%S")  # TODO: Change to UTC
+            # TODO: Change to UTC
+            response["created_at"] = audit["created_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+            # TODO: Change to UTC
+            response["updated_at"] = audit["updated_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
             response["contacts"] = []
 
             for contact in audits[0].contacts.dicts():
