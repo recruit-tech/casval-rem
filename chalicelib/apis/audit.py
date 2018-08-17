@@ -70,7 +70,7 @@ class AuditAPI(APIBase):
 
     def get(self, audit_uuid):
         try:
-            return self.__get_audit_by_uuid(audit_uuid)
+            return super()._get_audit_by_uuid(audit_uuid)
         except IndexError as e:
             self.app.log.error(e)
             raise NotFoundError(e)
@@ -101,7 +101,7 @@ class AuditAPI(APIBase):
                     contact["audit_id"] = audit.id
                 Contact.insert_many(contacts).execute()
 
-            return self.__get_audit_by_uuid(audit.uuid)
+            return super()._get_audit_by_uuid(audit.uuid)
 
         except Exception as e:
             self.app.log.error(e)
@@ -110,7 +110,7 @@ class AuditAPI(APIBase):
     def patch(self, audit_uuid):
         try:
             body = super()._get_request_body()
-            audit = self.__get_audit_by_uuid(audit_uuid, raw=True)
+            audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
 
             with db.atomic():
                 key_filter = ("name", "ip_restriction", "password_protection", "password")
@@ -136,7 +136,7 @@ class AuditAPI(APIBase):
                     Contact.delete().where(Contact.audit_id == audit["id"]).execute()
                     Contact.insert_many(contacts_new).execute()
 
-            return self.__get_audit_by_uuid(audit_uuid)
+            return super()._get_audit_by_uuid(audit_uuid)
 
         except IndexError as e:
             self.app.log.error(e)
@@ -162,7 +162,7 @@ class AuditAPI(APIBase):
 
     def tokens(self, audit_uuid):
         try:
-            audit = self.__get_audit_by_uuid(audit_uuid, raw=True)
+            audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
 
             if audit["ip_restriction"] is True:
                 if not super()._is_access_permitted():
@@ -198,7 +198,7 @@ class AuditAPI(APIBase):
 
     def submit(self, audit_uuid):
         try:
-            audit = self.__get_audit_by_uuid(audit_uuid)
+            audit = super()._get_audit_by_uuid(audit_uuid)
 
             # TODO: Check if number of scan belongging to the audit is more than 1
             # TODO: Check if status of all scan is processed=true
@@ -208,7 +208,7 @@ class AuditAPI(APIBase):
             submitted = {"submitted": True}
             Audit.update(submitted).where(Audit.uuid == audit_uuid).execute()
 
-            return self.__get_audit_by_uuid(audit_uuid)
+            return super()._get_audit_by_uuid(audit_uuid)
 
         except IndexError as e:
             self.app.log.error(e)
@@ -231,7 +231,7 @@ class AuditAPI(APIBase):
                 raise Exception(audit_validator.errors)
             Audit.update(audit_validator.data).where(Audit.uuid == audit_uuid).execute()
 
-            return self.__get_audit_by_uuid(audit_uuid)
+            return super()._get_audit_by_uuid(audit_uuid)
 
         except IndexError as e:
             self.app.log.error(e)
@@ -239,30 +239,3 @@ class AuditAPI(APIBase):
         except Exception as e:
             self.app.log.error(e)
             raise BadRequestError(e)
-
-    def __get_audit_by_uuid(self, uuid, raw=False):
-        audits = Audit.select().where(Audit.uuid == uuid)
-        audit = audits.dicts()[0]
-
-        if raw is True:
-            return audit
-        else:
-            response = {}
-            response["uuid"] = audit["uuid"].hex
-            response["name"] = audit["name"]
-            response["submitted"] = audit["submitted"]
-            response["ip_restriction"] = audit["ip_restriction"]
-            response["password_protection"] = audit["password_protection"]
-            response["rejected_reason"] = audit["rejected_reason"]
-            # TODO: Change to UTC
-            response["created_at"] = audit["created_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
-            # TODO: Change to UTC
-            response["updated_at"] = audit["updated_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
-            response["contacts"] = []
-
-            for contact in audits[0].contacts.dicts():
-                response["contacts"].append({"name": contact["name"], "email": contact["email"]})
-
-            response["scans"] = []  # ToDo: Return actual scans
-
-            return response

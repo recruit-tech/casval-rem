@@ -2,6 +2,8 @@ import ipaddress
 import logging
 import os
 
+from chalicelib.core.models import Audit
+
 logger = logging.getLogger("peewee")
 # logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
@@ -38,3 +40,31 @@ class APIBase:
         except Exception as e:
             self.app.log.error(e)
             return False
+
+    def _get_audit_by_uuid(self, uuid, raw=False):
+        audits = Audit.select().where(Audit.uuid == uuid)
+        audit = audits.dicts()[0]
+
+        if raw is True:
+            return audit
+
+        else:
+            response = {}
+            response["uuid"] = audit["uuid"].hex
+            response["name"] = audit["name"]
+            response["submitted"] = audit["submitted"]
+            response["ip_restriction"] = audit["ip_restriction"]
+            response["password_protection"] = audit["password_protection"]
+            response["rejected_reason"] = audit["rejected_reason"]
+            # TODO: Change to UTC
+            response["created_at"] = audit["created_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+            # TODO: Change to UTC
+            response["updated_at"] = audit["updated_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+            response["contacts"] = []
+
+            for contact in audits[0].contacts.dicts():
+                response["contacts"].append({"name": contact["name"], "email": contact["email"]})
+
+            response["scans"] = []  # ToDo: Return actual scans
+
+            return response
