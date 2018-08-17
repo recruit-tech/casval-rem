@@ -17,7 +17,7 @@ def password_not_empty(field, data):
 
 class AuditValidator(Validator):
     name = StringField(max_length=128, min_length=1)
-    password = StringField(max_length=128, min_length=6)
+    password = StringField(max_length=128, min_length=8)
     submitted = BooleanField()
     ip_restriction = BooleanField()
     password_protection = BooleanField(validators=[password_not_empty])

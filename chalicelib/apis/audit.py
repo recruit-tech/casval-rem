@@ -40,12 +40,14 @@ class AuditAPI(APIBase):
                 .where(Audit.submitted == submitted)
                 .join(Contact, on=(Audit.id == Contact.audit_id))
                 .group_by(Audit.id)
+                .order_by(Audit.updated_at.desc())
                 .paginate(page, count)
             )
 
             response = []
             for audit in audits.dicts():
                 entry = {}
+                entry["id"] = audit["id"]
                 entry["uuid"] = audit["uuid"].hex
                 entry["name"] = audit["name"]
                 entry["submitted"] = audit["submitted"]
@@ -164,7 +166,7 @@ class AuditAPI(APIBase):
 
             if audit["ip_restriction"] is True:
                 if not super()._is_access_permitted():
-                    raise PermissionError("Not allowed to access from your IP addess.")
+                    raise ConnectionRefusedError("Not allowed to access from your IP addess.")
 
             if audit["password_protection"] is True:
                 body = super()._get_request_body()
@@ -181,6 +183,9 @@ class AuditAPI(APIBase):
             response = {"token": token.decode("utf-8")}
             return response
 
+        except ConnectionRefusedError as e:
+            self.app.log.error(e)
+            raise ForbiddenError(e)
         except PermissionError as e:
             self.app.log.error(e)
             raise UnauthorizedError(e)
