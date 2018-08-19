@@ -137,9 +137,9 @@ def scan_schedule_cancel(audit_uuid, scan_uuid):
 
 
 @app.route("/auth", methods=["POST"], cors=cors_config)
-def authenticate():
+def auth():
     authentication_api = AuthenticationAPI(app)
-    return authentication_api.authenticate()
+    return authentication_api.auth()
 
 
 # Vulnerability API

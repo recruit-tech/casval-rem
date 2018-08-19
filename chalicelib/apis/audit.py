@@ -1,16 +1,9 @@
-import datetime
-import logging
-import os
-
-import jwt
 from peewee import fn
 
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit, Contact, db
 from chalicelib.core.validators import (AuditPagenationValidator,
                                         AuditValidator, ContactValidator)
-
-TOKEN_EXPIRATION_IN_HOUR = 3
 
 
 class AuditAPI(APIBase):
@@ -146,12 +139,8 @@ class AuditAPI(APIBase):
             if password_hash != audit["password"]:
                 raise PermissionError("Invalid password.")
 
-        expiration_time = datetime.datetime.now() + datetime.timedelta(hours=TOKEN_EXPIRATION_IN_HOUR)
-        ext = expiration_time.strftime("%s")
-        claim = {"scope": audit_uuid, "exp": ext}
-        token = jwt.encode(claim, os.getenv("JWT_SECRET"), algorithm="HS256")
-        response = {"token": token.decode("utf-8")}
-        return response
+        token = super()._get_signed_token(audit_uuid)
+        return {"token": token}
 
     @APIBase.exception_handler
     def submit(self, audit_uuid):

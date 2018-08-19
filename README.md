@@ -28,3 +28,25 @@ flake8 chalicelib/
 isort app.py
 isort -rc chalicelib/
 ```
+
+## Administrator password hash generation
+
+Below is an example to generate password of password `admin123`. Then, you can get `1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1` as the corresponding password hash. Set this value to the `ADMIN_PASSWORD_HASH` in `./chalice/config.json`.  
+
+```
+import binascii
+import hashlib
+
+PASSWORD_HASH_ALG = "sha256"
+PASSWORD_SALT = "a93bae912d8740c0bfddb4ec33417bf7"
+PASSWORD_ITERATION = 1000
+
+password = "admin123"
+token = binascii.hexlify(
+    hashlib.pbkdf2_hmac(
+        PASSWORD_HASH_ALG, password.encode(), PASSWORD_SALT.encode(), PASSWORD_ITERATION
+    )
+).decode("utf-8")
+print(token)
+
+```
