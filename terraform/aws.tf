@@ -2,8 +2,12 @@ output "bucket" {
   value = "${module.s3.bucket}"
 }
 
-output "subnet" {
-  value = "${module.vpc.subnet}"
+output "subnet_primary" {
+  value = "${module.vpc.subnet_primary}"
+}
+
+output "subnet_secondary" {
+  value = "${module.vpc.subnet_secondary}"
 }
 
 output "security_group" {
@@ -23,4 +27,11 @@ module "sqs" {
 
 module "vpc" {
   source = "./vpc"
+}
+
+module "aurora" {
+  source = "./aurora"
+  subnet_primary = "${module.vpc.subnet_primary}"
+  subnet_secondary = "${module.vpc.subnet_secondary}"
+  security_group = "${module.vpc.security_group}"
 }

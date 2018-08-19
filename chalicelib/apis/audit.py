@@ -1,112 +1,184 @@
-from boto3.dynamodb.conditions import Key
-from botocore.exceptions import ClientError
+import datetime
+import logging
+import os
 
-from chalice import BadRequestError
-from chalice import NotFoundError
-from chalicelib.audit_model import audit_get_id
-from chalicelib.audit_model import audit_get_updated_at_index
+import jwt
+from peewee import fn
 
-from chalicelib.audit_util import AUDIT_GET_DEFAULT_COUNT
-from chalicelib.audit_util import AUDIT_LIST_MAX_COUNT
-from chalicelib.audit_util import AuditMode
+from chalicelib.apis.base import APIBase
+from chalicelib.core.models import Audit, Contact, db
+from chalicelib.core.validators import (AuditPagenationValidator,
+                                        AuditValidator, ContactValidator)
 
-
-def index(app):
-    request = app.current_request
-    params = request.query_params
-
-    mode: AuditMode = AuditMode.unsubmitted
-    count: int = AUDIT_GET_DEFAULT_COUNT
-    keys: Key = Key("status").eq(mode.name)
-
-    if params is not None:
-        try:
-            mode = AuditMode[params["mode"]]
-            count = int(params.get("count", AUDIT_GET_DEFAULT_COUNT))
-
-            if count > AUDIT_LIST_MAX_COUNT:
-                count = AUDIT_LIST_MAX_COUNT
-            try:
-                item = audit_get_id(params["before"])
-                keys = Key("status").eq(mode.name) & Key("updated_at").lt(item["Item"]["updated_at"])
-
-            except ClientError as ce:
-                if ce.response["Error"]["Code"] == "ResourceNotFoundException":
-                    raise NotFoundError("Audit is NotFound")
-
-        except KeyError as e:
-            raise BadRequestError(str(e) + "is Unknown key")
-
-    try:
-        resp = audit_get_updated_at_index(keys, count)
-        return resp
-
-    except ClientError as ce:
-        if ce.response["Error"]["Code"] == "ResourceNotFoundException":
-            raise NotFoundError("Audit is NotFound")
+TOKEN_EXPIRATION_IN_HOUR = 3
 
 
-def get(audit_id):
-    response = {
-        "name": "コーポレートサイト",
-        "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
-        "id": "3cd708cefd58401f9d43ff953f063467",
-        "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
-        "submitted": False,
-        "rejected_reason": "深刻な脆弱性が修正されていません",
-        "restricted_by": {"ip": True, "password": False},
-        "created_at": "2018-10-10 23:59:59",
-        "updated_at": "2018-10-10 23:59:59",
-    }
-    return response
+class AuditAPI(APIBase):
+    @APIBase.exception_handler
+    def __init__(self, app):
+        super().__init__(app)
 
+    @APIBase.exception_handler
+    def index(self):
+        params = super()._get_query_params()
+        page_validator = AuditPagenationValidator()
+        page_validator.validate(params)
+        if page_validator.errors:
+            raise Exception(page_validator.errors)
+        count = page_validator.data["count"]
+        page = page_validator.data["page"]
+        submitted = False
+        if params.get("mode") == "submitted":
+            submitted = True
 
-def post():
-    response = {
-        "name": "コーポレートサイト",
-        "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
-        "id": "3cd708cefd58401f9d43ff953f063467",
-        "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
-        "submitted": False,
-        "rejected_reason": "深刻な脆弱性が修正されていません",
-        "restricted_by": {"ip": True, "password": False},
-        "created_at": "2018-10-10 23:59:59",
-        "updated_at": "2018-10-10 23:59:59",
-    }
-    return response
+        audits = (
+            Audit.select(
+                Audit,
+                fn.GROUP_CONCAT(Contact.name).alias("contact_names"),
+                fn.GROUP_CONCAT(Contact.email).alias("contact_emails"),
+            )
+            .where(Audit.submitted == submitted)
+            .join(Contact, on=(Audit.id == Contact.audit_id))
+            .group_by(Audit.id)
+            .order_by(Audit.updated_at.desc())
+            .paginate(page, count)
+        )
 
+        response = []
+        for audit in audits.dicts():
+            entry = {}
+            entry["id"] = audit["id"]
+            entry["uuid"] = audit["uuid"].hex
+            entry["name"] = audit["name"]
+            entry["submitted"] = audit["submitted"]
+            entry["ip_restriction"] = audit["ip_restriction"]
+            entry["password_protection"] = audit["password_protection"]
+            entry["rejected_reason"] = audit["rejected_reason"]
+            entry["created_at"] = audit["created_at"].strftime(APIBase.DATETIME_FORMAT)
+            entry["updated_at"] = audit["updated_at"].strftime(APIBase.DATETIME_FORMAT)
+            entry["contact_names"] = audit["contact_names"].split(",")
+            entry["contact_emails"] = audit["contact_emails"].split(",")
+            response.append(entry)
 
-def patch(audit_id):
-    response = {
-        "name": "コーポレートサイト",
-        "contacts": [{"name": "nishimunea", "email": "nishimunea@example.jp"}],
-        "id": "3cd708cefd58401f9d43ff953f063467",
-        "scans": ["21d6cd7b33e84fbf9a2898f4ea7f90cc"],
-        "submitted": False,
-        "rejected_reason": "深刻な脆弱性が修正されていません",
-        "restricted_by": {"ip": True, "password": False},
-        "created_at": "2018-10-10 23:59:59",
-        "updated_at": "2018-10-10 23:59:59",
-    }
-    return response
+        return response
 
+    @APIBase.exception_handler
+    def get(self, audit_uuid):
+        return super()._get_audit_by_uuid(audit_uuid)
 
-def delete(audit_id):
-    return {}
+    @APIBase.exception_handler
+    def post(self):
+        body = super()._get_request_body()
+        with db.atomic():
+            audit_validator = AuditValidator()
+            audit_validator.validate({"name": body["name"]}, only=("name"))
+            if audit_validator.errors:
+                raise Exception(audit_validator.errors)
+            audit = Audit(name=audit_validator.data["name"])
+            audit.save()
 
+            if "contacts" not in body or len(body["contacts"]) is 0:
+                raise Exception("'contacts': Must be contained.")
+            contact_validator = ContactValidator()
+            contacts = body["contacts"]
 
-def tokens(audit_id):
-    response = {
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
-        ".eyJzY29wZSI6IioiLCJleHAiOjE2MDIyNTU2MDB9"
-        ".zvz-IMMCXA_VCwElPE3BsrpPVnicSw0YFdsDi4wjyeo"
-    }
-    return response
+            for contact in contacts:
+                contact_validator.validate(contact)
+                if contact_validator.errors:
+                    raise Exception(contact_validator.errors)
+                contact["audit_id"] = audit.id
+            Contact.insert_many(contacts).execute()
 
+        return super()._get_audit_by_uuid(audit.uuid)
 
-def submit(audit_id):
-    return {}
+    @APIBase.exception_handler
+    def patch(self, audit_uuid):
+        body = super()._get_request_body()
+        audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
 
+        with db.atomic():
+            key_filter = ("name", "ip_restriction", "password_protection", "password")
+            audit_new = {k: v for k, v in body.items() if k in key_filter}
+            if audit_new:
+                audit_validator = AuditValidator()
+                audit_validator.validate(audit_new, only=audit_new)
+                if audit_validator.errors:
+                    raise Exception(audit_validator.errors)
+                Audit.update(audit_validator.data).where(Audit.id == audit["id"]).execute()
 
-def submit_cancel(audit_id):
-    return {}
+            if "contacts" in body:
+                if len(body["contacts"]) is 0:
+                    raise Exception("'contents': Must be contained.")
+                contacts_new = body["contacts"]
+                contact_validator = ContactValidator()
+
+                for contact_new in contacts_new:
+                    contact_new["audit_id"] = audit["id"]
+                    contact_validator.validate(contact_new)
+                    if contact_validator.errors:
+                        raise Exception(contact_validator.errors)
+                Contact.delete().where(Contact.audit_id == audit["id"]).execute()
+                Contact.insert_many(contacts_new).execute()
+
+        return super()._get_audit_by_uuid(audit_uuid)
+
+    @APIBase.exception_handler
+    def delete(self, audit_uuid):
+        query = Audit.delete().where(Audit.uuid == audit_uuid)
+        row_count = query.execute()
+        if row_count == 0:
+            raise IndexError("'audit_uuid': Item could not be found.")
+        return {}
+
+    @APIBase.exception_handler
+    def tokens(self, audit_uuid):
+        audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
+
+        if audit["ip_restriction"] is True:
+            if not super()._is_access_permitted():
+                raise ConnectionRefusedError("Not allowed to access from your IP addess.")
+
+        if audit["password_protection"] is True:
+            body = super()._get_request_body()
+            if body is None or "password" not in body:
+                raise PermissionError("Password must be specified.")
+            password_hash = AuditValidator.get_password_hash(body["password"])
+            if password_hash != audit["password"]:
+                raise PermissionError("Invalid password.")
+
+        expiration_time = datetime.datetime.now() + datetime.timedelta(hours=TOKEN_EXPIRATION_IN_HOUR)
+        ext = expiration_time.strftime("%s")
+        claim = {"scope": audit_uuid, "exp": ext}
+        token = jwt.encode(claim, os.getenv("JWT_SECRET"), algorithm="HS256")
+        response = {"token": token.decode("utf-8")}
+        return response
+
+    @APIBase.exception_handler
+    def submit(self, audit_uuid):
+        audit = super()._get_audit_by_uuid(audit_uuid)
+
+        # TODO: Check if number of scan belongging to the audit is more than 1
+        # TODO: Check if status of all scan is processed=true
+        # TODO: Check if no fix-required in a result of all scans, if fix-required,
+        #       length of the comment is more than 1
+
+        submitted = {"submitted": True}
+        Audit.update(submitted).where(Audit.uuid == audit_uuid).execute()
+
+        return super()._get_audit_by_uuid(audit_uuid)
+
+    @APIBase.exception_handler
+    def submit_cancel(self, audit_uuid):
+        body = super()._get_request_body()
+
+        unsubmitted = {"submitted": False}
+        if "rejected_reason" in body:
+            unsubmitted["rejected_reason"] = body["rejected_reason"]
+
+        audit_validator = AuditValidator()
+        audit_validator.validate(unsubmitted, unsubmitted)
+        if audit_validator.errors:
+            raise Exception(audit_validator.errors)
+        Audit.update(audit_validator.data).where(Audit.uuid == audit_uuid).execute()
+
+        return super()._get_audit_by_uuid(audit_uuid)

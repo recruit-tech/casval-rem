@@ -1,18 +1,17 @@
 import os
-from chalicelib.apis import audit
-from chalicelib.apis import scan
-from chalicelib.apis import authn
-from chalicelib.apis import vuln
-from chalicelib.batches import cron_jobs
-from chalicelib.batches import sqs_event_handlers
-from chalicelib import authorizer
-from chalice import Chalice, Cron
-from chalice import CORSConfig
 
-SQS_SCAN_COMPLETE = "ScanComplete"
+from chalice import Chalice, CORSConfig, Cron
 
-app = Chalice(app_name="casval")
+from chalicelib import SQS_SCAN_COMPLETE
+from chalicelib.apis import AuditAPI, AuthenticationAPI, ScanAPI, vuln
+from chalicelib.batches import cron_jobs, sqs_event_handlers
+from chalicelib.core import authorizer
+
+CASVAL = "casval"
+
+app = Chalice(app_name=CASVAL)
 app.debug = True
+
 
 cors_config = CORSConfig(allow_origin=os.environ["ORIGIN"], allow_headers=["Authorization"], max_age=3600)
 
@@ -22,109 +21,160 @@ def authorize(auth_request):
     return authorizer.authorize(auth_request)
 
 
+# Audit API
+
+
 @app.route("/audit", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_index():
-    if app.current_request.context["authorizer"]["scope"] == "*":
-        return audit.index(app)
+    # For administration users only
+    if __authorized_scope() == "*":
+        audit_api = AuditAPI(app)
+        return audit_api.index()
 
 
-@app.route("/audit/{audit_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
-def audit_get(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.get(audit_id)
+@app.route("/audit/{audit_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
+def audit_get(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.get(audit_uuid)
 
 
 @app.route("/audit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_post():
-    # ToDo: Add scope verification
-    return audit.post()
+    # For administration users only
+    if __authorized_scope() == "*":
+        audit_api = AuditAPI(app)
+        return audit_api.post()
 
 
-@app.route("/audit/{audit_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
-def audit_patch(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.patch(app, audit_id)
+@app.route("/audit/{audit_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+def audit_patch(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.patch(audit_uuid)
 
 
-@app.route("/audit/{audit_id}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
-def audit_delete(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.delete(audit_id)
+@app.route("/audit/{audit_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+def audit_delete(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.delete(audit_uuid)
 
 
-@app.route("/audit/{audit_id}/tokens", methods=["POST"], cors=cors_config)
-def audit_tokens(audit_id):
-    return audit.tokens(audit_id)
+@app.route("/audit/{audit_uuid}/tokens", methods=["POST"], cors=cors_config)
+def audit_tokens(audit_uuid):
+    audit_api = AuditAPI(app)
+    return audit_api.tokens(audit_uuid)
 
 
-@app.route("/audit/{audit_id}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
-def audit_submit(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.submit(audit_id)
+@app.route("/audit/{audit_uuid}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
+def audit_submit(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.submit(audit_uuid)
 
 
-@app.route("/audit/{audit_id}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
-def audit_submit_cancel(audit_id):
-    if app.current_request.context["authorizer"]["scope"] in [audit_id, "*"]:
-        return audit.submit_cancel(audit_id)
+@app.route("/audit/{audit_uuid}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+def audit_submit_cancel(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.submit_cancel(audit_uuid)
 
 
-@app.route("/scan/{scan_id}", methods=["GET"], cors=cors_config, authorizer=authorize)
-def scan_get(scan_id):
-    return scan.get(scan_id)
+# Scan API
 
 
-@app.route("/scan", methods=["POST"], cors=cors_config, authorizer=authorize)
-def scan_post():
-    return scan.post()
+@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
+def scan_get(audit_uuid, scan_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        scan_api = ScanAPI(app, audit_uuid)
+        return scan_api.get(scan_uuid)
 
 
-@app.route("/scan/{scan_id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
-def scan_patch(scan_id):
-    return scan.patch(app, scan_id)
+@app.route("/audit/{audit_uuid}/scan", methods=["POST"], cors=cors_config, authorizer=authorize)
+def scan_post(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        scan_api = ScanAPI(app, audit_uuid)
+        return scan_api.post()
 
 
-@app.route("/scan/{scan_id}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
-def scan_delete(scan_id):
-    return scan.delete(scan_id)
+@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+def scan_patch(audit_uuid, scan_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        scan_api = ScanAPI(app, audit_uuid)
+        return scan_api.patch(scan_uuid)
 
 
-@app.route("/scan/{scan_id}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize)
-def scan_schedule(scan_id):
-    return scan.schedule(app, scan_id)
+@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+def scan_delete(audit_uuid, scan_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        scan_api = ScanAPI(app, audit_uuid)
+        return scan_api.delete(scan_uuid)
 
 
-@app.route("/scan/{scan_id}/schedule", methods=["DELETE"], cors=cors_config, authorizer=authorize)
-def scan_schedule_cancel(scan_id):
-    return scan.schedule_cancel(scan_id)
+@app.route(
+    "/audit/{audit_uuid}/scan/{scan_uuid}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize
+)
+def scan_schedule(audit_uuid, scan_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        scan_api = ScanAPI(app, audit_uuid)
+        return scan_api.schedule(scan_uuid)
+
+
+@app.route(
+    "/audit/{audit_uuid}/scan/{scan_uuid}/schedule",
+    methods=["DELETE"],
+    cors=cors_config,
+    authorizer=authorize,
+)
+def scan_schedule_cancel(audit_uuid, scan_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        scan_api = ScanAPI(app, audit_uuid)
+        return scan_api.schedule_cancel(scan_uuid)
+
+
+# Authentication API
 
 
 @app.route("/auth", methods=["POST"], cors=cors_config)
 def authenticate():
-    return authn.authenticate()
+    authentication_api = AuthenticationAPI(app)
+    return authentication_api.authenticate()
+
+
+# Vulnerability API
 
 
 @app.route("/vulns", methods=["GET"], cors=cors_config, authorizer=authorize)
 def vulnerability_index():
-    return vuln.index()
+    # For administration users only
+    if __authorized_scope() == "*":
+        return vuln.index()
 
 
 @app.route("/vulns/{oid}", methods=["GET"], cors=cors_config, authorizer=authorize)
 def vulnerability_get(oid):
-    return vuln.get(oid)
+    # For administration users only
+    if __authorized_scope() == "*":
+        return vuln.get(oid)
 
 
 @app.route("/vulns/{oid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def vulnerability_patch(oid):
-    return vuln.patch(oid)
+    # For administration users only
+    if __authorized_scope() == "*":
+        return vuln.patch(oid)
 
 
-@app.schedule(Cron("0/1", "*", "*", "*", "?", "*"))
+# Batch processes
+
+
+@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
 def scan_launcher(event):
     return cron_jobs.scan_launcher(app)
 
 
-@app.schedule(Cron("0/2", "*", "*", "*", "?", "*"))
+@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
 def scan_processor(event):
     return cron_jobs.scan_processor(app)
 
@@ -149,7 +199,7 @@ def scan_completed_handler(event):
     return sqs_event_handlers.scan_completed_handler(event)
 
 
-# For debugging purposes
+# For debugging purposes only
 
 
 @app.route("/batch/launcher")
@@ -160,3 +210,10 @@ def scan_launcher_for_debug():
 @app.route("/batch/processor")
 def scan_processor_for_debug():
     return cron_jobs.scan_processor(app)
+
+
+# Private functions
+
+
+def __authorized_scope():
+    return app.current_request.context["authorizer"]["scope"]

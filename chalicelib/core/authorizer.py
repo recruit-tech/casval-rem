@@ -1,6 +1,7 @@
-from chalice import AuthResponse
-import jwt
 import os
+
+import jwt
+from chalice import AuthResponse
 
 
 def authorize(auth_request):
@@ -12,5 +13,4 @@ def authorize(auth_request):
         return AuthResponse(routes=["*"], principal_id="", context=claim)
 
     except Exception as e:
-        print(e)
         return AuthResponse(routes=[], principal_id="")

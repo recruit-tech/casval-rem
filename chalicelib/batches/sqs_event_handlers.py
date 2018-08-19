@@ -1,17 +1,17 @@
-import os
-import boto3
 import json
 import logging
+import os
+from os.path import dirname, join
 
-from os.path import join, dirname
+import boto3
+
+from chalicelib.core.scanner import Scanner
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 OBJECT_KEY_NAME = "report/{scanner}/{scan_id}.{ext}"
 REPORT_EXTENSION = "xml"
-
-from chalicelib.core.scanner import Scanner
 
 
 def scan_completed_handler(messages):
@@ -44,13 +44,9 @@ def scan_completed_handler(messages):
 
 def load_report(scan_id):
     try:
-        logger.info(
-            "try to load a report of scan {scan_id} ...".format(scan_id=scan_id)
-        )
+        logger.info("try to load a report of scan {scan_id} ...".format(scan_id=scan_id))
         s3 = boto3.resource("s3")
-        key = OBJECT_KEY_NAME.format(
-            scanner=os.environ["SCANNER"], scan_id=scan_id, ext=REPORT_EXTENSION
-        )
+        key = OBJECT_KEY_NAME.format(scanner=os.environ["SCANNER"], scan_id=scan_id, ext=REPORT_EXTENSION)
         logger.info("s3 key: {key}".format(key=key))
         bucket_name = get_bucket_name()
         logger.info("s3 bucket name: {bucket}".format(bucket=bucket_name))
@@ -66,13 +62,9 @@ def load_report(scan_id):
 
 def store_report(scan_id, report):
     try:
-        logger.info(
-            "try to store a report of scan {scan_id} ...".format(scan_id=scan_id)
-        )
+        logger.info("try to store a report of scan {scan_id} ...".format(scan_id=scan_id))
         s3 = boto3.resource("s3")
-        key = OBJECT_KEY_NAME.format(
-            scanner=os.environ["SCANNER"], scan_id=scan_id, ext=REPORT_EXTENSION
-        )
+        key = OBJECT_KEY_NAME.format(scanner=os.environ["SCANNER"], scan_id=scan_id, ext=REPORT_EXTENSION)
         bucket_name = get_bucket_name()
         logger.info("s3 bucket name: {bucket}".format(bucket=bucket_name))
         obj = s3.Object(bucket_name, key)
