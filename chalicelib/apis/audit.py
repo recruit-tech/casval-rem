@@ -3,7 +3,8 @@ import logging
 import os
 
 import jwt
-from chalice import BadRequestError, NotFoundError, UnauthorizedError
+from chalice import (BadRequestError, ForbiddenError, NotFoundError,
+                     UnauthorizedError)
 from peewee import fn
 
 from chalicelib.apis.base import APIBase

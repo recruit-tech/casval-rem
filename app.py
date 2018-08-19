@@ -112,14 +112,21 @@ def scan_delete(audit_uuid, scan_uuid):
         return scan_api.delete(scan_uuid)
 
 
-@app.route("/audit/{audit_uuid}/scan/{scan_uuid}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+@app.route(
+    "/audit/{audit_uuid}/scan/{scan_uuid}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize
+)
 def scan_schedule(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
         return scan_api.schedule(scan_uuid)
 
 
-@app.route("/audit/{audit_uuid}/scan/{scan_uuid}/schedule", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+@app.route(
+    "/audit/{audit_uuid}/scan/{scan_uuid}/schedule",
+    methods=["DELETE"],
+    cors=cors_config,
+    authorizer=authorize,
+)
 def scan_schedule_cancel(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
