@@ -163,9 +163,7 @@ class ScanAPI(APIBase):
             response["comment"] = scan["comment"]
             # TODO: Return s3.generate_presigned_url
             response["report_url"] = scan["report_url"]
-            # TODO: Change to UTC
             response["created_at"] = scan["created_at"].strftime(APIBase.DATETIME_FORMAT)
-            # TODO: Change to UTC
             response["updated_at"] = scan["updated_at"].strftime(APIBase.DATETIME_FORMAT)
 
             start_at = scan["start_at"]

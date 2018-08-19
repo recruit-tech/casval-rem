@@ -54,10 +54,8 @@ class AuditAPI(APIBase):
             entry["ip_restriction"] = audit["ip_restriction"]
             entry["password_protection"] = audit["password_protection"]
             entry["rejected_reason"] = audit["rejected_reason"]
-            # TODO: Change to UTC
-            entry["created_at"] = audit["created_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
-            # TODO: Change to UTC
-            entry["updated_at"] = audit["updated_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+            entry["created_at"] = audit["created_at"].strftime(APIBase.DATETIME_FORMAT)
+            entry["updated_at"] = audit["updated_at"].strftime(APIBase.DATETIME_FORMAT)
             entry["contact_names"] = audit["contact_names"].split(",")
             entry["contact_emails"] = audit["contact_emails"].split(",")
             response.append(entry)

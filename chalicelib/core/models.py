@@ -27,8 +27,8 @@ class Audit(BaseModel):
     password_protection = BooleanField(default=False)
     password = CharField(default="")
     rejected_reason = CharField(default="")
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField(default=datetime.now)
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
 
 
 class Contact(BaseModel):
@@ -43,8 +43,8 @@ class Scan(BaseModel):
     target = CharField()
     start_at = DateTimeField(default=0)
     end_at = DateTimeField(default=0)
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField(default=datetime.now)
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
     error_reason = CharField(default="")
     scheduled = BooleanField(default=False)
     schedule_uuid = UUIDField(unique=True, null=True, default=None)

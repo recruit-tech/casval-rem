@@ -89,7 +89,7 @@ class AuditValidator(Validator):
     def clean(self, data):
         if "password" in data:
             data["password"] = self.get_password_hash(data["password"])
-        data["updated_at"] = datetime.now()
+        data["updated_at"] = datetime.utcnow()
         return data
 
     class Meta:
@@ -168,5 +168,5 @@ class ScanValidator(Validator):
         return False
 
     def clean(self, data):
-        data["updated_at"] = datetime.now()
+        data["updated_at"] = datetime.utcnow()
         return data
