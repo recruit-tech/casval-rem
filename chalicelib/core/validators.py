@@ -12,6 +12,7 @@ from peewee_validates import (BooleanField, DateTimeField, IntegerField,
                               validate_email, validate_regexp)
 
 PASSWORD_HASH_ALG = "sha256"
+MAX_COMMENT_LENGTH = 1000
 AWS_IP_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
 
 
@@ -101,6 +102,8 @@ class ContactValidator(Validator):
 
 class ScanValidator(Validator):
     target = StringField(required=True, validators=[valid_ipv4_or_fqdn])
+    updated_at = DateTimeField()
+    comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=1)
 
     @staticmethod
     def is_AWS(target_ipv4_or_fqdn):
@@ -115,3 +118,7 @@ class ScanValidator(Validator):
                 return True
 
         return False
+
+    def clean(self, data):
+        data["updated_at"] = datetime.now()
+        return data

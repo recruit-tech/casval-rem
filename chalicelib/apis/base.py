@@ -65,6 +65,8 @@ class APIBase:
             for contact in audits[0].contacts.dicts():
                 response["contacts"].append({"name": contact["name"], "email": contact["email"]})
 
-            response["scans"] = []  # ToDo: Return actual scans
+            response["scans"] = []
+            for scan in audits[0].scans.dicts():
+                response["scans"].append(scan["uuid"].hex)
 
             return response
