@@ -3,7 +3,7 @@ from datetime import datetime
 
 import boto3
 import pytz
-from chalice import BadRequestError, NotFoundError, UnprocessableEntityError
+from chalice import UnprocessableEntityError
 from peewee import fn
 
 from chalicelib.apis.base import APIBase
@@ -15,111 +15,80 @@ SQS_SCAN_WAITING = "ScanWaiting"
 
 
 class ScanAPI(APIBase):
+    @APIBase.exception_handler
     def __init__(self, app, audit_uuid):
         super().__init__(app)
-        try:
-            self.audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
-        except IndexError as e:
-            self.app.log.error(e)
-            raise NotFoundError(e)
-        except Exception as e:
-            self.app.log.error(e)
-            raise BadRequestError(e)
+        self.audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
 
+    @APIBase.exception_handler
     def get(self, scan_uuid):
-        try:
-            return self.__get_scan_by_uuid(scan_uuid)
-        except IndexError as e:
-            self.app.log.error(e)
-            raise NotFoundError(e)
-        except Exception as e:
-            self.app.log.error(e)
-            raise BadRequestError(e)
+        return self.__get_scan_by_uuid(scan_uuid)
 
+    @APIBase.exception_handler
     def post(self):
-        try:
-            if self.audit["submitted"] is True:
-                raise Exception("audit-submitted")
+        if self.audit["submitted"] is True:
+            raise Exception("audit-submitted")
 
-            body = super()._get_request_body()
-            if "target" not in body:
-                raise Exception("target-is-empty")
+        body = super()._get_request_body()
+        if "target" not in body:
+            raise Exception("target-is-empty")
 
+        scan_validator = ScanValidator()
+        scan_validator.validate({"target": body["target"]}, only=("target"))
+        if scan_validator.errors:
+            raise Exception(scan_validator.errors)
+        target = scan_validator.data["target"]
+
+        scan_query = (
+            Scan()
+            .select(fn.Count(Scan.id).alias("scan_count"))
+            .where((Scan.audit_id == self.audit["id"]) & (Scan.target == target) & (Scan.scheduled is True))
+        )
+        scan_count = scan_query.dicts().get()["scan_count"]
+        if scan_count > 0:
+            raise Exception("target-is-scheduled")
+
+        scan = Scan(target=target, audit_id=self.audit["id"], platform=self.__get_platform(target))
+        scan.save()
+
+        return self.__get_scan_by_uuid(scan.uuid)
+
+    @APIBase.exception_handler
+    def patch(self, scan_uuid):
+        body = super()._get_request_body()
+        scan = self.__get_scan_by_uuid(scan_uuid, raw=True)
+
+        if "comment" not in body:
+            raise Exception("'comment': Must be contained.")
+        key_filter = "comment"
+        scan_new = {k: v for k, v in body.items() if k in key_filter}
+        if scan_new:
             scan_validator = ScanValidator()
-            scan_validator.validate({"target": body["target"]}, only=("target"))
+            scan_validator.validate(scan_new, only=scan_new)
             if scan_validator.errors:
                 raise Exception(scan_validator.errors)
-            target = scan_validator.data["target"]
+            Scan.update(scan_validator.data).where(Scan.id == scan["id"]).execute()
 
-            scan_query = (
-                Scan()
-                .select(fn.Count(Scan.id).alias("scan_count"))
-                .where(
-                    (Scan.audit_id == self.audit["id"]) & (Scan.target == target) & (Scan.scheduled is True)
-                )
-            )
-            scan_count = scan_query.dicts().get()["scan_count"]
-            if scan_count > 0:
-                raise Exception("target-is-scheduled")
+        return self.__get_scan_by_uuid(scan_uuid)
 
-            scan = Scan(target=target, audit_id=self.audit["id"], platform=self.__get_platform(target))
-            scan.save()
-
-            return self.__get_scan_by_uuid(scan.uuid)
-
-        except Exception as e:
-            self.app.log.error(e)
-            raise BadRequestError(e)
-
-    def patch(self, scan_uuid):
-        try:
-            body = super()._get_request_body()
-            scan = self.__get_scan_by_uuid(scan_uuid, raw=True)
-
-            if "comment" not in body:
-                raise Exception("'comment': Must be contained.")
-            key_filter = "comment"
-            scan_new = {k: v for k, v in body.items() if k in key_filter}
-            if scan_new:
-                scan_validator = ScanValidator()
-                scan_validator.validate(scan_new, only=scan_new)
-                if scan_validator.errors:
-                    raise Exception(scan_validator.errors)
-                Scan.update(scan_validator.data).where(Scan.id == scan["id"]).execute()
-
-            return self.__get_scan_by_uuid(scan_uuid)
-
-        except IndexError as e:
-            self.app.log.error(e)
-            raise NotFoundError(e)
-        except Exception as e:
-            self.app.log.error(e)
-            raise BadRequestError(e)
-
+    @APIBase.exception_handler
     def delete(self, scan_uuid):
-        try:
-            query = Scan.delete().where(Scan.uuid == scan_uuid)
-            row_count = query.execute()
-            if row_count == 0:
-                raise IndexError("'scan_uuid': Item could not be found.")
-            return {}
+        query = Scan.delete().where(Scan.uuid == scan_uuid)
+        row_count = query.execute()
+        if row_count == 0:
+            raise IndexError("'scan_uuid': Item could not be found.")
+        return {}
 
-        except IndexError as e:
-            self.app.log.error(e)
-            raise NotFoundError(e)
-        except Exception as e:
-            self.app.log.error(e)
-            raise BadRequestError(e)
-
+    @APIBase.exception_handler
     def schedule(self, scan_uuid):
         body = self.app.current_request.json_body
 
         if "schedule" not in body:
-            raise BadRequestError("Request has no key `schedule`")
+            raise Exception("Request has no key `schedule`")
         if "start_at" not in body["schedule"]:
-            raise BadRequestError("Request has no key `start_at`")
+            raise Exception("Request has no key `start_at`")
         if "end_at" not in body["schedule"]:
-            raise BadRequestError("Request has no key `end_at`")
+            raise Exception("Request has no key `end_at`")
 
         try:
             start_at = datetime.strptime(body["schedule"]["start_at"], DATETIME_FORMAT)
@@ -129,14 +98,14 @@ class ScanAPI(APIBase):
             jst = pytz.timezone("Asia/Tokyo")
             now = datetime.now(tz=pytz.utc).astimezone(jst)
         except Exception as e:
-            raise BadRequestError(e)
+            raise Exception(e)
 
         if end_at <= start_at:
-            raise BadRequestError("`end_at` in the request is equal or earlier than `start_at`")
+            raise Exception("`end_at` in the request is equal or earlier than `start_at`")
         if start_at <= now:
-            raise BadRequestError("`start_at` in the request has elapsed")
+            raise Exception("`start_at` in the request has elapsed")
         if end_at <= now:
-            raise BadRequestError("`end_at` in the request has elapsed")
+            raise Exception("`end_at` in the request has elapsed")
 
         # ToDo: store schedule to Aurora Serverless
         # Add schedule uuid
@@ -152,7 +121,7 @@ class ScanAPI(APIBase):
             queue = sqs.get_queue_by_name(QueueName=SQS_SCAN_WAITING)
             queue.send_message(MessageBody=(json.dumps(message)))
         except Exception as e:
-            raise UnprocessableEntityError(e)
+            raise UnprocessableEntityError(e)  # consider to use decorator
 
         response = {
             "target": "127.0.0.1",
@@ -180,6 +149,7 @@ class ScanAPI(APIBase):
         }
         return response
 
+    @APIBase.exception_handler
     def schedule_cancel(self, scan_uuid):
         return {}
 

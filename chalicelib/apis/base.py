@@ -2,6 +2,9 @@ import ipaddress
 import logging
 import os
 
+from chalice import (BadRequestError, ForbiddenError, NotFoundError,
+                     UnauthorizedError)
+
 from chalicelib.core.models import Audit
 
 logger = logging.getLogger("peewee")
@@ -70,3 +73,23 @@ class APIBase:
                 response["scans"].append(scan["uuid"].hex)
 
             return response
+
+    @classmethod
+    def exception_handler(cls, func):
+        def self_wrapper(self, *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
+            except ConnectionRefusedError as e:
+                self.app.log.error(e)
+                raise ForbiddenError(e)
+            except PermissionError as e:
+                self.app.log.error(e)
+                raise UnauthorizedError(e)
+            except IndexError as e:
+                self.app.log.error(e)
+                raise NotFoundError(e)
+            except Exception as e:
+                self.app.log.error(e)
+                raise BadRequestError(e)
+
+        return self_wrapper
