@@ -93,3 +93,4 @@ class APIBase:
                 raise BadRequestError(e)
 
         return self_wrapper
+

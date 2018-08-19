@@ -3,6 +3,7 @@ import hashlib
 import ipaddress
 import os
 import socket
+import uuid
 from datetime import datetime
 
 import requests
@@ -102,6 +103,10 @@ class ContactValidator(Validator):
 
 class ScanValidator(Validator):
     target = StringField(required=True, validators=[valid_ipv4_or_fqdn])
+    start_at = DateTimeField(default=0)
+    end_at = DateTimeField(default=0)
+    schedule_uuid = StringField(default=uuid.uuid4)
+    scheduled = BooleanField(default=False)
     updated_at = DateTimeField()
     comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=1)
 

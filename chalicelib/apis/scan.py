@@ -15,16 +15,29 @@ SQS_SCAN_WAITING = "ScanWaiting"
 
 
 class ScanAPI(APIBase):
+
     @APIBase.exception_handler
     def __init__(self, app, audit_uuid):
         super().__init__(app)
         self.audit = super()._get_audit_by_uuid(audit_uuid, raw=True)
+
+
+    def __disable_if_submitted(func):
+        def disable_if_submitted_wrapper(self, *args, **kwargs):
+            if self.audit["submitted"] is True:
+                raise Exception("audit-submitted")
+            else:
+                return func(self, *args, **kwargs)
+
+        return disable_if_submitted_wrapper
+
 
     @APIBase.exception_handler
     def get(self, scan_uuid):
         return self.__get_scan_by_uuid(scan_uuid)
 
     @APIBase.exception_handler
+    @__disable_if_submitted
     def post(self):
         if self.audit["submitted"] is True:
             raise Exception("audit-submitted")
@@ -54,6 +67,7 @@ class ScanAPI(APIBase):
         return self.__get_scan_by_uuid(scan.uuid)
 
     @APIBase.exception_handler
+    @__disable_if_submitted
     def patch(self, scan_uuid):
         body = super()._get_request_body()
         scan = self.__get_scan_by_uuid(scan_uuid, raw=True)
@@ -72,6 +86,7 @@ class ScanAPI(APIBase):
         return self.__get_scan_by_uuid(scan_uuid)
 
     @APIBase.exception_handler
+    @__disable_if_submitted
     def delete(self, scan_uuid):
         query = Scan.delete().where(Scan.uuid == scan_uuid)
         row_count = query.execute()
@@ -80,6 +95,7 @@ class ScanAPI(APIBase):
         return {}
 
     @APIBase.exception_handler
+    @__disable_if_submitted
     def schedule(self, scan_uuid):
         body = self.app.current_request.json_body
 
@@ -150,8 +166,30 @@ class ScanAPI(APIBase):
         return response
 
     @APIBase.exception_handler
+    @__disable_if_submitted
     def schedule_cancel(self, scan_uuid):
-        return {}
+        body = super()._get_request_body()
+        scan = self.__get_scan_by_uuid(scan_uuid, raw=True)
+
+        if scan["scheduled"] is False:
+            raise Exception("scan-not-scheduled")
+
+        unscheduled = {
+            "start_at": 0,
+            "end_at": 0,
+            "schedule_uuid": None,
+            "scheduled": False
+        }
+
+        scan_validator = ScanValidator()
+        scan_validator.validate(unscheduled, only=unscheduled)
+        if scan_validator.errors:
+            raise Exception(scan_validator.errors)
+
+        Scan.update(scan_validator.data).where(Scan.id == scan["id"]).execute()
+
+        return self.__get_scan_by_uuid(scan_uuid)
+
 
     def __get_platform(self, target):
         if ScanValidator.is_AWS(target) is True:

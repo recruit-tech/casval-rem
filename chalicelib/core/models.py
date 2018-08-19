@@ -47,6 +47,7 @@ class Scan(BaseModel):
     updated_at = DateTimeField(default=datetime.now)
     error_reason = CharField(default="")
     scheduled = BooleanField(default=False)
+    schedule_uuid = UUIDField(unique=True, null=True, default=None)
     processed = BooleanField(default=False)
     platform = CharField(default="")
     report_url = CharField(default="")
