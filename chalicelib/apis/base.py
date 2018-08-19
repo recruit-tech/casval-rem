@@ -14,7 +14,7 @@ logger.addHandler(logging.StreamHandler())
 
 class APIBase:
 
-    RESPONSE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     def __init__(self, app):
         self.app = app
@@ -60,9 +60,9 @@ class APIBase:
             response["password_protection"] = audit["password_protection"]
             response["rejected_reason"] = audit["rejected_reason"]
             # TODO: Change to UTC
-            response["created_at"] = audit["created_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+            response["created_at"] = audit["created_at"].strftime(APIBase.DATETIME_FORMAT)
             # TODO: Change to UTC
-            response["updated_at"] = audit["updated_at"].strftime(APIBase.RESPONSE_TIME_FORMAT)
+            response["updated_at"] = audit["updated_at"].strftime(APIBase.DATETIME_FORMAT)
             response["contacts"] = []
 
             for contact in audits[0].contacts.dicts():
@@ -93,4 +93,3 @@ class APIBase:
                 raise BadRequestError(e)
 
         return self_wrapper
-

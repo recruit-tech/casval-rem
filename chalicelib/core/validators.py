@@ -3,17 +3,22 @@ import hashlib
 import ipaddress
 import os
 import socket
-import uuid
 from datetime import datetime
 
+import pytz
 import requests
 import validators
 from peewee_validates import (BooleanField, DateTimeField, IntegerField,
                               StringField, ValidationError, Validator,
                               validate_email, validate_regexp)
 
+from chalicelib.apis.base import APIBase
+
 PASSWORD_HASH_ALG = "sha256"
 MAX_COMMENT_LENGTH = 1000
+MIN_SCAN_DURATION_IN_SECONDS = 2 * 3600
+SCAN_SCHEDULABLE_DAYS_FROM_NOW = 10
+SCAN_SCHEDULABLE_DAYS_FROM_START_DATE = 5
 AWS_IP_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
 
 
@@ -105,10 +110,48 @@ class ScanValidator(Validator):
     target = StringField(required=True, validators=[valid_ipv4_or_fqdn])
     start_at = DateTimeField(default=0)
     end_at = DateTimeField(default=0)
-    schedule_uuid = StringField(default=uuid.uuid4)
+    schedule_uuid = StringField()
     scheduled = BooleanField(default=False)
     updated_at = DateTimeField()
     comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=1)
+
+    @staticmethod
+    def is_valid_time_range(start, end):
+        start_at = datetime.strptime(start, APIBase.DATETIME_FORMAT)
+        start_at = start_at.replace(tzinfo=pytz.utc)
+        end_at = datetime.strptime(end, APIBase.DATETIME_FORMAT)
+        end_at = end_at.replace(tzinfo=pytz.utc)
+        jst = pytz.timezone("Asia/Tokyo")
+        now = datetime.now(tz=pytz.utc).astimezone(jst)
+
+        if start_at <= now:
+            raise Exception("'start_at has elapsed.")
+        if end_at <= now:
+            raise Exception("'end_at' has elapsed.")
+        if end_at <= start_at:
+            raise Exception("'end_at' is equal or earlier than 'start_at'.")
+
+        start_from_now = start_at - now
+        if start_from_now.days > SCAN_SCHEDULABLE_DAYS_FROM_NOW:
+            raise Exception(
+                "'start_at' must be within {} days from now.".format(SCAN_SCHEDULABLE_DAYS_FROM_NOW)
+            )
+
+        scan_duration = end_at - start_at
+        if scan_duration.days is 0 and scan_duration.seconds < MIN_SCAN_DURATION_IN_SECONDS:
+            raise Exception(
+                "Duration between 'end_at' and 'start_at' must be equal or more than {} seconds.".format(
+                    MIN_SCAN_DURATION_IN_SECONDS
+                )
+            )
+        if scan_duration.days > SCAN_SCHEDULABLE_DAYS_FROM_START_DATE:
+            raise Exception(
+                "Duration between 'end_at' and 'start_at' within {} days.".format(
+                    SCAN_SCHEDULABLE_DAYS_FROM_START_DATE
+                )
+            )
+
+        return True
 
     @staticmethod
     def is_AWS(target_ipv4_or_fqdn):
