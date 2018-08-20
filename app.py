@@ -2,9 +2,8 @@ import os
 
 from chalice import Chalice, CORSConfig, Cron
 
-from chalicelib import SQS_SCAN_COMPLETE
 from chalicelib.apis import AuditAPI, AuthenticationAPI, ScanAPI, vuln
-from chalicelib.batches import cron_jobs, sqs_event_handlers
+from chalicelib.batches import QueueHandler
 from chalicelib.core import authorizer
 
 CASVAL = "casval"
@@ -137,9 +136,9 @@ def scan_schedule_cancel(audit_uuid, scan_uuid):
 
 
 @app.route("/auth", methods=["POST"], cors=cors_config)
-def authenticate():
+def auth():
     authentication_api = AuthenticationAPI(app)
-    return authentication_api.authenticate()
+    return authentication_api.auth()
 
 
 # Vulnerability API
@@ -169,47 +168,43 @@ def vulnerability_patch(oid):
 # Batch processes
 
 
-@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
-def scan_launcher(event):
-    return cron_jobs.scan_launcher(app)
+@app.schedule(Cron("0/10", "*", "*", "*", "?", "*"))
+def process_scan_pending_queue(event):
+    handler = QueueHandler(app)
+    return handler.process_scan_pending_queue()
 
 
-@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
-def scan_processor(event):
-    return cron_jobs.scan_processor(app)
+@app.schedule(Cron("0/10", "*", "*", "*", "?", "*"))
+def process_scan_running_queue(event):
+    handler = QueueHandler(app)
+    return handler.process_scan_running_queue()
 
 
-@app.lambda_function(name="async_scan_launch")
-def async_scan_launch(event, context):
-    return cron_jobs.async_scan_launch(event)
-
-
-@app.lambda_function(name="async_scan_status_check")
-def async_scan_status_check(event, context):
-    return cron_jobs.async_scan_status_check(event)
-
-
-@app.lambda_function(name="async_scan_terminate")
-def async_scan_terminate(event, context):
-    return cron_jobs.async_scan_terminate(event)
-
-
-@app.on_sqs_message(queue=SQS_SCAN_COMPLETE)
-def scan_completed_handler(event):
-    return sqs_event_handlers.scan_completed_handler(event)
+@app.schedule(Cron("0/10", "*", "*", "*", "?", "*"))
+def process_scan_stopped_queue(event):
+    handler = QueueHandler(app)
+    return handler.process_scan_stopped_queue()
 
 
 # For debugging purposes only
 
 
-@app.route("/batch/launcher")
-def scan_launcher_for_debug():
-    return cron_jobs.scan_launcher(app)
+@app.route("/handle/pending")
+def process_scan_pending_queue_for_debug():
+    handler = QueueHandler(app)
+    return handler.process_scan_pending_queue()
 
 
-@app.route("/batch/processor")
-def scan_processor_for_debug():
-    return cron_jobs.scan_processor(app)
+@app.route("/handle/running")
+def process_scan_running_queue_for_debug():
+    handler = QueueHandler(app)
+    return handler.process_scan_running_queue()
+
+
+@app.route("/handle/stopped")
+def process_scan_stopped_queue_for_debug():
+    handler = QueueHandler(app)
+    return handler.process_scan_stopped_queue()
 
 
 # Private functions

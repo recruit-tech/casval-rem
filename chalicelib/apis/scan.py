@@ -31,7 +31,7 @@ class ScanAPI(APIBase):
     @__disable_if_submitted
     def post(self):
         body = super()._get_request_body()
-        if "target" not in body:
+        if "target" not in body or len(body["target"]) is 0:
             raise Exception("target-is-empty")
 
         scan_validator = ScanValidator()
@@ -113,7 +113,11 @@ class ScanAPI(APIBase):
             raise Exception(scan_validator.errors)
 
         self.__request_scan(
-            target=scan["target"], start_at=start_at, end_at=end_at, schedule_uuid=schedule_uuid
+            target=scan["target"],
+            start_at=start_at,
+            end_at=end_at,
+            schedule_uuid=schedule_uuid,
+            scan_uuid=scan_uuid,
         )
 
         Scan.update(scan_validator.data).where(Scan.id == scan["id"]).execute()
@@ -162,7 +166,7 @@ class ScanAPI(APIBase):
             response["platform"] = scan["platform"]
             response["comment"] = scan["comment"]
             # TODO: Return s3.generate_presigned_url
-            response["report_url"] = scan["report_url"]
+            response["report_url"] = ""
             response["created_at"] = scan["created_at"].strftime(APIBase.DATETIME_FORMAT)
             response["updated_at"] = scan["updated_at"].strftime(APIBase.DATETIME_FORMAT)
 
@@ -179,7 +183,13 @@ class ScanAPI(APIBase):
     def __get_schedule_uuid(self):
         return uuid.uuid4().hex
 
-    def __request_scan(self, target, start_at, end_at, schedule_uuid):
-        queue = Queue(Queue.SCAN_WAITING)
-        message = {"target": target, "start_at": start_at, "end_at": end_at, "schedule_uuid": schedule_uuid}
+    def __request_scan(self, target, start_at, end_at, schedule_uuid, scan_uuid):
+        queue = Queue(Queue.SCAN_PENDING)
+        message = {
+            "target": target,
+            "start_at": start_at,
+            "end_at": end_at,
+            "schedule_uuid": schedule_uuid,
+            "scan_uuid": scan_uuid,
+        }
         queue.enqueue(message)
