@@ -14,7 +14,7 @@
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
         "AUDIT_LIST_MAX_COUNT":"300",
-        "SCANNER":"casval-openvas-dev",
+        "SCANNER":"casval-stub",
         "STAGE":"dev",
         "DB_NAME":"casval_dev",
         "DB_ENDPOINT":"localhost",

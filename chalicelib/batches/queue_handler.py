@@ -6,14 +6,16 @@ import pytz
 from peewee import fn
 
 from chalicelib.apis.base import APIBase
+from chalicelib.core import Scanner
 from chalicelib.core.models import Scan
 from chalicelib.core.queues import Queue
-from chalicelib.core.scanner import Scanner
 
 
 class QueueHandler:
     def __init__(self, app):
         self.app = app
+        jst = pytz.timezone("Asia/Tokyo")
+        self.now = datetime.now(tz=pytz.utc).astimezone(jst)
 
     def __disable_if_submitted(func):
         def disable_if_submitted_wrapper(self, *args, **kwargs):
@@ -34,14 +36,11 @@ class QueueHandler:
 
     @__exception_handler
     def process_scan_pending_queue(self):
+        # TODO: Use singleton queue instance for reducing SQS loading time
         pending_queue = Queue(Queue.SCAN_PENDING)
         running_queue = Queue(Queue.SCAN_RUNNING)
         stopped_queue = Queue(Queue.SCAN_STOPPED)
 
-        jst = pytz.timezone("Asia/Tokyo")
-        now = datetime.now(tz=pytz.utc).astimezone(jst)
-
-        # Check all messages in the pending queue
         while 1:
             messages = pending_queue.peek()
             self.app.log.debug("Messages obtained: " + str(len(messages)))
@@ -51,37 +50,97 @@ class QueueHandler:
 
             for message in messages:
                 entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
-
                 body = json.loads(message.body)
+                self.app.log.debug("Message: body=" + message.body)
+
                 start_at = self.__get_datetime_in_utc(body["start_at"])
                 end_at = self.__get_datetime_in_utc(body["end_at"])
 
-                if end_at < (now + timedelta(hours=1)):
+                if end_at < (self.now + timedelta(hours=1)):
+                    self.app.log.debug("Scan abandoned: schedule_uuid=" + body["schedule_uuid"])
                     body["error"] = "Scan has been abandoned because 'end_at' is soon or over."
                     stopped_queue.enqueue(body)
                     pending_queue.delete(entry)
                     continue
-                    raise Exception()
 
-                if start_at > now:
+                if start_at > self.now:
                     # The time to scan hasn't come yet, check next message.
                     continue
 
-                if running_queue.message_count() >= int(os.getenv("MAX_PARALLEL_SCAN_SESSION")):
-                    # Abandon subsequent processes because other scan sessions are running.
-                    break
+                num_of_running_scan = running_queue.message_count()
+                if num_of_running_scan >= int(os.getenv("MAX_PARALLEL_SCAN_SESSION")):
+                    # Abandon subsequent process because other scan sessions are running.
+                    if num_of_running_scan > int(os.getenv("MAX_PARALLEL_SCAN_SESSION")):
+                        self.app.log.error("Running scan: " + str(num_of_running_scan))
+                    self.app.log.debug("Polling finished because number of running scan is " + str(num_of_running_scan))
+                    return True
 
                 if self.__is_scan_schedule_active(body["schedule_uuid"]) is False:
                     # Remove the message silently because the scan session has been cancelled by user.
+                    self.app.log.debug("Scan removed: scan has been cancelled: schedule_uuid=" + body["schedule_uuid"])
                     pending_queue.delete(entry)
                     continue
 
-                self.app.log.debug("Messages processed: " + message.message_id)
+                self.app.log.debug("Scan launched: schedule_uuid=" + body["schedule_uuid"])
                 scanner = Scanner(os.getenv("SCANNER"))
                 session = scanner.launch(body["target"])
                 body["session"] = session
                 running_queue.enqueue(body)
                 pending_queue.delete(entry)
+                # Do not continue subsequent process when new scan has been launched
+                # because SQS sometimes returns wrong `num_of_running_scan` shortly after enqueueing
+                # and that leads the handler to make a mistake on checking of parallel scaning sessions.
+                return True
+
+        return True
+
+    @__exception_handler
+    def process_scan_running_queue(self):
+        # TODO: Use singleton queue instance for reducing SQS loading time
+        running_queue = Queue(Queue.SCAN_RUNNING)
+        stopped_queue = Queue(Queue.SCAN_STOPPED)
+        scanner = Scanner(os.environ["SCANNER"])
+
+        while 1:
+            messages = running_queue.peek()
+            self.app.log.debug("Messages obtained: " + str(len(messages)))
+
+            if len(messages) is 0:
+                break
+
+            for message in messages:
+                entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
+                body = json.loads(message.body)
+                self.app.log.debug("Message: body=" + message.body)
+
+                if self.__is_scan_schedule_active(body["schedule_uuid"]) is False:
+                    # Force terminate the scan because scan session has been cancelled by user.
+                    self.app.log.debug("Scan terminated by user cancellation: schedule_uuid=" + body["schedule_uuid"])
+                    scanner.terminate(body["session"])
+                    running_queue.delete(entry)
+                    continue
+
+                end_at = self.__get_datetime_in_utc(body["end_at"])
+                if end_at <= self.now:
+                    self.app.log.debug("Scan terminated by timeout: schedule_uuid=" + body["schedule_uuid"])
+                    scanner.terminate(body["session"])
+                    body["error"] = "Scan has been terminated because 'end_at' is over."
+                    stopped_queue.enqueue(body)
+                    running_queue.delete(entry)
+                    continue
+
+                status = scanner.check_status(body["session"])
+                self.app.log.info("Scan status: {status}".format(status=status))
+                if status == "complete":
+                    stopped_queue.enqueue(body)
+                    running_queue.delete(entry)
+                elif status == "failure":
+                    body["error"] = "Scan session has been failed."
+                    stopped_queue.enqueue(body)
+                    running_queue.delete(entry)
+                else:
+                    # Do not remove the queue entry because scan session is still running.
+                    self.app.log.info("Running: {schedule_uuid}".format(schedule_uuid=body["schedule_uuid"]))
 
         return True
 

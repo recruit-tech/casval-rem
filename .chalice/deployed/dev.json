@@ -22,14 +22,14 @@
       "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_terminate"
     },
     {
-      "name": "scan_launcher",
+      "name": "process_scan_pending_queue",
       "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_launcher"
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-process_scan_pending_queue"
     },
     {
-      "name": "scan_launcher-event",
+      "name": "process_scan_pending_queue-event",
       "resource_type": "cloudwatch_event",
-      "rule_name": "casval-dev-scan_launcher-event"
+      "rule_name": "casval-dev-process_scan_pending_queue-event"
     },
     {
       "name": "scan_processor",

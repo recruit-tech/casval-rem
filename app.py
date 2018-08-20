@@ -4,7 +4,7 @@ from chalice import Chalice, CORSConfig, Cron
 
 from chalicelib import SQS_SCAN_COMPLETE
 from chalicelib.apis import AuditAPI, AuthenticationAPI, ScanAPI, vuln
-from chalicelib.batches import QueueHandler, cron_jobs, sqs_event_handlers
+from chalicelib.batches import QueueHandler, sqs_event_handlers
 from chalicelib.core import authorizer
 
 CASVAL = "casval"
@@ -175,24 +175,10 @@ def process_scan_pending_queue(event):
     return handler.process_scan_pending_queue()
 
 
-@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
-def scan_processor(event):
-    return cron_jobs.scan_processor(app)
-
-
-@app.lambda_function(name="async_scan_launch")
-def async_scan_launch(event, context):
-    return cron_jobs.async_scan_launch(event)
-
-
-@app.lambda_function(name="async_scan_status_check")
-def async_scan_status_check(event, context):
-    return cron_jobs.async_scan_status_check(event)
-
-
-@app.lambda_function(name="async_scan_terminate")
-def async_scan_terminate(event, context):
-    return cron_jobs.async_scan_terminate(event)
+@app.schedule(Cron("0/10", "*", "*", "*", "?", "*"))
+def process_scan_running_queue(event):
+    handler = QueueHandler(app)
+    return handler.process_scan_running_queue()
 
 
 @app.on_sqs_message(queue=SQS_SCAN_COMPLETE)
@@ -203,15 +189,16 @@ def scan_completed_handler(event):
 # For debugging purposes only
 
 
-@app.route("/hundle/pending")
+@app.route("/handle/pending")
 def process_scan_pending_queue_for_debug():
     handler = QueueHandler(app)
     return handler.process_scan_pending_queue()
 
 
-@app.route("/batch/processor")
-def scan_processor_for_debug():
-    return cron_jobs.scan_processor(app)
+@app.route("/handle/running")
+def process_scan_running_queue_for_debug():
+    handler = QueueHandler(app)
+    return handler.process_scan_running_queue()
 
 
 # Private functions
