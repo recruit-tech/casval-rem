@@ -1,11 +1,10 @@
-import uuid
-
-from peewee import fn
-
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Scan
 from chalicelib.core.queues import Queue
 from chalicelib.core.validators import ScanValidator
+from peewee import fn
+
+import uuid
 
 
 class ScanAPI(APIBase):
@@ -161,11 +160,11 @@ class ScanAPI(APIBase):
             response["target"] = scan["target"]
             response["uuid"] = scan["uuid"].hex
             response["status"] = {"scheduled": scan["scheduled"], "processed": scan["processed"]}
-            response["results"] = []  # TODO: Include scan results
+            response["results"] = []  # TODO(nishimunea): Include scan results
             response["error_reason"] = scan["error_reason"]
             response["platform"] = scan["platform"]
             response["comment"] = scan["comment"]
-            # TODO: Return s3.generate_presigned_url
+            # TODO(nishimunea): Return s3.generate_presigned_url
             response["report_url"] = ""
             response["created_at"] = scan["created_at"].strftime(APIBase.DATETIME_FORMAT)
             response["updated_at"] = scan["updated_at"].strftime(APIBase.DATETIME_FORMAT)

@@ -1,10 +1,14 @@
-import os
-
-from chalice import Chalice, CORSConfig, Cron
-
-from chalicelib.apis import AuditAPI, AuthenticationAPI, ScanAPI, vuln
+from chalice import Chalice
+from chalice import CORSConfig
+from chalice import Cron
+from chalicelib.apis import AuditAPI
+from chalicelib.apis import AuthenticationAPI
+from chalicelib.apis import ScanAPI
+from chalicelib.apis import vuln
 from chalicelib.batches import QueueHandler
 from chalicelib.core import authorizer
+
+import os
 
 CASVAL = "casval"
 

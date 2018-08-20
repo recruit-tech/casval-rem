@@ -1,7 +1,7 @@
-import os
+from chalice import AuthResponse
 
 import jwt
-from chalice import AuthResponse
+import os
 
 
 def authorize(auth_request):

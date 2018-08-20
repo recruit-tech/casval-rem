@@ -1,8 +1,13 @@
+from chalicelib.apis.base import APIBase
+
+from chalicelib.core.models import Audit
+from chalicelib.core.models import Contact
+from chalicelib.core.models import db
+from chalicelib.core.validators import AuditPagenationValidator
+from chalicelib.core.validators import AuditValidator
+from chalicelib.core.validators import ContactValidator
 from peewee import fn
 
-from chalicelib.apis.base import APIBase
-from chalicelib.core.models import Audit, Contact, db
-from chalicelib.core.validators import AuditPagenationValidator, AuditValidator, ContactValidator
 
 
 class AuditAPI(APIBase):
@@ -143,11 +148,11 @@ class AuditAPI(APIBase):
 
     @APIBase.exception_handler
     def submit(self, audit_uuid):
-        audit = super()._get_audit_by_uuid(audit_uuid)
+        super()._get_audit_by_uuid(audit_uuid)
 
-        # TODO: Check if number of scan belongging to the audit is more than 1
-        # TODO: Check if status of all scan is processed=true
-        # TODO: Check if no fix-required in a result of all scans, if fix-required,
+        # TODO(nishimunea): Check if number of scan belongging to the audit is more than 1
+        # TODO(nishimunea): Check if status of all scan is processed=true
+        # TODO(nishimunea): Check if no fix-required in a result of all scans, if fix-required,
         #       length of the comment is more than 1
 
         submitted = {"submitted": True}

@@ -1,25 +1,22 @@
+from chalicelib.apis.base import APIBase
+from datetime import datetime
+from peewee_validates import BooleanField
+from peewee_validates import DateTimeField
+from peewee_validates import IntegerField
+from peewee_validates import StringField
+from peewee_validates import validate_email
+from peewee_validates import validate_regexp
+from peewee_validates import ValidationError
+from peewee_validates import Validator
+
 import binascii
 import hashlib
 import ipaddress
 import os
-import socket
-from datetime import datetime
-
 import pytz
 import requests
+import socket
 import validators
-from peewee_validates import (
-    BooleanField,
-    DateTimeField,
-    IntegerField,
-    StringField,
-    ValidationError,
-    Validator,
-    validate_email,
-    validate_regexp,
-)
-
-from chalicelib.apis.base import APIBase
 
 PASSWORD_HASH_ALG = "sha256"
 MAX_COMMENT_LENGTH = 1000
@@ -99,7 +96,7 @@ class AuditValidator(Validator):
         data["updated_at"] = datetime.utcnow()
         return data
 
-    class Meta:
+    class Meta(object):
         messages = {"password_not_empty": "Password must be provided when enforcing protection."}
 
 

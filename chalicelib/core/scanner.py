@@ -1,9 +1,8 @@
+import boto3
 import json
 
-import boto3
 
-
-class Scanner:
+class Scanner(object):
     def __init__(self, name):
         self.name = name
 

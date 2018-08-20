@@ -1,12 +1,15 @@
+from chalice import BadRequestError
+from chalice import ForbiddenError
+from chalice import NotFoundError
+from chalice import UnauthorizedError
+from chalicelib.core.models import Audit
+
 import datetime
 import ipaddress
+import jwt
 import logging
 import os
 
-import jwt
-from chalice import BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError
-
-from chalicelib.core.models import Audit
 
 logger = logging.getLogger("peewee")
 # logger.setLevel(logging.DEBUG)
@@ -15,7 +18,7 @@ logger.addHandler(logging.StreamHandler())
 TOKEN_EXPIRATION_IN_HOUR = 3
 
 
-class APIBase:
+class APIBase(object):
 
     DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

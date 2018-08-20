@@ -1,7 +1,7 @@
 import boto3
 
 
-class Storage:
+class Storage(object):
     def __init__(self, bucket):
         self.s3 = boto3.resource("s3")
         self.bucket = bucket
