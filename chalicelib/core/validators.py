@@ -8,9 +8,16 @@ from datetime import datetime
 import pytz
 import requests
 import validators
-from peewee_validates import (BooleanField, DateTimeField, IntegerField,
-                              StringField, ValidationError, Validator,
-                              validate_email, validate_regexp)
+from peewee_validates import (
+    BooleanField,
+    DateTimeField,
+    IntegerField,
+    StringField,
+    ValidationError,
+    Validator,
+    validate_email,
+    validate_regexp,
+)
 
 from chalicelib.apis.base import APIBase
 

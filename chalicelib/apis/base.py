@@ -4,8 +4,7 @@ import logging
 import os
 
 import jwt
-from chalice import (BadRequestError, ForbiddenError, NotFoundError,
-                     UnauthorizedError)
+from chalice import BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError
 
 from chalicelib.core.models import Audit
 

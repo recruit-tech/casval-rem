@@ -7,21 +7,6 @@
       "role_name": "casval-dev"
     },
     {
-      "name": "async_scan_launch",
-      "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_launch"
-    },
-    {
-      "name": "async_scan_status_check",
-      "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_status_check"
-    },
-    {
-      "name": "async_scan_terminate",
-      "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-async_scan_terminate"
-    },
-    {
       "name": "process_scan_pending_queue",
       "resource_type": "lambda_function",
       "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-process_scan_pending_queue"
@@ -32,27 +17,24 @@
       "rule_name": "casval-dev-process_scan_pending_queue-event"
     },
     {
-      "name": "scan_processor",
+      "name": "process_scan_running_queue",
       "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_processor"
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-process_scan_running_queue"
     },
     {
-      "name": "scan_processor-event",
+      "name": "process_scan_running_queue-event",
       "resource_type": "cloudwatch_event",
-      "rule_name": "casval-dev-scan_processor-event"
+      "rule_name": "casval-dev-process_scan_running_queue-event"
     },
     {
-      "name": "scan_completed_handler",
+      "name": "process_scan_stopped_queue",
       "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_completed_handler"
+      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-process_scan_stopped_queue"
     },
     {
-      "name": "scan_completed_handler-sqs-event-source",
-      "resource_type": "sqs_event",
-      "queue_arn": "arn:aws:sqs:us-east-1:422346647762:ScanComplete",
-      "event_uuid": "84298842-fd97-40d1-955e-2b160f9c4d40",
-      "queue": "ScanComplete",
-      "lambda_arn": "arn:aws:lambda:us-east-1:422346647762:function:casval-dev-scan_completed_handler"
+      "name": "process_scan_stopped_queue-event",
+      "resource_type": "cloudwatch_event",
+      "rule_name": "casval-dev-process_scan_stopped_queue-event"
     },
     {
       "name": "api_handler",

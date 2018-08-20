@@ -2,8 +2,7 @@ from peewee import fn
 
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit, Contact, db
-from chalicelib.core.validators import (AuditPagenationValidator,
-                                        AuditValidator, ContactValidator)
+from chalicelib.core.validators import AuditPagenationValidator, AuditValidator, ContactValidator
 
 
 class AuditAPI(APIBase):

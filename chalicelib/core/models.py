@@ -2,8 +2,16 @@ import os
 import uuid
 from datetime import datetime
 
-from peewee import (BooleanField, CharField, DateTimeField, ForeignKeyField,
-                    Model, MySQLDatabase, TextField, UUIDField)
+from peewee import (
+    BooleanField,
+    CharField,
+    DateTimeField,
+    ForeignKeyField,
+    Model,
+    MySQLDatabase,
+    TextField,
+    UUIDField,
+)
 
 db = MySQLDatabase(
     os.environ["DB_NAME"],
