@@ -2,9 +2,8 @@ import os
 
 from chalice import Chalice, CORSConfig, Cron
 
-from chalicelib import SQS_SCAN_COMPLETE
 from chalicelib.apis import AuditAPI, AuthenticationAPI, ScanAPI, vuln
-from chalicelib.batches import QueueHandler, sqs_event_handlers
+from chalicelib.batches import QueueHandler
 from chalicelib.core import authorizer
 
 CASVAL = "casval"
@@ -181,9 +180,10 @@ def process_scan_running_queue(event):
     return handler.process_scan_running_queue()
 
 
-@app.on_sqs_message(queue=SQS_SCAN_COMPLETE)
-def scan_completed_handler(event):
-    return sqs_event_handlers.scan_completed_handler(event)
+@app.schedule(Cron("0/10", "*", "*", "*", "?", "*"))
+def process_scan_stopped_queue(event):
+    handler = QueueHandler(app)
+    return handler.process_scan_stopped_queue()
 
 
 # For debugging purposes only
@@ -199,6 +199,12 @@ def process_scan_pending_queue_for_debug():
 def process_scan_running_queue_for_debug():
     handler = QueueHandler(app)
     return handler.process_scan_running_queue()
+
+
+@app.route("/handle/stopped")
+def process_scan_stopped_queue_for_debug():
+    handler = QueueHandler(app)
+    return handler.process_scan_stopped_queue()
 
 
 # Private functions

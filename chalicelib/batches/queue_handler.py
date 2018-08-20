@@ -7,8 +7,11 @@ from peewee import fn
 
 from chalicelib.apis.base import APIBase
 from chalicelib.core import Scanner
-from chalicelib.core.models import Scan
+from chalicelib.core.models import Scan, db
 from chalicelib.core.queues import Queue
+from chalicelib.core.storage import Storage
+
+REPORT_KEY_NAME = "report/{scan_uuid}"
 
 
 class QueueHandler:
@@ -72,12 +75,16 @@ class QueueHandler:
                     # Abandon subsequent process because other scan sessions are running.
                     if num_of_running_scan > int(os.getenv("MAX_PARALLEL_SCAN_SESSION")):
                         self.app.log.error("Running scan: " + str(num_of_running_scan))
-                    self.app.log.debug("Polling finished because number of running scan is " + str(num_of_running_scan))
+                    self.app.log.debug(
+                        "Polling finished because number of running scan is " + str(num_of_running_scan)
+                    )
                     return True
 
                 if self.__is_scan_schedule_active(body["schedule_uuid"]) is False:
                     # Remove the message silently because the scan session has been cancelled by user.
-                    self.app.log.debug("Scan removed: scan has been cancelled: schedule_uuid=" + body["schedule_uuid"])
+                    self.app.log.debug(
+                        "Scan removed: scan has been cancelled: schedule_uuid=" + body["schedule_uuid"]
+                    )
                     pending_queue.delete(entry)
                     continue
 
@@ -115,7 +122,9 @@ class QueueHandler:
 
                 if self.__is_scan_schedule_active(body["schedule_uuid"]) is False:
                     # Force terminate the scan because scan session has been cancelled by user.
-                    self.app.log.debug("Scan terminated by user cancellation: schedule_uuid=" + body["schedule_uuid"])
+                    self.app.log.debug(
+                        "Scan terminated by user cancellation: schedule_uuid=" + body["schedule_uuid"]
+                    )
                     scanner.terminate(body["session"])
                     running_queue.delete(entry)
                     continue
@@ -143,6 +152,70 @@ class QueueHandler:
                     self.app.log.info("Running: {schedule_uuid}".format(schedule_uuid=body["schedule_uuid"]))
 
         return True
+
+    @__exception_handler
+    def process_scan_stopped_queue(self):
+        stopped_queue = Queue(Queue.SCAN_STOPPED)
+        scanner = Scanner(os.environ["SCANNER"])
+
+        while 1:
+            messages = stopped_queue.peek()
+            self.app.log.debug("Messages obtained: " + str(len(messages)))
+
+            if len(messages) is 0:
+                break
+
+            for message in messages:
+                entry = {"Id": message.message_id, "ReceiptHandle": message.receipt_handle}
+                body = json.loads(message.body)
+                self.app.log.debug("Message: body=" + message.body)
+
+                if "error" in body:
+                    scan = {}
+                    scan["error_reason"] = body["error"]
+                    scan["schedule_uuid"] = None
+                    scan["scheduled"] = False
+                    scan["processed"] = True
+                    query = Scan.update(scan).where(Scan.schedule_uuid == body["schedule_uuid"])
+                    query.execute()
+                    stopped_queue.delete(entry)
+                else:
+                    report = self.__load_report(body["scan_uuid"])
+                    if report is None:
+                        self.app.log.debug("Report not found. Retrieve from scanner")
+                        report = scanner.get_report(body["session"])
+                        self.app.log.debug("Report retrieved: {} bytes".format(len(report)))
+                        result = self.__store_report(body["scan_uuid"], report)
+
+                    self.app.log.debug("Parse report")
+                    result = scanner.parse_report(report)
+
+                    with db.atomic():
+                        scan = {}
+                        scan["error_reason"] = ""
+                        scan["schedule_uuid"] = None
+                        scan["scheduled"] = False
+                        scan["processed"] = True
+                        query = Scan.update(scan).where(Scan.schedule_uuid == body["schedule_uuid"])
+                        query.execute()
+                        # TODO: Update result table
+                    stopped_queue.delete(entry)
+
+        return True
+
+    def __load_report(self, scan_uuid):
+        try:
+            storage = Storage(os.getenv("S3_BUCKET_NAME"))
+            key = REPORT_KEY_NAME.format(scan_uuid=scan_uuid)
+            return storage.load(key)
+        except Exception as e:
+            self.app.log.debug(e)
+            return None
+
+    def __store_report(self, scan_uuid, report):
+        storage = Storage(os.getenv("S3_BUCKET_NAME"))
+        key = REPORT_KEY_NAME.format(scan_uuid=scan_uuid)
+        return storage.store(key, report)
 
     def __is_scan_schedule_active(self, schedule_uuid):
         query = (

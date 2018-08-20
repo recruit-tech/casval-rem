@@ -50,5 +50,4 @@ class Scan(BaseModel):
     schedule_uuid = UUIDField(unique=True, null=True, default=None)
     processed = BooleanField(default=False)
     platform = CharField(default="")
-    report_url = CharField(default="")
     comment = TextField(default="")
