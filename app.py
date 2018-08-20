@@ -4,7 +4,7 @@ from chalice import Chalice, CORSConfig, Cron
 
 from chalicelib import SQS_SCAN_COMPLETE
 from chalicelib.apis import AuditAPI, AuthenticationAPI, ScanAPI, vuln
-from chalicelib.batches import cron_jobs, sqs_event_handlers
+from chalicelib.batches import QueueHandler, cron_jobs, sqs_event_handlers
 from chalicelib.core import authorizer
 
 CASVAL = "casval"
@@ -169,9 +169,10 @@ def vulnerability_patch(oid):
 # Batch processes
 
 
-@app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
-def scan_launcher(event):
-    return cron_jobs.scan_launcher(app)
+@app.schedule(Cron("0/10", "*", "*", "*", "?", "*"))
+def process_scan_pending_queue(event):
+    handler = QueueHandler(app)
+    return handler.process_scan_pending_queue()
 
 
 @app.schedule(Cron("0/30", "*", "*", "*", "?", "*"))
@@ -202,9 +203,10 @@ def scan_completed_handler(event):
 # For debugging purposes only
 
 
-@app.route("/batch/launcher")
-def scan_launcher_for_debug():
-    return cron_jobs.scan_launcher(app)
+@app.route("/hundle/pending")
+def process_scan_pending_queue_for_debug():
+    handler = QueueHandler(app)
+    return handler.process_scan_pending_queue()
 
 
 @app.route("/batch/processor")
