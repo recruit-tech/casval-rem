@@ -39,7 +39,12 @@ pipenv run lint chalicelib/
 ```
 If there is not error at the end okey.
 
+## make requirements.txt
 
+```
+pipenv lock -r >> requirements.txt # is packages only
+pipenv lock -r >> dev-requirements.txt # is dev-packages only
+```
 ## Administrator password hash generation
 
 Below is an example to generate password of password `admin123`. Then, you can get `1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1` as the corresponding password hash. Set this value to the `ADMIN_PASSWORD_HASH` in `./chalice/config.json`.  
