@@ -10,7 +10,6 @@ import jwt
 import logging
 import os
 
-
 logger = logging.getLogger("peewee")
 # logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())

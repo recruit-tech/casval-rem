@@ -43,7 +43,7 @@ If there is not error at the end okey.
 
 ```
 pipenv lock -r >> requirements.txt # is packages only
-pipenv lock -r >> dev-requirements.txt # is dev-packages only
+pipenv lock -r --dev >> dev-requirements.txt # is dev-packages only
 ```
 ## Administrator password hash generation
 

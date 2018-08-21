@@ -8,10 +8,8 @@ from peewee import MySQLDatabase
 from peewee import TextField
 from peewee import UUIDField
 
-
 import os
 import uuid
-
 
 db = MySQLDatabase(
     os.environ["DB_NAME"],
