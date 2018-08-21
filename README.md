@@ -1,5 +1,12 @@
 # CASVAL REM (CASVAL Remote Execution Module)
 
+## getstart
+``
+$ brew install pipenv
+$ pipenv shell
+$ pipenv install
+```
+
 ## Local testing
 
 ```
@@ -18,16 +25,20 @@ Note that the terraform command requires setting of `aws_access_key` and `aws_se
 ## Code check
 
 ```
-black --py36 --line-length 110 app.py
-black --py36 --line-length 110 chalicelib/
-black --py36 --line-length 110 chalicelib/apis/
-black --py36 --line-length 110 chalicelib/batches/
-black --py36 --line-length 110 chalicelib/core/
-flake8 app.py
-flake8 chalicelib/
-isort app.py
-isort -rc chalicelib/
+pipenv run unused app.py
+pipenv run unused chalicelib/apis/*
+pipenv run unused chalicelib/batches/*
+pipenv run unused chalicelib/core/*
+pipenv run unused chalicelib/core/stub/*
+pipenv run fmt app.py
+pipenv run fmt chalicelib/
+pipenv run imports app.py
+pipenv run imports chalicelib/
+pipenv run lint app.py
+pipenv run lint chalicelib/
 ```
+If there is not error at the end okey.
+
 
 ## Administrator password hash generation
 

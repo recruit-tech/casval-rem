@@ -1,6 +1,7 @@
-import boto3
 import os
 import sys
+
+import boto3
 
 dynamodb = boto3.resource(
     'dynamodb',

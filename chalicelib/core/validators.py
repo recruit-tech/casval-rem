@@ -29,28 +29,28 @@ AWS_IP_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
 def is_ipv4(value):
     try:
         return validators.ip_address.ipv4(value)
-    except Exception as e:
+    except Exception:
         return False
 
 
 def is_public_address(value):
     try:
         return ipaddress.ip_address(value).is_global
-    except Exception as e:
+    except Exception:
         return False
 
 
 def is_domain(value):
     try:
         return validators.domain(value)
-    except Exception as e:
+    except Exception:
         return False
 
 
 def is_host_resolvable(value):
     try:
         return len(socket.gethostbyname(value)) > 0
-    except Exception as e:
+    except Exception:
         return False
 
 
