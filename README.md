@@ -42,8 +42,8 @@ If there is not error at the end okey.
 ## Make requirements.txt
 
 ```
-pipenv lock -r >> requirements.txt # is packages only
-pipenv lock -r --dev >> dev-requirements.txt # is dev-packages only
+pipenv lock -r > requirements.txt # is packages only
+pipenv lock -r --dev > dev-requirements.txt # is dev-packages only
 ```
 
 ## Administrator password hash generation
