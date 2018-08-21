@@ -4,7 +4,7 @@
 ``
 $ brew install pipenv
 $ pipenv shell
-$ pipenv install
+$ pipenv install -d
 ```
 
 ## Local testing
