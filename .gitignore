@@ -105,6 +105,10 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# pyre
+.pyre
+.pyre_configuration
+
 # Chalice
 .chalice/deployments/
 .chalice/venv/
