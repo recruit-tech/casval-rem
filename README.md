@@ -5,7 +5,9 @@
 $ brew install pipenv
 $ pipenv shell
 $ pipenv install -d
+$ pipenv install -d pip==10.0.1
 ```
+pip version 10.0.1 is chalice dependence
 
 ## Local testing
 
