@@ -1,19 +1,15 @@
 # CASVAL REM (CASVAL Remote Execution Module)
 
-## Getstart
+## Getting Started
+
 ```
-$ brew install pipenv
 $ pipenv shell
 $ pipenv install -d
 $ pipenv install -d pip==10.0.1
-```
-pip version 10.0.1 is chalice dependence
-
-## Local testing
-
-```
 $ chalice local --port 3000 --stage local
+
 ```
+Note that pip 10.0.1 is required by chalice.
 
 ## Deploy (dev)
 
@@ -21,10 +17,10 @@ $ chalice local --port 3000 --stage local
 $ terraform init -reconfigure
 $ terraform apply
 ```
+
 Note that the terraform command requires setting of `aws_access_key` and `aws_secret_key` variables.
 
-
-## Code check
+## Code Checking
 
 ```
 pipenv run unused app.py
