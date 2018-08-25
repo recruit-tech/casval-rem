@@ -1,5 +1,7 @@
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit
+from chalicelib.core.models import Vuln
+from chalicelib.core.models import Result
 from chalicelib.core.models import Contact
 from chalicelib.core.models import db
 from chalicelib.core.models import Scan
@@ -12,7 +14,7 @@ class AuthenticationAPI(APIBase):
     @APIBase.exception_handler
     def __init__(self, app):
         super().__init__(app)
-        db.create_tables([Audit, Contact, Scan])
+        db.create_tables([Audit, Contact, Scan, Vuln, Result])
 
     @APIBase.exception_handler
     def auth(self):

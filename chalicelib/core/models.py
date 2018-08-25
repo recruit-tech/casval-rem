@@ -57,3 +57,26 @@ class Scan(BaseModel):
     processed = BooleanField(default=False)
     platform = CharField(default="")
     comment = TextField(default="")
+
+
+class Vuln(BaseModel):
+    oid = CharField(unique=True, null=True, default=None)
+    fix_required = BooleanField(null=True)
+    name = CharField(null=True)
+    cvss_base = CharField(null=True)
+    cve = CharField(null=True)
+    description = TextField(null=True)
+
+
+class Result(BaseModel):
+    scan_id = ForeignKeyField(Scan, backref="results", on_delete="CASCADE", on_update="CASCADE")
+    name = CharField(null=True)
+    port = CharField(null=True)
+    vuln_id = ForeignKeyField(Vuln, backref="results", on_delete="CASCADE", on_update="CASCADE")
+    description = TextField(null=True)
+    qod = CharField(null=True)
+    severity = CharField(null=True)
+    severity_rank = CharField(null=True)
+    scanner = CharField(null=True)
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
