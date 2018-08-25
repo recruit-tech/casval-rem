@@ -1,4 +1,4 @@
-class Scanner:
+class Scanner(object):
     def __init__(self, name):
         self.name = name
 
@@ -39,14 +39,18 @@ class Scanner:
                     "cve": "NOCVE",
                     "bid": "NOBID",
                     "xref": "NOXREF",
-                    "tags": "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N|summary=Detects the installed version of Apache Web Server\n\n  The script detects the version of Apache HTTP Server on remote host and sets the KB.|qod_type=remote_banner",
+                    "tags": "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N|"
+                    "summary=Detects the installed version of Apache Web Server\n\n  "
+                    "The script detects the version of Apache HTTP Server on remote host and sets the KB.|"
+                    "qod_type=remote_banner",
                     "cert": None,
                 },
                 "scan_nvt_version": "$Revision: 10290 $",
                 "threat": "Log",
                 "severity": "0.0",
                 "qod": {"value": "80", "type": "remote_banner"},
-                "description": "Detected Apache\n\nVersion:  unknown\nLocation: 8080/tcp\nCPE: cpe:/a:apache:http_server",
+                "description": "Detected Apache\n\nVersion:  unknown\n"
+                "Location: 8080/tcp\nCPE: cpe:/a:apache:http_server",
             },
             {
                 "@id": "c15a893f-70dd-46b8-ac40-67d3f07a87aa",
@@ -70,13 +74,20 @@ class Scanner:
                     "cve": "NOCVE",
                     "bid": "NOBID",
                     "xref": "NOXREF",
-                    "tags": "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N|summary=This routine uses information collected by other routines about\n  CPE identities (http://cpe.mitre.org/) of operating systems, services and\n  applications detected during the scan.|qod_type=remote_banner",
+                    "tags": "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N|"
+                    "summary=This routine uses information collected by other routines about\n  "
+                    "CPE identities (http://cpe.mitre.org/) of operating systems, services and\n "
+                    " applications detected during the scan.|"
+                    "qod_type=remote_banner",
                     "cert": None,
                 },
                 "scan_nvt_version": "$Revision: 8140 $",
                 "threat": "Log",
                 "severity": "0.0",
                 "qod": {"value": "80", "type": "remote_banner"},
-                "description": "153.120.5.32|cpe:/a:apache:http_server\n153.120.5.32|cpe:/a:dovecot:dovecot\n153.120.5.32|cpe:/a:openbsd:openssh:6.6.1p1\n153.120.5.32|cpe:/o:canonical:ubuntu_linux:14.04",
+                "description": "153.120.5.32|cpe:/a:apache:http_server\n153.120.5.32|"
+                "cpe:/a:dovecot:dovecot\n153.120.5.32|"
+                "cpe:/a:openbsd:openssh:6.6.1p1\n153.120.5.32|"
+                "cpe:/o:canonical:ubuntu_linux:14.04",
             },
         ]

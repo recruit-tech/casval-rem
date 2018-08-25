@@ -1,5 +1,14 @@
 # CASVAL REM (CASVAL Remote Execution Module)
 
+## Getstart
+```
+$ brew install pipenv
+$ pipenv shell
+$ pipenv install -d
+$ pipenv install -d pip==10.0.1
+```
+pip version 10.0.1 is chalice dependence
+
 ## Local testing
 
 ```
@@ -18,15 +27,25 @@ Note that the terraform command requires setting of `aws_access_key` and `aws_se
 ## Code check
 
 ```
-black --py36 --line-length 110 app.py
-black --py36 --line-length 110 chalicelib/
-black --py36 --line-length 110 chalicelib/apis/
-black --py36 --line-length 110 chalicelib/batches/
-black --py36 --line-length 110 chalicelib/core/
-flake8 app.py
-flake8 chalicelib/
-isort app.py
-isort -rc chalicelib/
+pipenv run unused app.py
+pipenv run unused chalicelib/apis/*
+pipenv run unused chalicelib/batches/*
+pipenv run unused chalicelib/core/*
+pipenv run unused chalicelib/core/stub/*
+pipenv run fmt app.py
+pipenv run fmt chalicelib/
+pipenv run imports app.py
+pipenv run imports chalicelib/
+pipenv run lint app.py
+pipenv run lint chalicelib/
+```
+If there is not error at the end okey.
+
+## Make requirements.txt
+
+```
+pipenv lock -r > requirements.txt # is packages only
+pipenv lock -r --dev > dev-requirements.txt # is dev-packages only
 ```
 
 ## Administrator password hash generation
@@ -50,3 +69,44 @@ token = binascii.hexlify(
 print(token)
 
 ```
+
+## Type check
+How to check type. This is optional and is good.
+
+### Configuration
+
+```
+# Make .pyre_configuration. aute create is (binary,source_directory, typeshed).
+pyre init
+
+# Change to apply to your environment
+vim .pyre_configuration
+```
+example
+```
+{
+  "binary": "/Users/takehaya/.local/share/virtualenvs/casval-rem-R9TrrDKY/bin/pyre.bin",
+  "source_directories": [
+    "."
+  ],
+   "do_not_check":[
+   ".chalice",
+   ".pyre",
+    "terraform",
+    "vendor"
+  ],
+  "search_path":[
+    "/Users/takehaya/.local/share/virtualenvs/casval-rem-R9TrrDKY/lib/python3.6/site-packages/"
+  ],
+  "typeshed": "/Users/takehaya/.local/share/virtualenvs/casval-rem-R9TrrDKY/lib/pyre_check/typeshed/"
+}
+```
+* search_path mean use package path.
+* If you are using macOS and Pipenv you maybe use to the path of `$HOME/.local/share/virtualenvs/casval-rem-*/lib/python3.6/site-packages/`
+### Usage
+```
+# do type check
+pipenv run types
+```
+Troubleshooting this document :)
+[pyre-check.org](https://pyre-check.org/)

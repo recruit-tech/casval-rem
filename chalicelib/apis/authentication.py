@@ -1,8 +1,11 @@
-import os
-
 from chalicelib.apis.base import APIBase
-from chalicelib.core.models import Audit, Contact, Scan, db
+from chalicelib.core.models import Audit
+from chalicelib.core.models import Contact
+from chalicelib.core.models import db
+from chalicelib.core.models import Scan
 from chalicelib.core.validators import AuditValidator
+
+import os
 
 
 class AuthenticationAPI(APIBase):

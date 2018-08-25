@@ -1,20 +1,21 @@
-import json
-import os
-from datetime import datetime, timedelta
-
-import pytz
-from peewee import fn
-
 from chalicelib.apis.base import APIBase
 from chalicelib.core import Scanner
-from chalicelib.core.models import Scan, db
+from chalicelib.core.models import db
+from chalicelib.core.models import Scan
 from chalicelib.core.queues import Queue
 from chalicelib.core.storage import Storage
+from datetime import datetime
+from datetime import timedelta
+from peewee import fn
+
+import json
+import os
+import pytz
 
 REPORT_KEY_NAME = "report/{scan_uuid}"
 
 
-class QueueHandler:
+class QueueHandler(object):
     def __init__(self, app):
         self.app = app
         jst = pytz.timezone("Asia/Tokyo")
@@ -154,10 +155,10 @@ class QueueHandler:
                 self.app.log.debug("Report not found. Retrieve from scanner")
                 report = scanner.get_report(body["session"])
                 self.app.log.debug("Report retrieved: {} bytes".format(len(report)))
-                result = self.__store_report(body["scan_uuid"], report)
+                self.__store_report(body["scan_uuid"], report)
 
             self.app.log.debug("Parse report")
-            result = scanner.parse_report(report)
+            scanner.parse_report(report)
 
             with db.atomic():
                 scan = {}
@@ -167,7 +168,7 @@ class QueueHandler:
                 scan["processed"] = True
                 query = Scan.update(scan).where(Scan.schedule_uuid == body["schedule_uuid"])
                 query.execute()
-                # TODO: Update result table
+                # TODO(nishimunea): Update result table
             stopped_queue.delete(entry)
 
     def __load_report(self, scan_uuid):

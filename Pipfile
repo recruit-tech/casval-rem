@@ -1,0 +1,35 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+boto3 = "*"
+chalice = "*"
+pbr = "*"
+peewee-validates = "*"
+PyJWT = "*"
+PyMySQL = "*"
+pytz = "*"
+requests = "*"
+uuid = "*"
+validate-email = "*"
+validators = "*"
+
+[dev-packages]
+hacking = {git = "https://github.com/aruneko/hacking.git"}
+pyre-check = "*"
+black = "==18.6b4"
+isort = "*"
+autoflake = "*"
+pip = "==10.0.1"
+
+[requires]
+python_version = "3.6"
+
+[scripts]
+fmt = "black --py36 --line-length 110"
+lint = "flake8"
+unused = "autoflake -i --remove-all-unused-imports --remove-unused-variables"
+imports = "isort -fas -fass --recursive --force-single-line"
+types = "pyre check"

@@ -1,17 +1,15 @@
+from datetime import datetime
+from peewee import BooleanField
+from peewee import CharField
+from peewee import DateTimeField
+from peewee import ForeignKeyField
+from peewee import Model
+from peewee import MySQLDatabase
+from peewee import TextField
+from peewee import UUIDField
+
 import os
 import uuid
-from datetime import datetime
-
-from peewee import (
-    BooleanField,
-    CharField,
-    DateTimeField,
-    ForeignKeyField,
-    Model,
-    MySQLDatabase,
-    TextField,
-    UUIDField,
-)
 
 db = MySQLDatabase(
     os.environ["DB_NAME"],
@@ -23,7 +21,7 @@ db = MySQLDatabase(
 
 
 class BaseModel(Model):
-    class Meta:
+    class Meta(object):
         database = db
 
 

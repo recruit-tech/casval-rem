@@ -1,25 +1,22 @@
+from chalicelib.apis.base import APIBase
+from datetime import datetime
+from peewee_validates import BooleanField
+from peewee_validates import DateTimeField
+from peewee_validates import IntegerField
+from peewee_validates import StringField
+from peewee_validates import validate_email
+from peewee_validates import validate_regexp
+from peewee_validates import ValidationError
+from peewee_validates import Validator
+
 import binascii
 import hashlib
 import ipaddress
 import os
-import socket
-from datetime import datetime
-
 import pytz
 import requests
+import socket
 import validators
-from peewee_validates import (
-    BooleanField,
-    DateTimeField,
-    IntegerField,
-    StringField,
-    ValidationError,
-    Validator,
-    validate_email,
-    validate_regexp,
-)
-
-from chalicelib.apis.base import APIBase
 
 PASSWORD_HASH_ALG = "sha256"
 MAX_COMMENT_LENGTH = 1000
@@ -32,28 +29,28 @@ AWS_IP_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
 def is_ipv4(value):
     try:
         return validators.ip_address.ipv4(value)
-    except Exception as e:
+    except Exception:
         return False
 
 
 def is_public_address(value):
     try:
         return ipaddress.ip_address(value).is_global
-    except Exception as e:
+    except Exception:
         return False
 
 
 def is_domain(value):
     try:
         return validators.domain(value)
-    except Exception as e:
+    except Exception:
         return False
 
 
 def is_host_resolvable(value):
     try:
         return len(socket.gethostbyname(value)) > 0
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -99,7 +96,7 @@ class AuditValidator(Validator):
         data["updated_at"] = datetime.utcnow()
         return data
 
-    class Meta:
+    class Meta(object):
         messages = {"password_not_empty": "Password must be provided when enforcing protection."}
 
 

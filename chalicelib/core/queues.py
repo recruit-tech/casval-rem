@@ -1,9 +1,8 @@
+import boto3
 import json
 
-import boto3
 
-
-class Queue:
+class Queue(object):
 
     SCAN_PENDING = "ScanPending"
     SCAN_RUNNING = "ScanRunning"
