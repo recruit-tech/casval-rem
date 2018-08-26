@@ -1,7 +1,9 @@
 from chalicelib.apis.base import APIBase
 from chalicelib.core import Scanner
 from chalicelib.core.models import db
+from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
+from chalicelib.core.models import Vuln
 from chalicelib.core.queues import Queue
 from chalicelib.core.storage import Storage
 from datetime import datetime
@@ -12,7 +14,7 @@ import json
 import os
 import pytz
 
-REPORT_KEY_NAME = "report/{scan_uuid}"
+REPORT_KEY_NAME = "report/{audit_id}/{scan_id}"
 
 
 class QueueHandler(object):
@@ -30,7 +32,7 @@ class QueueHandler(object):
         return self.__process_all_messages(running_queue, self.__check_progress)
 
     def process_scan_stopped_queue(self):
-        stopped_queue = Queue(Queue.SCAN_RUNNING)
+        stopped_queue = Queue(Queue.SCAN_STOPPED)
         return self.__process_all_messages(stopped_queue, self.__notify_result)
 
     def __exception_handler(func):
@@ -141,48 +143,67 @@ class QueueHandler(object):
     def __notify_result(self, stopped_queue, entry, body):
         scanner = Scanner(os.environ["SCANNER"])
         if "error" in body:
-            scan = {}
-            scan["error_reason"] = body["error"]
-            scan["schedule_uuid"] = None
-            scan["scheduled"] = False
-            scan["processed"] = True
-            query = Scan.update(scan).where(Scan.schedule_uuid == body["schedule_uuid"])
-            query.execute()
+            self.__set_scan_error(body["schedule_uuid"], body["error"])
             stopped_queue.delete(entry)
         else:
-            report = self.__load_report(body["scan_uuid"])
+            report = self.__load_report(body["audit_id"], body["scan_id"])
             if report is None:
                 self.app.log.debug("Report not found. Retrieve from scanner")
                 report = scanner.get_report(body["session"])
                 self.app.log.debug("Report retrieved: {} bytes".format(len(report)))
-                self.__store_report(body["scan_uuid"], report)
+                self.__store_report(body["audit_id"], body["scan_id"], report)
 
             self.app.log.debug("Parse report")
-            scanner.parse_report(report)
+            records = scanner.parse_report(report)
 
             with db.atomic():
-                scan = {}
-                scan["error_reason"] = ""
-                scan["schedule_uuid"] = None
-                scan["scheduled"] = False
-                scan["processed"] = True
-                query = Scan.update(scan).where(Scan.schedule_uuid == body["schedule_uuid"])
-                query.execute()
-                # TODO(nishimunea): Update result table
+                self.__set_scan_complete(body["schedule_uuid"])
+                self.__delete_scan_results(body["scan_id"])
+                for record in records:
+                    self.__set_scan_result(body["scan_id"], scanner, record)
+
             stopped_queue.delete(entry)
 
-    def __load_report(self, scan_uuid):
+    def __delete_scan_results(self, scan_id):
+        Result.delete().where(Result.scan_id == scan_id).execute()
+
+    def __set_scan_result(self, scan_id, scanner, record):
+        vuln, result = scanner.parse_record(record)
+        Vuln.insert(vuln).on_conflict(preserve=[Vuln.fix_required], update=vuln).execute()
+
+        result["scan_id"] = scan_id
+        Result.insert(result).execute()
+
+    def __set_scan_error(self, schedule_uuid, error):
+        scan = {}
+        scan["error_reason"] = error
+        scan["schedule_uuid"] = None
+        scan["scheduled"] = False
+        scan["processed"] = True
+        query = Scan.update(scan).where(Scan.schedule_uuid == schedule_uuid)
+        query.execute()
+
+    def __set_scan_complete(self, schedule_uuid):
+        scan = {}
+        scan["error_reason"] = ""
+        scan["schedule_uuid"] = None
+        scan["scheduled"] = False
+        scan["processed"] = True
+        query = Scan.update(scan).where(Scan.schedule_uuid == schedule_uuid)
+        query.execute()
+
+    def __load_report(self, audit_id, scan_id):
         try:
             storage = Storage(os.getenv("S3_BUCKET_NAME"))
-            key = REPORT_KEY_NAME.format(scan_uuid=scan_uuid)
+            key = REPORT_KEY_NAME.format(audit_id=audit_id, scan_id=scan_id)
             return storage.load(key)
         except Exception as e:
             self.app.log.debug(e)
             return None
 
-    def __store_report(self, scan_uuid, report):
+    def __store_report(self, audit_id, scan_id, report):
         storage = Storage(os.getenv("S3_BUCKET_NAME"))
-        key = REPORT_KEY_NAME.format(scan_uuid=scan_uuid)
+        key = REPORT_KEY_NAME.format(audit_id=audit_id, scan_id=scan_id)
         return storage.store(key, report)
 
     def __is_scan_schedule_active(self, schedule_uuid):

@@ -91,3 +91,25 @@ class Scanner(object):
                 "cpe:/o:canonical:ubuntu_linux:14.04",
             },
         ]
+
+    def parse_record(self, record):
+        nvt = record["nvt"]
+
+        vuln = {}
+        vuln["oid"] = nvt["@oid"]
+        vuln["name"] = nvt["name"]
+        vuln["cvss_base"] = nvt["cvss_base"]
+        vuln["cve"] = nvt["cve"]
+        vuln["description"] = nvt["tags"]
+
+        result = {}
+        result["name"] = record["name"]
+        result["port"] = record["port"]
+        result["vuln_id"] = vuln["oid"]
+        result["description"] = record["description"]
+        result["qod"] = ""
+        result["severity"] = record["severity"]
+        result["severity_rank"] = record["threat"]
+        result["scanner"] = ""
+
+        return vuln, result

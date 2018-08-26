@@ -35,7 +35,6 @@ pipenv run imports chalicelib/
 pipenv run lint app.py
 pipenv run lint chalicelib/
 ```
-If there is not error at the end okey.
 
 ## Make requirements.txt
 

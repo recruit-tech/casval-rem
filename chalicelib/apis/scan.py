@@ -116,7 +116,8 @@ class ScanAPI(APIBase):
             start_at=start_at,
             end_at=end_at,
             schedule_uuid=schedule_uuid,
-            scan_uuid=scan_uuid,
+            scan_id=scan["id"],
+            audit_id=self.audit["id"],
         )
 
         Scan.update(scan_validator.data).where(Scan.id == scan["id"]).execute()
@@ -160,14 +161,15 @@ class ScanAPI(APIBase):
             response["target"] = scan["target"]
             response["uuid"] = scan["uuid"].hex
             response["status"] = {"scheduled": scan["scheduled"], "processed": scan["processed"]}
-            response["results"] = []  # TODO(nishimunea): Include scan results
             response["error_reason"] = scan["error_reason"]
             response["platform"] = scan["platform"]
             response["comment"] = scan["comment"]
-            # TODO(nishimunea): Return s3.generate_presigned_url
-            response["report_url"] = ""
             response["created_at"] = scan["created_at"].strftime(APIBase.DATETIME_FORMAT)
             response["updated_at"] = scan["updated_at"].strftime(APIBase.DATETIME_FORMAT)
+            response["results"] = []
+
+            for result in scans[0].results.dicts():
+                response["results"].append(result)
 
             start_at = scan["start_at"]
             if type(start_at) is not str:
@@ -182,13 +184,14 @@ class ScanAPI(APIBase):
     def __get_schedule_uuid(self):
         return uuid.uuid4().hex
 
-    def __request_scan(self, target, start_at, end_at, schedule_uuid, scan_uuid):
+    def __request_scan(self, target, start_at, end_at, schedule_uuid, scan_id, audit_id):
         queue = Queue(Queue.SCAN_PENDING)
         message = {
             "target": target,
             "start_at": start_at,
             "end_at": end_at,
             "schedule_uuid": schedule_uuid,
-            "scan_uuid": scan_uuid,
+            "scan_id": scan_id,
+            "audit_id": audit_id,
         }
         queue.enqueue(message)

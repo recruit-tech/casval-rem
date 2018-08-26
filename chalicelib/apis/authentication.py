@@ -1,10 +1,10 @@
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit
-from chalicelib.core.models import Vuln
-from chalicelib.core.models import Result
 from chalicelib.core.models import Contact
 from chalicelib.core.models import db
+from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
+from chalicelib.core.models import Vuln
 from chalicelib.core.validators import AuditValidator
 
 import os
