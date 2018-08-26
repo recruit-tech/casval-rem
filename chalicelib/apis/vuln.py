@@ -21,9 +21,9 @@ class VulnAPI(APIBase):
         query = Vuln.select(Vuln)
 
         if params.get("fix_required") == "true":
-            query = query.where(Vuln.fix_required is True)
+            query = query.where(Vuln.fix_required == True)  # noqa: E712
         elif params.get("fix_required") == "false":
-            query = query.where(Vuln.fix_required is False)
+            query = query.where(Vuln.fix_required == False)  # noqa: E712
         elif params.get("fix_required") == "unknown":
             query = query.where(Vuln.fix_required.is_null())
 
@@ -42,10 +42,11 @@ class VulnAPI(APIBase):
 
     @APIBase.exception_handler
     def patch(self, id):
-        response = {
-            "oid": "1.3.6.1.4.1.25623.1.0.105879",
-            "name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
-            "fix_required": False,
-            "threat": "Log",
-        }
-        return response
+        body = super()._get_request_body()
+
+        if "fix_required" not in body:
+            raise Exception("'fix_required': Must be contained.")
+
+        Vuln.update({"fix_required": body["fix_required"]}).where(Vuln.oid == id).execute()
+
+        return {}
