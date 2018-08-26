@@ -1,5 +1,7 @@
 from chalicelib.apis.base import APIBase
+from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
+from chalicelib.core.models import Vuln
 from chalicelib.core.queues import Queue
 from chalicelib.core.validators import ScanValidator
 from peewee import fn
@@ -168,7 +170,13 @@ class ScanAPI(APIBase):
             response["updated_at"] = scan["updated_at"].strftime(APIBase.DATETIME_FORMAT)
             response["results"] = []
 
-            for result in scans[0].results.dicts():
+            results = (
+                Result.select(Result, Vuln.fix_required)
+                .join(Vuln, on=(Result.vuln_id == Vuln.oid))
+                .where(Vuln.fix_required is True)
+            )
+
+            for result in results.dicts():
                 response["results"].append(result)
 
             start_at = scan["start_at"]
