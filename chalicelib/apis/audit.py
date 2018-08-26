@@ -147,12 +147,6 @@ class AuditAPI(APIBase):
     @APIBase.exception_handler
     def submit(self, audit_uuid):
         super()._get_audit_by_uuid(audit_uuid)
-
-        # TODO(nishimunea): Check if number of scan belongging to the audit is more than 1
-        # TODO(nishimunea): Check if status of all scan is processed=true
-        # TODO(nishimunea): Check if no fix-required in a result of all scans, if fix-required,
-        #       length of the comment is more than 1
-
         submitted = {"submitted": True}
         Audit.update(submitted).where(Audit.uuid == audit_uuid).execute()
 
