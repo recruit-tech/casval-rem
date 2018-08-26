@@ -10,7 +10,7 @@ from chalicelib.core.validators import AuditValidator
 import os
 
 
-class AuthenticationAPI(APIBase):
+class AuthAPI(APIBase):
     @APIBase.exception_handler
     def __init__(self, app):
         super().__init__(app)

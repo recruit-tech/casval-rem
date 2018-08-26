@@ -2,9 +2,9 @@ from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit
 from chalicelib.core.models import Contact
 from chalicelib.core.models import db
-from chalicelib.core.validators import AuditPagenationValidator
 from chalicelib.core.validators import AuditValidator
 from chalicelib.core.validators import ContactValidator
+from chalicelib.core.validators import PagenationValidator
 from peewee import fn
 
 
@@ -16,7 +16,7 @@ class AuditAPI(APIBase):
     @APIBase.exception_handler
     def index(self):
         params = super()._get_query_params()
-        page_validator = AuditPagenationValidator()
+        page_validator = PagenationValidator()
         page_validator.validate(params)
         if page_validator.errors:
             raise Exception(page_validator.errors)

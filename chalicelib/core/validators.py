@@ -100,7 +100,7 @@ class AuditValidator(Validator):
         messages = {"password_not_empty": "Password must be provided when enforcing protection."}
 
 
-class AuditPagenationValidator(Validator):
+class PagenationValidator(Validator):
     page = IntegerField(required=True, low=1, default=1)
     count = IntegerField(required=True, low=1, high=300, default=30)
 

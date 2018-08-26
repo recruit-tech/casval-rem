@@ -2,9 +2,9 @@ from chalice import Chalice
 from chalice import CORSConfig
 from chalice import Cron
 from chalicelib.apis import AuditAPI
-from chalicelib.apis import AuthenticationAPI
+from chalicelib.apis import AuthAPI
 from chalicelib.apis import ScanAPI
-from chalicelib.apis import vuln
+from chalicelib.apis import VulnAPI
 from chalicelib.batches import QueueHandler
 from chalicelib.core import authorizer
 
@@ -141,32 +141,27 @@ def scan_schedule_cancel(audit_uuid, scan_uuid):
 
 @app.route("/auth", methods=["POST"], cors=cors_config)
 def auth():
-    authentication_api = AuthenticationAPI(app)
-    return authentication_api.auth()
+    auth_api = AuthAPI(app)
+    return auth_api.auth()
 
 
 # Vulnerability API
 
 
-@app.route("/vulns", methods=["GET"], cors=cors_config, authorizer=authorize)
-def vulnerability_index():
+@app.route("/vuln", methods=["GET"], cors=cors_config, authorizer=authorize)
+def vuln_index():
     # For administration users only
     if __authorized_scope() == "*":
-        return vuln.index()
+        vuln_api = VulnAPI(app)
+        return vuln_api.index()
 
 
-@app.route("/vulns/{oid}", methods=["GET"], cors=cors_config, authorizer=authorize)
-def vulnerability_get(oid):
+@app.route("/vuln/{id}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+def vuln_patch(id):
     # For administration users only
     if __authorized_scope() == "*":
-        return vuln.get(oid)
-
-
-@app.route("/vulns/{oid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
-def vulnerability_patch(oid):
-    # For administration users only
-    if __authorized_scope() == "*":
-        return vuln.patch(oid)
+        vuln_api = VulnAPI(app)
+        return vuln_api.patch(id)
 
 
 # Batch processes
