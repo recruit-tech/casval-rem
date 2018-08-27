@@ -14,8 +14,6 @@ import json
 import os
 import pytz
 
-REPORT_KEY_NAME = "report/{audit_id}/{scan_id}"
-
 
 class QueueHandler(object):
     def __init__(self, app):
@@ -195,7 +193,7 @@ class QueueHandler(object):
     def __load_report(self, audit_id, scan_id):
         try:
             storage = Storage(os.getenv("S3_BUCKET_NAME"))
-            key = REPORT_KEY_NAME.format(audit_id=audit_id, scan_id=scan_id)
+            key = storage.get_report_key(audit_id=audit_id, scan_id=scan_id)
             return storage.load(key)
         except Exception as e:
             self.app.log.debug(e)
@@ -203,7 +201,7 @@ class QueueHandler(object):
 
     def __store_report(self, audit_id, scan_id, report):
         storage = Storage(os.getenv("S3_BUCKET_NAME"))
-        key = REPORT_KEY_NAME.format(audit_id=audit_id, scan_id=scan_id)
+        key = storage.get_report_key(audit_id=audit_id, scan_id=scan_id)
         return storage.store(key, report)
 
     def __is_scan_schedule_active(self, schedule_uuid):

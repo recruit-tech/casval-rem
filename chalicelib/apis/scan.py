@@ -173,9 +173,8 @@ class ScanAPI(APIBase):
             results = (
                 Result.select(Result, Vuln.fix_required)
                 .join(Vuln, on=(Result.vuln_id == Vuln.oid))
-                .where(Vuln.fix_required is True)
+                .where(Vuln.fix_required == True)  # noqa: E712
             )
-
             for result in results.dicts():
                 response["results"].append(result)
 

@@ -117,7 +117,7 @@ class ScanValidator(Validator):
     schedule_uuid = StringField()
     scheduled = BooleanField(default=False)
     updated_at = DateTimeField()
-    comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=1)
+    comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=0)
 
     @staticmethod
     def is_valid_time_range(start, end):
