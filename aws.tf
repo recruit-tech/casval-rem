@@ -8,20 +8,32 @@ variable "db_password" {
   default = "admin123"
 }
 
-output "report_bucket" {
+output "bucket" {
   value = "${aws_s3_bucket.report_bucket.id}"
 }
 
-output "sn_primary" {
+output "subnet_primary" {
   value = "${aws_subnet.sn_primary.id}"
 }
 
-output "sn_secondary" {
+output "subnet_secondary" {
   value = "${aws_subnet.sn_secondary.id}"
 }
 
-output "sg" {
+output "security_group" {
   value = "${aws_security_group.sg.id}"
+}
+
+output "database_username" {
+  value = "${aws_rds_cluster.db.master_username}"
+}
+
+output "database_password" {
+  value = "${aws_rds_cluster.db.master_password}"
+}
+
+output "database_name" {
+  value = "${aws_rds_cluster.db.database_name}"
 }
 
 # aws
