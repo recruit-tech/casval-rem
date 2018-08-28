@@ -21,7 +21,14 @@
         "DB_ENDPOINT":"localhost",
         "DB_USER":"root",
         "DB_PASSWORD":"admin123",
-        "DB_PORT":"3306"
+        "DB_PORT":"3306",
+        "TOKEN_EXPIRATION_IN_HOUR":3,
+        "AWS_IP_RANGES_URL":"https://ip-ranges.amazonaws.com/ip-ranges.json",
+        "PASSWORD_HASH_ALG":"sha256",
+        "MAX_COMMENT_LENGTH":1000,
+        "MIN_SCAN_DURATION_IN_SECONDS" : 2 ,
+        "SCAN_SCHEDULABLE_DAYS_FROM_NOW" : 10,
+        "SCAN_SCHEDULABLE_DAYS_FROM_START_DATE" : 5
       }
     },
     "dev": {
@@ -48,7 +55,13 @@
         "DB_ENDPOINT":"casval-aurora-cluster.cluster-ccykysrksugc.us-east-1.rds.amazonaws.com",
         "DB_USER":"admin",
         "DB_PASSWORD":"admin123",
-        "DB_PORT":"3306"
+        "DB_PORT":"3306",
+        "AWS_IP_RANGES_URL":"https://ip-ranges.amazonaws.com/ip-ranges.json",
+        "PASSWORD_HASH_ALG":"sha256",
+        "MAX_COMMENT_LENGTH":1000,
+        "MIN_SCAN_DURATION_IN_SECONDS" : 2 ,
+        "SCAN_SCHEDULABLE_DAYS_FROM_NOW" : 10,
+        "SCAN_SCHEDULABLE_DAYS_FROM_START_DATE" : 5
       }
     }
   }
