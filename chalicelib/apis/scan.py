@@ -61,9 +61,10 @@ class ScanAPI(APIBase):
         body = super()._get_request_body()
         scan = self.__get_scan_by_uuid(scan_uuid, raw=True)
 
-        if "comment" not in body:
-            raise Exception("'comment': Must be contained.")
         key_filter = "comment"
+        if key_filter not in body:
+            raise Exception("'{0}': Must be contained.".format(key_filter))
+
         scan_new = {k: v for k, v in body.items() if k in key_filter}
         if scan_new:
             scan_validator = ScanValidator()
@@ -91,16 +92,18 @@ class ScanAPI(APIBase):
 
         if scan["scheduled"] is True:
             raise Exception("scan-scheduled")
-
         if "schedule" not in body:
             raise Exception("'schedule': Must be contained.")
-        if "start_at" not in body["schedule"]:
+
+        schedule_range = body["schedule"]
+
+        if "start_at" not in schedule_range:
             raise Exception("'start_at': Must be contained.")
-        if "end_at" not in body["schedule"]:
+        if "end_at" not in schedule_range:
             raise Exception("'end_at': Must be contained.")
 
-        start_at = body["schedule"]["start_at"]
-        end_at = body["schedule"]["end_at"]
+        start_at = schedule_range["start_at"]
+        end_at = schedule_range["end_at"]
 
         if ScanValidator.is_valid_time_range(start_at, end_at) is False:
             raise Exception("'start_at' or 'end_at' is invalid.")
@@ -159,16 +162,17 @@ class ScanAPI(APIBase):
             return scan
 
         else:
-            response = {}
-            response["target"] = scan["target"]
-            response["uuid"] = scan["uuid"].hex
-            response["status"] = {"scheduled": scan["scheduled"], "processed": scan["processed"]}
-            response["error_reason"] = scan["error_reason"]
-            response["platform"] = scan["platform"]
-            response["comment"] = scan["comment"]
-            response["created_at"] = scan["created_at"].strftime(APIBase.DATETIME_FORMAT)
-            response["updated_at"] = scan["updated_at"].strftime(APIBase.DATETIME_FORMAT)
-            response["results"] = []
+            response = {
+                "target": scan["target"],
+                "uuid": scan["uuid"].hex,
+                "status": {"scheduled": scan["scheduled"], "processed": scan["processed"]},
+                "error_reason": scan["error_reason"],
+                "platform": scan["platform"],
+                "comment": scan["comment"],
+                "created_at": scan["created_at"].strftime(APIBase.DATETIME_FORMAT),
+                "updated_at": scan["updated_at"].strftime(APIBase.DATETIME_FORMAT),
+                "results": [],
+            }
 
             results = (
                 Result.select(Result, Vuln.fix_required)
@@ -181,6 +185,7 @@ class ScanAPI(APIBase):
             start_at = scan["start_at"]
             if type(start_at) is not str:
                 start_at = start_at.strftime(APIBase.DATETIME_FORMAT)
+
             end_at = scan["end_at"]
             if type(end_at) is not str:
                 end_at = end_at.strftime(APIBase.DATETIME_FORMAT)

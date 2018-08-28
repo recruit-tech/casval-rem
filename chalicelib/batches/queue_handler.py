@@ -45,7 +45,7 @@ class QueueHandler(object):
 
     @__exception_handler
     def __process_all_messages(self, queue, func):
-        while 1:
+        while True:
             messages = queue.peek()
             self.app.log.debug("Messages obtained: " + str(len(messages)))
 
@@ -77,9 +77,10 @@ class QueueHandler(object):
 
         running_queue = Queue(Queue.SCAN_RUNNING)
         num_of_running_scan = running_queue.message_count()
-        if num_of_running_scan >= int(os.getenv("MAX_PARALLEL_SCAN_SESSION")):
+        max_scan_parallel_size = int(os.getenv("MAX_PARALLEL_SCAN_SESSION"))
+        if num_of_running_scan >= max_scan_parallel_size:
             # Abandon subsequent process because other scan sessions are running.
-            if num_of_running_scan > int(os.getenv("MAX_PARALLEL_SCAN_SESSION")):
+            if num_of_running_scan > max_scan_parallel_size:
                 self.app.log.error("Running scan: " + str(num_of_running_scan))
             self.app.log.debug(
                 "Polling finished because number of running scan is " + str(num_of_running_scan)
@@ -173,20 +174,12 @@ class QueueHandler(object):
         Result.insert(result).execute()
 
     def __set_scan_error(self, schedule_uuid, error):
-        scan = {}
-        scan["error_reason"] = error
-        scan["schedule_uuid"] = None
-        scan["scheduled"] = False
-        scan["processed"] = True
+        scan = {"error_reason": error, "schedule_uuid": None, "scheduled": False, "processed": True}
         query = Scan.update(scan).where(Scan.schedule_uuid == schedule_uuid)
         query.execute()
 
     def __set_scan_complete(self, schedule_uuid):
-        scan = {}
-        scan["error_reason"] = ""
-        scan["schedule_uuid"] = None
-        scan["scheduled"] = False
-        scan["processed"] = True
+        scan = {"error_reason": "", "schedule_uuid": None, "scheduled": False, "processed": True}
         query = Scan.update(scan).where(Scan.schedule_uuid == schedule_uuid)
         query.execute()
 

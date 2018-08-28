@@ -29,7 +29,8 @@ class Queue(object):
             QueueUrl=self.queue.url,
             AttributeNames=["ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible"],
         )
-        message_num = response["Attributes"]["ApproximateNumberOfMessages"]
-        message_num_not_visible = response["Attributes"]["ApproximateNumberOfMessagesNotVisible"]
+        sqs_messages = response["Attributes"]
+        message_num = sqs_messages["ApproximateNumberOfMessages"]
+        message_num_not_visible = sqs_messages["ApproximateNumberOfMessagesNotVisible"]
         total_message_num = int(message_num) + int(message_num_not_visible)
         return total_message_num
