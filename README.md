@@ -7,7 +7,6 @@ $ pipenv shell
 $ pipenv install -d
 $ pipenv install -d pip==10.0.1
 $ chalice local --port 3000 --stage local
-
 ```
 Note that pip 10.0.1 is required by chalice.
 
@@ -19,6 +18,50 @@ $ terraform apply
 ```
 
 Note that the terraform command requires setting of `aws_access_key` and `aws_secret_key` variables.
+
+## Configuration
+It is necessary to dynamically generate configuration based on tfstate etc. Here we show these methods.
+
+As for what is involved in production...
+* `config_gen.py`: Config generation script
+* `terafform.tfstate`: Original data of information used for configuration
+* `template_config.json`: Model file for automatically generating contents. Embedded variables are available.
+* `.env.*`: A file that defines an embedded variable. default on load `.env.local` and` .env.dev`. 
+
+### Example
+#### Generate method
+```
+$ pwd　# /casval-rem/.chalice
+$ python config_gen.py
+```
+
+#### Defining Embedded Variables
+
+* `$<id>`: Embedded variable
+* `$<id>_INT`: Use embedded variables as integers
+
+#### Examples of embedded variables
+`template_config.json`
+```
+....
+    "local": {
+      "environment_variables": {
+        ....
+        "AUDIT_LIST_MAX_COUNT":"$AUDIT_LIST_MAX_COUNT_LOCAL_INT",
+        ....
+        "DB_USER":"$DB_USER_LOCAL",
+        "DB_PASSWORD":"$DB_PASSWORD_LOCAL",
+        "DB_PORT":"3306"
+      }
+    },
+....
+```
+`.env.local`
+```
+AUDIT_LIST_MAX_COUNT_LOCAL_INT=300
+DB_USER_LOCAL="root"
+DB_PASSWORD_LOCAL="admin123"
+```
 
 ## Code Checking
 

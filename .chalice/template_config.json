@@ -13,7 +13,7 @@
         "ADMIN_PASSWORD_HASH":"1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
-        "AUDIT_LIST_MAX_COUNT":"$AUDIT_LIST_MAX_COUNT_LOCAL",
+        "AUDIT_LIST_MAX_COUNT":"$AUDIT_LIST_MAX_COUNT_LOCAL_INT",
         "SCANNER":"casval-stub",
         "STAGE":"dev",
         "S3_BUCKET_NAME": "casval-dev-123456",
@@ -28,7 +28,7 @@
       "api_gateway_stage": "api",
       "lambda_memory_size": 512,
       "lambda_timeout": 300,
-      "subnet_ids": ["$HOST"],
+      "subnet_ids": [],
       "security_group_ids": [],
       "environment_variables": {
         "ORIGIN": "http://localhost:8080",
