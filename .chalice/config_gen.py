@@ -1,15 +1,23 @@
 import json
 from collections import OrderedDict
-import pprint
 import os
+from dotenv import load_dotenv
 path = os.path.abspath(".")
 dir_path = os.path.dirname(path)
 
 tmp_json_path = '/template_config.json'
 tf_path = '/terraform.tfstate'
-env_path = '/env.local'
-env_path = '/env.dev'
+
+local_env_path = '.env.local'
+dev_env_path = '.env.dev'
+
 output_json_path = '/config.json'
+
+local_env = os.path.join(os.path.dirname("."), local_env_path)
+dev_env = os.path.join(os.path.dirname("."), dev_env_path)
+load_dotenv(local_env)
+load_dotenv(dev_env)
+
 
 tf_to_conf_key = [
     ("report_bucket", "S3_BUCKET_NAME"),
@@ -19,10 +27,32 @@ tf_to_conf_key = [
 ]
 
 
+def getenv(val):
+    value = os.environ.get(val)
+    print("env: ", val, " : ", value)
+    return value
+
+
+def search_val(arg: dict):
+    if isinstance(arg, str):
+        if arg[0] == '$':
+            arg = getenv(arg[1:])
+
+    elif isinstance(arg, list):
+        for x in range(len(arg)):
+            arg[x] = search_val(arg[x])
+
+    elif isinstance(arg, dict):
+        keys = arg.keys()
+        for key in keys:
+            arg[key] = search_val(arg[key])
+
+    return arg
+
+
 def config_subs(tmp_json, tf_json, keys):
     for tf_key, conf_key in keys:
         tf_value = tf_json["modules"][0]["outputs"][tf_key]["value"]
-        print(tf_value)
         if conf_key in ["security_group_ids", "subnet_ids"]:
             tmp_json["stages"]["dev"][conf_key].append(tf_value)
         else:
@@ -33,26 +63,16 @@ def config_subs(tmp_json, tf_json, keys):
 
 
 def main():
-    try:
         with open(path + tmp_json_path) as f:
             tmp_json = json.load(f, object_pairs_hook=OrderedDict)
-            print(tmp_json)
+            tmp_json = search_val(tmp_json)
 
         with open(dir_path + tf_path) as f:
             tf_json = json.load(f)
             make_json = config_subs(tmp_json, tf_json, tf_to_conf_key)
-            print(tf_json)
 
         with open(path + output_json_path, mode='w') as f:
-            print(make_json)
             json.dump(make_json, f, indent=4)
-
-    except OSError as e:
-        print(e)
-    except KeyError as e:
-        print(e)
-    except Exception as e:
-        print(e)
 
 
 if __name__ == '__main__':

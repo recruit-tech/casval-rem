@@ -13,14 +13,14 @@
         "ADMIN_PASSWORD_HASH":"1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1",
         "DYNAMO_REGION": "ap-northeast-1",
         "AUDIT_GET_DEFAULT_COUNT":"30",
-        "AUDIT_LIST_MAX_COUNT":"300",
+        "AUDIT_LIST_MAX_COUNT":"$AUDIT_LIST_MAX_COUNT_LOCAL",
         "SCANNER":"casval-stub",
         "STAGE":"dev",
         "S3_BUCKET_NAME": "casval-dev-123456",
         "DB_NAME":"casval_dev",
         "DB_ENDPOINT":"localhost",
-        "DB_USER":"root",
-        "DB_PASSWORD":"admin123",
+        "DB_USER":"$DB_USER_LOCAL",
+        "DB_PASSWORD":"$DB_PASSWORD_LOCAL",
         "DB_PORT":"3306"
       }
     },
@@ -28,7 +28,7 @@
       "api_gateway_stage": "api",
       "lambda_memory_size": 512,
       "lambda_timeout": 300,
-      "subnet_ids": [],
+      "subnet_ids": ["$HOST"],
       "security_group_ids": [],
       "environment_variables": {
         "ORIGIN": "http://localhost:8080",
@@ -46,8 +46,8 @@
         "S3_BUCKET_NAME": "casval-dev-123456",
         "DB_NAME":"casval_dev",
         "DB_ENDPOINT":"casval-aurora-cluster.cluster-ccykysrksugc.us-east-1.rds.amazonaws.com",
-        "DB_USER":"admin",
-        "DB_PASSWORD":"admin123",
+        "DB_USER":"$DB_USER_DEV",
+        "DB_PASSWORD":"$DB_PASSWORD_DEV",
         "DB_PORT":"3306"
       }
     }
