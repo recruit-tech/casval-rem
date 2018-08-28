@@ -22,10 +22,13 @@ load_dotenv(dev_env)
 
 
 tf_to_conf_key = [
-    ("report_bucket", "S3_BUCKET_NAME"),
-    ("sg", "security_group_ids"),
-    ("sn_primary", "subnet_ids"),
-    ("sn_secondary", "subnet_ids"),
+    ("bucket", "S3_BUCKET_NAME"),
+    ("security_group", "security_group_ids"),
+    ("subnet_primary", "subnet_ids"),
+    ("subnet_secondary", "subnet_ids"),
+    ("database_username", "DB_USER"),
+    ("database_name", "DB_NAME"),
+    ("database_password", "DB_PASSWORD"),
 ]
 
 
@@ -57,6 +60,7 @@ def search_val(arg: dict):
 def config_subs(tmp_json, tf_json, keys):
     for tf_key, conf_key in keys:
         tf_value = tf_json["modules"][0]["outputs"][tf_key]["value"]
+        print("tf: ", tf_key, " : ",tf_value)
         if conf_key in ["security_group_ids", "subnet_ids"]:
             tmp_json["stages"]["dev"][conf_key].append(tf_value)
         else:
