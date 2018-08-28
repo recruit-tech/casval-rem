@@ -57,16 +57,17 @@ class APIBase(object):
             return audit
 
         else:
-            response = {}
-            response["uuid"] = audit["uuid"].hex
-            response["name"] = audit["name"]
-            response["submitted"] = audit["submitted"]
-            response["ip_restriction"] = audit["ip_restriction"]
-            response["password_protection"] = audit["password_protection"]
-            response["rejected_reason"] = audit["rejected_reason"]
-            response["created_at"] = audit["created_at"].strftime(APIBase.DATETIME_FORMAT)
-            response["updated_at"] = audit["updated_at"].strftime(APIBase.DATETIME_FORMAT)
-            response["contacts"] = []
+            response = {
+                "uuid": audit["uuid"].hex,
+                "name": audit["name"],
+                "submitted": audit["submitted"],
+                "ip_restriction": audit["ip_restriction"],
+                "password_protection": audit["password_protection"],
+                "rejected_reason": audit["rejected_reason"],
+                "created_at": audit["created_at"].strftime(APIBase.DATETIME_FORMAT),
+                "updated_at": audit["updated_at"].strftime(APIBase.DATETIME_FORMAT),
+                "contacts": [],
+            }
 
             for contact in audits[0].contacts.dicts():
                 response["contacts"].append({"name": contact["name"], "email": contact["email"]})

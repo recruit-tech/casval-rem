@@ -41,18 +41,19 @@ class AuditAPI(APIBase):
 
         response = []
         for audit in audits.dicts():
-            entry = {}
-            entry["id"] = audit["id"]
-            entry["uuid"] = audit["uuid"].hex
-            entry["name"] = audit["name"]
-            entry["submitted"] = audit["submitted"]
-            entry["ip_restriction"] = audit["ip_restriction"]
-            entry["password_protection"] = audit["password_protection"]
-            entry["rejected_reason"] = audit["rejected_reason"]
-            entry["created_at"] = audit["created_at"].strftime(APIBase.DATETIME_FORMAT)
-            entry["updated_at"] = audit["updated_at"].strftime(APIBase.DATETIME_FORMAT)
-            entry["contact_names"] = audit["contact_names"].split(",")
-            entry["contact_emails"] = audit["contact_emails"].split(",")
+            entry = {
+                "id": audit["id"],
+                "uuid": audit["uuid"].hex,
+                "name": audit["name"],
+                "submitted": audit["submitted"],
+                "ip_restriction": audit["ip_restriction"],
+                "password_protection": audit["password_protection"],
+                "rejected_reason": audit["rejected_reason"],
+                "created_at": audit["created_at"].strftime(APIBase.DATETIME_FORMAT),
+                "updated_at": audit["updated_at"].strftime(APIBase.DATETIME_FORMAT),
+                "contact_names": audit["contact_names"].split(","),
+                "contact_emails": audit["contact_emails"].split(","),
+            }
             response.append(entry)
 
         return response
@@ -131,7 +132,7 @@ class AuditAPI(APIBase):
 
         if audit["ip_restriction"] is True:
             if not super()._is_access_permitted():
-                raise ConnectionRefusedError("Not allowed to access from your IP addess.")
+                raise ConnectionRefusedError("Not allowed to access from your IP address.")
 
         if audit["password_protection"] is True:
             body = super()._get_request_body()

@@ -41,12 +41,12 @@ class VulnAPI(APIBase):
         return response
 
     @APIBase.exception_handler
-    def patch(self, id):
+    def patch(self, _id):
         body = super()._get_request_body()
 
         if "fix_required" not in body:
             raise Exception("'fix_required': Must be contained.")
 
-        Vuln.update({"fix_required": body["fix_required"]}).where(Vuln.oid == id).execute()
+        Vuln.update({"fix_required": body["fix_required"]}).where(Vuln.oid == _id).execute()
 
         return {}
