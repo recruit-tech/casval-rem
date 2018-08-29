@@ -1,87 +1,75 @@
 from collections import OrderedDict
-from dotenv import load_dotenv
+import re
 
 import json
 import os
 
 path = os.path.abspath(".")
 dir_path = os.path.dirname(path)
+repatter = re.compile("^__.*__.*")
+
 
 tmp_json_path = "/template_config.json"
 tf_path = "/terraform.tfstate"
 
-local_env_path = ".env.local"
-dev_env_path = ".env.dev"
-
 output_json_path = "/config.json"
 
-local_env = os.path.join(os.path.dirname("."), local_env_path)
-dev_env = os.path.join(os.path.dirname("."), dev_env_path)
-load_dotenv(local_env)
-load_dotenv(dev_env)
+
+class PyColor:
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    PURPLE = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    END = '\033[0m'
+    BOLD = '\038[1m'
+    UNDERLINE = '\033[4m'
+    INVISIBLE = '\033[08m'
+    REVERCE = '\033[07m'
 
 
-tf_to_conf_key = [
-    ("bucket", "S3_BUCKET_NAME"),
-    ("security_group", "security_group_ids"),
-    ("subnet_primary", "subnet_ids"),
-    ("subnet_secondary", "subnet_ids"),
-    ("database_username", "DB_USER"),
-    ("database_name", "DB_NAME"),
-    ("database_password", "DB_PASSWORD"),
-]
+def get_tf(val, tf_json):
+    tf_value = tf_json["modules"][0]["outputs"][val]["value"]
+    print(PyColor.GREEN + "tf: ", val, " : ", tf_value + PyColor.END)
+    return tf_value
 
 
-def getenv(val):
-    value = os.environ.get(val)
-    if val[-4:] == "_INT":
-        value = int(value)
-    print("env: ", val, " : ", value)
-    return value
-
-
-def search_val(arg: dict):
+def search_val(arg: dict, tfarg: dict):
     if isinstance(arg, str):
-        if arg[0] == "$":
-            arg = getenv(arg[1:])
+        if arg[:7] == "__dev__":
+            arg = get_tf(arg[7:], tfarg)
+        elif arg[:8] == "__prep__":
+            arg = get_tf(arg[8:], tfarg)
+        elif repatter.match(arg):
+            print(PyColor.RED + "tf: ", arg, " : ", "not patter match" + PyColor.END)
 
     elif isinstance(arg, list):
         for x in range(len(arg)):
-            arg[x] = search_val(arg[x])
+            arg[x] = search_val(arg[x], tfarg)
 
     elif isinstance(arg, dict):
         keys = arg.keys()
         for key in keys:
-            arg[key] = search_val(arg[key])
+            arg[key] = search_val(arg[key], tfarg)
 
     return arg
-
-
-def config_subs(tmp_json, tf_json, keys):
-    for tf_key, conf_key in keys:
-        tf_value = tf_json["modules"][0]["outputs"][tf_key]["value"]
-        print("tf: ", tf_key, " : ",tf_value)
-        if conf_key in ["security_group_ids", "subnet_ids"]:
-            tmp_json["stages"]["dev"][conf_key].append(tf_value)
-        else:
-            tmp_json["stages"]["local"]["environment_variables"][conf_key] = tf_value
-            tmp_json["stages"]["dev"]["environment_variables"][conf_key] = tf_value
-
-    return tmp_json
 
 
 def main():
     with open(path + tmp_json_path) as f:
         tmp_json = json.load(f, object_pairs_hook=OrderedDict)
-        tmp_json = search_val(tmp_json)
 
     with open(dir_path + tf_path) as f:
         tf_json = json.load(f)
-        make_json = config_subs(tmp_json, tf_json, tf_to_conf_key)
+        tmp_json = search_val(tmp_json, tf_json)
 
     with open(path + output_json_path, mode="w") as f:
-        json.dump(make_json, f, indent=4)
+        json.dump(tmp_json, f, indent=4)
 
 
 if __name__ == "__main__":
     main()
+

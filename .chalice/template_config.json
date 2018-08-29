@@ -16,11 +16,11 @@
         "AUDIT_LIST_MAX_COUNT":"$AUDIT_LIST_MAX_COUNT_LOCAL_INT",
         "SCANNER":"casval-stub",
         "STAGE":"dev",
-        "S3_BUCKET_NAME": "casval-dev-123456",
+        "S3_BUCKET_NAME": "__dev__bucket",
         "DB_NAME":"casval_dev",
         "DB_ENDPOINT":"localhost",
-        "DB_USER":"$DB_USER_LOCAL",
-        "DB_PASSWORD":"$DB_PASSWORD_LOCAL",
+        "DB_USER":"admin",
+        "DB_PASSWORD":"admin",
         "DB_PORT":"3306"
       }
     },
@@ -28,8 +28,8 @@
       "api_gateway_stage": "api",
       "lambda_memory_size": 512,
       "lambda_timeout": 300,
-      "subnet_ids": [],
-      "security_group_ids": [],
+      "subnet_ids": ["__dev__subnet_primary", "__dev__subnet_secondary"],
+      "security_group_ids": ["__dev__security_group"],
       "environment_variables": {
         "ORIGIN": "http://localhost:8080",
         "PASSWORD_SALT": "a93bae912d8740c0bfddb4ec33417bf7",
@@ -43,11 +43,11 @@
         "AUDIT_LIST_MAX_COUNT":"300",
         "SCANNER":"casval-openvas-dev",
         "STAGE":"dev",
-        "S3_BUCKET_NAME": "casval-dev-123456",
-        "DB_NAME":"casval_dev",
+        "S3_BUCKET_NAME": "__dev__bucket",
+        "DB_NAME":"__dev__database_name",
         "DB_ENDPOINT":"casval-aurora-cluster.cluster-ccykysrksugc.us-east-1.rds.amazonaws.com",
-        "DB_USER":"$DB_USER_DEV",
-        "DB_PASSWORD":"$DB_PASSWORD_DEV",
+        "DB_USER":"__dev__database_username",
+        "DB_PASSWORD":"__dev__database_password",
         "DB_PORT":"3306"
       }
     }
