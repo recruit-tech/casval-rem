@@ -1,8 +1,8 @@
 from collections import OrderedDict
-import re
 
 import json
 import os
+import re
 
 path = os.path.abspath("..")
 repatter = re.compile("^__.*__.*")
@@ -14,19 +14,19 @@ output_json_path = "/.chalice" + tmp_json_path
 
 
 class PyColor:
-    BLACK = '\033[30m'
-    RED = '\033[31m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    BLUE = '\033[34m'
-    PURPLE = '\033[35m'
-    CYAN = '\033[36m'
-    WHITE = '\033[37m'
-    END = '\033[0m'
-    BOLD = '\038[1m'
-    UNDERLINE = '\033[4m'
-    INVISIBLE = '\033[08m'
-    REVERCE = '\033[07m'
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    PURPLE = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    END = "\033[0m"
+    BOLD = "\038[1m"
+    UNDERLINE = "\033[4m"
+    INVISIBLE = "\033[08m"
+    REVERCE = "\033[07m"
 
 
 def get_tf(val, tf_json):
@@ -70,4 +70,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -23,7 +23,6 @@ black = "==18.6b4"
 isort = "*"
 autoflake = "*"
 pip = "==10.0.1"
-python-dotenv = "*"
 
 [requires]
 python_version = "3.6"
