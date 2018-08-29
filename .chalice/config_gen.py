@@ -4,15 +4,13 @@ import re
 import json
 import os
 
-path = os.path.abspath(".")
-dir_path = os.path.dirname(path)
+path = os.path.abspath("..")
 repatter = re.compile("^__.*__.*")
 
 
-tmp_json_path = "/template_config.json"
+tmp_json_path = "/config.json"
 tf_path = "/terraform.tfstate"
-
-output_json_path = "/config.json"
+output_json_path = "/.chalice" + tmp_json_path
 
 
 class PyColor:
@@ -62,7 +60,7 @@ def main():
     with open(path + tmp_json_path) as f:
         tmp_json = json.load(f, object_pairs_hook=OrderedDict)
 
-    with open(dir_path + tf_path) as f:
+    with open(path + tf_path) as f:
         tf_json = json.load(f)
         tmp_json = search_val(tmp_json, tf_json)
 
