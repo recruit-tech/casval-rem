@@ -25,8 +25,7 @@ It is necessary to dynamically generate configuration based on tfstate etc. Here
 As for what is involved in production...
 * `config_gen.py`: Config generation script
 * `terafform.tfstate`: Original data of information used for configuration
-* `template_config.json`: Model file for automatically generating contents. Embedded variables are available.
-* `.env.*`: A file that defines an embedded variable. default on load `.env.local` and` .env.dev`. 
+* `config.json`: Model file for automatically generating contents. Embedded variables are available.
 
 ### Example
 #### Generate method
@@ -37,31 +36,46 @@ $ python config_gen.py
 
 #### Defining Embedded Variables
 
-* `$<id>`: Embedded variable
-* `$<id>_INT`: Use embedded variables as integers
+* `__<id_1>__<id_2>`: Embedded variable
+* `<id_1>`: There are `dev` and` prep` as built-in identifiers. All other than these are regarded as fixed values on the user side and are not replaced
 
 #### Examples of embedded variables
-`template_config.json`
+`config.json`(user setting)
 ```
 ....
-    "local": {
+    "dev": {
       "environment_variables": {
-        ....
-        "AUDIT_LIST_MAX_COUNT":"$AUDIT_LIST_MAX_COUNT_LOCAL_INT",
-        ....
-        "DB_USER":"$DB_USER_LOCAL",
-        "DB_PASSWORD":"$DB_PASSWORD_LOCAL",
+         ....
+        "DB_USER":"__dev__database_username",
+        "DB_PASSWORD":"__dev__database_password",
         "DB_PORT":"3306"
       }
     },
 ....
 ```
-`.env.local`
+`terraform.tfstate`
 ```
-AUDIT_LIST_MAX_COUNT_LOCAL_INT=300
-DB_USER_LOCAL="root"
-DB_PASSWORD_LOCAL="admin123"
+....
+"outputs": {
+    "bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "casval-dev20180827071622708900000001"
+    },
+    "database_name": {
+        "sensitive": false,
+        "type": "string",
+        "value": "casval_dev"
+    },
+    "database_password": {
+        "sensitive": false,
+        "type": "string",
+        "value": "admin123"
+    },
+....
 ```
+
+
 
 ## Code Checking
 
