@@ -35,25 +35,37 @@ def get_tf(val, tf_json):
     return tf_value
 
 
-def search_val(arg: dict, tfarg: dict):
-    if isinstance(arg, str):
-        if arg[:7] == "__dev__":
-            arg = get_tf(arg[7:], tfarg)
-        elif arg[:8] == "__prep__":
-            arg = get_tf(arg[8:], tfarg)
-        elif repatter.match(arg):
-            print(PyColor.RED + "tf: ", arg, " : ", "not patter match" + PyColor.END)
+def is_tf_stage(stage_name, tf_json):
+    if stage_name == tf_json["modules"][0]["outputs"]["stage"]["value"]:
+        return True
 
-    elif isinstance(arg, list):
-        for x in range(len(arg)):
-            arg[x] = search_val(arg[x], tfarg)
+    return False
 
-    elif isinstance(arg, dict):
-        keys = arg.keys()
+
+def search_val(json_ctx, tf_json: dict):
+
+    if isinstance(json_ctx, str):
+        match = repatter.match(json_ctx)
+
+        if match:
+            match_string = match.group()
+            stage_name = match_string.split("__")[1]
+
+            if is_tf_stage(stage_name, tf_json):
+                json_ctx = get_tf(json_ctx[len(stage_name) + 4:], tf_json)
+            else:
+                print(PyColor.RED + "tf: ", json_ctx, " : ", "not patter match" + PyColor.END)
+
+    elif isinstance(json_ctx, list):
+        for x in range(len(json_ctx)):
+            json_ctx[x] = search_val(json_ctx[x], tf_json)
+
+    elif isinstance(json_ctx, dict):
+        keys = json_ctx.keys()
         for key in keys:
-            arg[key] = search_val(arg[key], tfarg)
+            json_ctx[key] = search_val(json_ctx[key], tf_json)
 
-    return arg
+    return json_ctx
 
 
 def main():

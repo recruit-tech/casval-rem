@@ -8,6 +8,15 @@ variable "db_password" {
   default = "admin123"
 }
 
+variable "stage" {
+  type = "string"
+  default = "dev"
+}
+
+output "stage" {
+  value = "${var.stage}"
+}
+
 output "bucket" {
   value = "${aws_s3_bucket.report_bucket.id}"
 }
