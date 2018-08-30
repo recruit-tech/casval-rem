@@ -37,7 +37,7 @@ $ python config_gen.py
 #### Defining Embedded Variables
 
 * `__<id_1>__<id_2>`: Embedded variable
-* `<id_1>`: There are `dev` and` prep` as built-in identifiers. All other than these are regarded as fixed values on the user side and are not replaced
+* `<id_1>`: All other than these are regarded as fixed values on the user side and are not replaced
 
 #### Examples of embedded variables
 `config.json`(user setting)
