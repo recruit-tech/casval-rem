@@ -112,6 +112,8 @@ venv.bak/
 # Chalice
 .chalice/deployments/
 .chalice/venv/
+.chalice/deployed/
+.chalice/config.json
 
 # Editor directories and files
 .idea
@@ -121,9 +123,6 @@ venv.bak/
 *.njsproj
 *.sln
 *.sw*
-
-# Local .terraform directories
-**/.terraform/*
 
 # .tfstate files
 *.tfstate
@@ -136,3 +135,6 @@ crash.log
 # .tfvars files are managed as part of configuration and so should be included in
 # version control.
 *.tfvars
+
+# Local .terraform directories
+.terraform/

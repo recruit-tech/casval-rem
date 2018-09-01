@@ -4,7 +4,7 @@ import json
 import os
 import re
 
-path = os.path.abspath("..")
+path = os.path.abspath(".")
 repatter = re.compile("^__.*__.*")
 
 

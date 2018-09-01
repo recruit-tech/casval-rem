@@ -1,3 +1,8 @@
+variable "stage" {
+  type = "string"
+  default = "dev"
+}
+
 variable "db_username" {
   type = "string"
   default = "admin"
@@ -6,11 +11,6 @@ variable "db_username" {
 variable "db_password" {
   type = "string"
   default = "admin123"
-}
-
-variable "stage" {
-  type = "string"
-  default = "dev"
 }
 
 output "stage" {
@@ -45,6 +45,23 @@ output "database_name" {
   value = "${aws_rds_cluster.db.database_name}"
 }
 
+# null resource for building chalice's config.json from tfstate
+
+resource "null_resource" "generate-config" {
+  depends_on = ["aws_rds_cluster.db",
+                "aws_s3_bucket.report_bucket",
+                "aws_sqs_queue.pending_queue",
+                "aws_sqs_queue.running_queue",
+                "aws_sqs_queue.stopped_queue"]
+  provisioner "local-exec" {
+    command = "python .chalice/config_gen.py"
+  }
+  provisioner "local-exec" {
+    when = "destroy"
+    command = "rm .chalice/config.json"
+  }
+}
+
 # aws
 
 provider "aws" {
@@ -67,21 +84,36 @@ resource "aws_subnet" "sn_primary" {
   availability_zone = "${data.aws_availability_zones.az.names[0]}"
   vpc_id = "${aws_vpc.vpc.id}"
   cidr_block = "10.0.1.0/24"
+  tags {
+    Name = "CASVAL-SUBNET-PRIMARY"
+  }
 }
 
 resource "aws_subnet" "sn_secondary" {
   availability_zone = "${data.aws_availability_zones.az.names[1]}"
   vpc_id = "${aws_vpc.vpc.id}"
   cidr_block = "10.0.2.0/24"
+  tags {
+    Name = "CASVAL-SUBNET-SECONDARY"
+  }
 }
 
 resource "aws_security_group" "sg" {
   vpc_id = "${aws_vpc.vpc.id}"
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
-    from_port = 0
+    from_port = 3306
     to_port = 3306
     protocol = "tcp"
+  }
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+  }
+  tags {
+   Name = "CASVAL-SECURITY-GROUP"
   }
 }
 
@@ -120,9 +152,9 @@ resource "aws_rds_cluster" "db" {
   backup_retention_period = 3
   preferred_backup_window = "17:00-19:00"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+#  lifecycle {
+#    prevent_destroy = true
+#  }
 
 #  scaling_configuration {
 #    auto_pause = true

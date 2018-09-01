@@ -1,23 +1,26 @@
 # CASVAL REM (CASVAL Remote Execution Module)
 
-## Getting Started
 
-```
-$ pipenv shell
-$ pipenv install -d
-$ pipenv install -d pip==10.0.1
-$ chalice local --port 3000 --stage local
-```
-Note that pip 10.0.1 is required by chalice.
-
-## Deploy (dev)
+## Deployment
 
 ```
 $ terraform init -reconfigure
 $ terraform apply
 ```
 
-Note that the terraform command requires setting of `aws_access_key` and `aws_secret_key` variables.
+The terraform commands require settings of `aws_access_key`, `aws_secret_key` and `stage` to deploy through environment variables.
+
+
+## Local Testing
+
+```
+$ docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6
+$ pipenv shell
+$ pipenv install -d
+$ pipenv install -d pip==10.0.1
+$ chalice local --port 3000 --stage local
+```
+Note that pip 10.0.1 is required by chalice.
 
 ## Configuration
 It is necessary to dynamically generate configuration based on tfstate etc. Here we show these methods.

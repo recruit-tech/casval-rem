@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "765cc46f30dd894913a941376caf7d8031974dfbad9f06b2919f3aa518539632"
+            "sha256": "60b0e4286ac9cb3e523b2aed39c310da108fa724a7edfe000bed212bb9db758f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -32,18 +32,18 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:12beee9a107b14a2d5a10adf16d083753aaa74062af10c50aad90307c4d3bccb",
-                "sha256:ea356ed13400e86833cd911d4ecae1e27197e4eb5336f8d120d48167ec8e1a98"
+                "sha256:95ac50b1905e0aa0344a2a733d76c44af81b2cc51304386b94b0ef669d8d19bc",
+                "sha256:b227764ab3dcb4b55d54dd90c7676846f153b1e29ed259081ffc34b064a6ff21"
             ],
             "index": "pypi",
-            "version": "==1.8.3"
+            "version": "==1.8.5"
         },
         "botocore": {
             "hashes": [
-                "sha256:4269167c71ab57769b49df8cc60cd9f790dcd4af8f42215d2837eea6592a0af7",
-                "sha256:b4d5154d19c1d38ea7445a97c69fdf546ad37719a372976159257df9e90ca4e0"
+                "sha256:4a2d4fc68fdc7113957cfc51b733a9900a9ba35e19e6d841a8b11fd6c20732f9",
+                "sha256:dcad4db0349dd11278d094a91434faf11500aae1991890a62d47a79923ca7ba3"
             ],
-            "version": "==1.11.3"
+            "version": "==1.11.5"
         },
         "certifi": {
             "hashes": [
@@ -170,14 +170,6 @@
             ],
             "version": "==0.9.3"
         },
-        "pbr": {
-            "hashes": [
-                "sha256:1b8be50d938c9bb75d0eaf7eda111eec1bf6dc88a62a6412e33bf077457e0f45",
-                "sha256:b486975c0cafb6beeb50ca0e17ba047647f229087bd74e37f4a7e2cac17d2caa"
-            ],
-            "index": "pypi",
-            "version": "==4.2.0"
-        },
         "peewee": {
             "hashes": [
                 "sha256:e2df2de859ca366525430c7f2e4cd5a95029d45872dadc02f9a3403b16fb165e"
@@ -265,21 +257,8 @@
                 "sha256:a68ac5e15e76e7e5dd2b8f94007233e01effe3e50e8daddf69acfd81cb686baf",
                 "sha256:b5725a0bd4ba422ab0e66e89e030c806576753ea3ee08554382c14e685d117b5"
             ],
+            "markers": "python_version != '3.1.*' and python_version != '3.0.*' and python_version < '4' and python_version >= '2.6' and python_version != '3.3.*' and python_version != '3.2.*'",
             "version": "==1.23"
-        },
-        "uuid": {
-            "hashes": [
-                "sha256:1f87cc004ac5120466f36c5beae48b4c48cc411968eed0eaecd3da82aa96193f"
-            ],
-            "index": "pypi",
-            "version": "==1.30"
-        },
-        "validate-email": {
-            "hashes": [
-                "sha256:784719dc5f780be319cdd185dc85dd93afebdb6ebb943811bc4c7c5f9c72aeaf"
-            ],
-            "index": "pypi",
-            "version": "==1.3"
         },
         "validators": {
             "hashes": [
@@ -327,7 +306,8 @@
             "version": "==6.7"
         },
         "hacking": {
-            "git": "https://github.com/aruneko/hacking.git"
+            "git": "https://github.com/aruneko/hacking.git",
+            "ref": "733ffe4a711ed6c92063d8074410ac05c97608dc"
         },
         "isort": {
             "hashes": [
@@ -343,6 +323,7 @@
                 "sha256:9a7662ec724d0120012f6e29d6248ae3727d821bba522a0e6b356eff19126a49",
                 "sha256:f661252913bc1dbe7fcfcbf0af0db3f42ab65aabd1a6ca68fe5d466bace94dae"
             ],
+            "markers": "python_version != '3.2.*' and python_version != '3.0.*' and python_version != '3.3.*' and python_version >= '2.7' and python_version != '3.1.*'",
             "version": "==2.0.0"
         },
         "pyre-check": {

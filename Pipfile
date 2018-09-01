@@ -6,14 +6,11 @@ name = "pypi"
 [packages]
 boto3 = "*"
 chalice = "*"
-pbr = "*"
 peewee-validates = "*"
 PyJWT = "*"
 PyMySQL = "*"
 pytz = "*"
 requests = "*"
-uuid = "*"
-validate-email = "*"
 validators = "*"
 
 [dev-packages]
