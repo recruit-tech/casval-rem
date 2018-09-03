@@ -102,7 +102,12 @@ class AuditValidator(Validator):
 
 class PagenationValidator(Validator):
     page = IntegerField(required=True, low=1, default=1)
-    count = IntegerField(required=True, low=1, high=300, default=30)
+    count = IntegerField(
+        required=True,
+        low=1,
+        high=int(os.environ["AUDIT_LIST_MAX_COUNT"]),
+        default=int(os.environ["AUDIT_GET_DEFAULT_COUNT"]),
+    )
 
 
 class ContactValidator(Validator):
