@@ -14,7 +14,7 @@ logger = logging.getLogger("peewee")
 # logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-TOKEN_EXPIRATION_IN_HOUR = 3
+TOKEN_EXPIRATION_IN_HOUR = int(os.environ["TOKEN_EXPIRATION_IN_HOUR"])
 
 
 class APIBase(object):
