@@ -60,7 +60,7 @@ class Scan(BaseModel):
 
 
 class Vuln(BaseModel):
-    oid = CharField(unique=True, null=True, default=None)
+    oid = CharField(unique=True, max_length=191, null=True, default=None)
     fix_required = BooleanField(null=True)
     name = CharField(null=True)
     cvss_base = CharField(null=True)
