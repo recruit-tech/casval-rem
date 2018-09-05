@@ -1,8 +1,10 @@
 from chalicelib.apis.base import APIBase
+from chalicelib.core.models import Audit
 from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
 from chalicelib.core.models import Vuln
 from chalicelib.core.queues import Queue
+from chalicelib.core.validators import ErrorReasonEnum
 from chalicelib.core.validators import ScanValidator
 from peewee import fn
 
@@ -18,7 +20,7 @@ class ScanAPI(APIBase):
     def __disable_if_submitted(func):
         def disable_if_submitted_wrapper(self, *args, **kwargs):
             if self.audit["submitted"] is True:
-                raise Exception("audit-submitted")
+                raise Exception({"error_reason": ErrorReasonEnum.audit_submitted.name})
             else:
                 return func(self, *args, **kwargs)
 
@@ -40,6 +42,11 @@ class ScanAPI(APIBase):
         if scan_validator.errors:
             raise Exception(scan_validator.errors)
         target = scan_validator.data["target"]
+
+        selected_audit = Audit.where(Audit.uuid == body)
+
+        if len(selected_audit.dicts()) == 0:
+            raise Exception({"error_reason": ErrorReasonEnum.audit_id_not_found.name})
 
         scan_query = (
             Scan()

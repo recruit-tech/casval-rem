@@ -58,24 +58,12 @@ def is_host_resolvable(value):
 def valid_ipv4_or_fqdn(field, data):
     if is_ipv4(field.value):
         if not is_public_address(field.value):
-            raise Exception("target-is-private-ip")
+            raise Exception({"error_reason": ErrorReasonEnum.target_is_private_ip.name})
     elif is_domain(field.value):
         if not is_host_resolvable(field.value):
-            raise Exception("could-not-resolve-target-fqdn")
+            raise Exception({"error_reason": ErrorReasonEnum.could_not_resolve_target_fqdn.name})
     else:
-        raise Exception("target-is-not-fqdn-or-ipv4")
-
-
-def valid_error_reason(field, data):
-    try:
-        if field.value.find("-") == -1:
-            key = field.value.replace("-", "_")
-            if not (key == ""):
-                ErrorReasonEnum[key]
-        else:
-            raise Exception()
-    except Exception:
-        raise Exception("error_reason_invalid_key")
+        raise Exception({"error_reason": ErrorReasonEnum.target_is_not_fqdn_or_ipv4.name})
 
 
 def password_not_empty(field, data):
@@ -146,7 +134,6 @@ class ScanValidator(Validator):
     end_at = DateTimeField(default=0)
     schedule_uuid = StringField()
     scheduled = BooleanField(default=False)
-    error_reason = StringField(required=True, validators=[valid_error_reason])
     updated_at = DateTimeField()
     comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=0)
 
