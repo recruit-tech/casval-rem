@@ -14,7 +14,7 @@ The terraform commands require settings of `aws_access_key`, `aws_secret_key` an
 ## Local Testing
 
 ```
-$ docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6
+$ docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 $ pipenv shell
 $ pipenv install -d
 $ pipenv install -d pip==10.0.1
@@ -33,8 +33,8 @@ As for what is involved in production...
 ### Example
 #### Generate method
 ```
-$ pwd　# /casval-rem/.chalice
-$ python config_gen.py
+$ pwd　# ./casval-rem
+$ python .chalice/config_gen.py
 ```
 
 #### Defining Embedded Variables
