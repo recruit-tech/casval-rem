@@ -1,0 +1,48 @@
+- model : chalicelib.core.models.Scan
+  id: 1
+  fields:
+    uuid: 21d6cd7b33e84fbf9a2898f4ea7f90ca
+    audit_id: 1
+    target: "127.0.0.1"
+    start_at: "2018-10-05 23:59:59"
+    end_at: "2018-10-06 23:59:59"
+    created_at: "2018-10-05 23:59:59"
+    updated_at: "2018-10-05 23:59:59"
+    error_reason: audit-id-not-found
+    scheduled: false
+    schedule_uuid: null
+    processed: false
+    platform: aws
+    comment: 誤検知なので修正不要と判断した
+- model : chalicelib.core.models.Scan
+  id: 2
+  fields:
+    uuid: 21d6cd7b33e84fbf9a2898f4ea7f90cb
+    audit_id: 2
+    target: "127.0.0.1"
+    start_at: "2018-10-05 23:59:59"
+    end_at: "2018-10-06 23:59:59"
+    created_at: "2018-10-06 23:59:59"
+    updated_at: "2018-10-06 23:59:59"
+    error_reason: audit-id-not-found
+    scheduled: false
+    schedule_uuid: null
+    processed: false
+    platform: aws
+    comment: 誤検知なので修正不要と判断した
+- model : chalicelib.core.models.Scan
+  id: 3
+  fields:
+    uuid: 21d6cd7b33e84fbf9a2898f4ea7f90cc
+    audit_id: 3
+    target: "127.0.0.1"
+    start_at: "2018-10-05 23:59:59"
+    end_at: "2018-10-06 23:59:59"
+    created_at: "2018-10-07 23:59:59"
+    updated_at: "2018-10-07 23:59:59"
+    error_reason: audit-id-not-found
+    scheduled: false
+    schedule_uuid: null
+    processed: false
+    platform: aws
+    comment: 誤検知なので修正不要と判断した

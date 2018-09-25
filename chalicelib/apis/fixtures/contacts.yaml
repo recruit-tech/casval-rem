@@ -1,0 +1,18 @@
+- model : chalicelib.core.models.Contact
+  id: 1
+  fields:
+    audit_id: 1
+    name: A_nishimunea
+    email: "nishimunea@example.jp"
+- model : chalicelib.core.models.Contact
+  id: 2
+  fields:
+    audit_id: 2
+    name: B_nishimunea
+    email: "nishimunea@example.jp"
+- model : chalicelib.core.models.Contact
+  id: 3
+  fields:
+    audit_id: 3
+    name: takemioIO
+    email: "takemioIO@example.jp"

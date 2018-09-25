@@ -13,7 +13,7 @@ paths = [
 ]
 fixture_files = [
     # pathと同じ順番で置く
-    ['audit.yaml']
+    ['audits.yaml', 'scans.yaml', 'contacts.yaml']
 ]
 
 # seeds instance
