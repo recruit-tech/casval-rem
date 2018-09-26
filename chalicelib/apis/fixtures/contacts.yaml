@@ -13,6 +13,12 @@
 - model : chalicelib.core.models.Contact
   id: 3
   fields:
+    audit_id: 2
+    name: C_nishimunea
+    email: "nishimunea@example.jp"
+- model : chalicelib.core.models.Contact
+  id: 4
+  fields:
     audit_id: 3
     name: takemioIO
     email: "takemioIO@example.jp"
