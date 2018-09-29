@@ -76,28 +76,5 @@ info: Audit > 検査の提出 > 取り下げ／却下 > Example 1
 skip: DELETE (200) /audit/3cd708cefd58401f9d43ff953f063467/submit
 info: Audit > 検査の提出 > 取り下げ／却下 > Example 2
 skip: DELETE (200) /audit/3cd708cefd58401f9d43ff953f063467/submit
-info: Scan > 新規スキャンの登録 > 新規スキャンの登録
-skip: POST (200) /audit/3cd708cefd58401f9d43ff953f063467/scan
-info: Scan > スキャン情報 > 取得
-skip: GET (200) /audit/3cd708cefd58401f9d43ff953f063467/scan/21d6cd7b33e84fbf9a2898f4ea7f90cc
-info: Scan > スキャン情報 > 更新
-skip: PATCH (200) /audit/3cd708cefd58401f9d43ff953f063467/scan/21d6cd7b33e84fbf9a2898f4ea7f90cc
-info: Scan > スキャン情報 > 削除
-skip: DELETE (200) /audit/3cd708cefd58401f9d43ff953f063467/scan/21d6cd7b33e84fbf9a2898f4ea7f90cc
-info: Scan > スキャンスケジュール > 更新
-skip: PATCH (200) /audit/3cd708cefd58401f9d43ff953f063467/scan/21d6cd7b33e84fbf9a2898f4ea7f90cc/schedule
-info: Scan > スキャンスケジュール > 削除
-skip: DELETE (200) /audit/3cd708cefd58401f9d43ff953f063467/scan/21d6cd7b33e84fbf9a2898f4ea7f90cc/schedule
-info: Auth > 管理者の認証 > 管理者の認証
-skip: POST (200) /auth
-info: Vulnerabilities > 脆弱性一覧の取得 > 脆弱性一覧の取得
-skip: GET (200) /vulns?fix_required=false&before=1.3.6.1.4.1.25623.1.0.105879&count=30
-info: Vulnerabilities > 脆弱性情報 > 取得
-skip: GET (200) /vulns/1.3.6.1.4.1.25623.1.0.105879
-info: Vulnerabilities > 脆弱性情報 > 修正要否の変更
-skip: PATCH (200) /vulns/1.3.6.1.4.1.25623.1.0.105879
-complete: 0 passing, 0 failing, 0 errors, 19 skipped, 19 total
-complete: Tests took 198ms
-
 ...
 ```

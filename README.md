@@ -11,7 +11,7 @@ $ terraform apply
 The terraform commands require settings of `aws_access_key`, `aws_secret_key` and `stage` to deploy through environment variables.
 
 
-## Local Testing
+## Local Execute
 
 ```
 $ docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6
@@ -21,6 +21,18 @@ $ pipenv install -d pip==10.0.1
 $ chalice local --port 3000 --stage local
 ```
 Note that pip 10.0.1 is required by chalice.
+
+## seed
+```
+# db table create
+python seed_enrty.py create
+
+# db table drop
+python seed_enrty.py drop
+
+# db table create & seed
+python seed_enrty.py seed
+```
 
 ## Configuration
 It is necessary to dynamically generate configuration based on tfstate etc. Here we show these methods.
