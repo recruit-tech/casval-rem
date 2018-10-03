@@ -32,6 +32,9 @@ As for what is involved in production...
 
 ### Example
 #### Generate method
+Usually done at `terraform apply`
+
+But if you want to do it directly please refer to the command below
 ```
 $ pwd　# ./casval-rem
 $ python .chalice/config_gen.py
@@ -78,7 +81,19 @@ $ python .chalice/config_gen.py
 ....
 ```
 
-
+`.chalice/config.json`(output config)
+```
+....
+    "dev": {
+      "environment_variables": {
+         ....
+        "DB_USER":"casval_dev",
+        "DB_PASSWORD":"admin123",
+        "DB_PORT":"3306"
+      }
+    },
+....
+```
 
 ## Code Checking
 
