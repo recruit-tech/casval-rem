@@ -13,7 +13,7 @@ jobs:
           command: pipenv run flake8
       - run:
           name: check code format with black
-          command: pipenv run black --py36 --check .
+          command: pipenv run black --py36 --line-length 110 --check .
       - run:
           name: check code format with isort
           command: pipenv run isort --recursive --check-only --force-single-line --skip venv .

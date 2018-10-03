@@ -1,18 +1,19 @@
+import json
+import os
+from datetime import datetime
+from datetime import timedelta
+
+import pytz
+from peewee import fn
+
 from chalicelib.apis.base import APIBase
 from chalicelib.core import Scanner
-from chalicelib.core.models import db
 from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
 from chalicelib.core.models import Vuln
+from chalicelib.core.models import db
 from chalicelib.core.queues import Queue
 from chalicelib.core.storage import Storage
-from datetime import datetime
-from datetime import timedelta
-from peewee import fn
-
-import json
-import os
-import pytz
 
 
 class QueueHandler(object):

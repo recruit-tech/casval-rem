@@ -1,12 +1,13 @@
+import uuid
+
+from peewee import fn
+
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
 from chalicelib.core.models import Vuln
 from chalicelib.core.queues import Queue
 from chalicelib.core.validators import ScanValidator
-from peewee import fn
-
-import uuid
 
 
 class ScanAPI(APIBase):

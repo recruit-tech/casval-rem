@@ -1,8 +1,7 @@
-from collections import OrderedDict
-
 import json
 import os
 import re
+from collections import OrderedDict
 
 path = os.path.abspath(".")
 repatter = re.compile("^__.*__.*")
@@ -13,7 +12,7 @@ tf_path = "/terraform.tfstate"
 output_json_path = "/.chalice" + tmp_json_path
 
 
-class PyColor:
+class PyColor(object):
     BLACK = "\033[30m"
     RED = "\033[31m"
     GREEN = "\033[32m"
@@ -52,7 +51,8 @@ def search_val(json_ctx, tf_json: dict):
             stage_name = match_string.split("__")[1]
 
             if is_tf_stage(stage_name, tf_json):
-                json_ctx = get_tf(json_ctx[len(stage_name) + 4:], tf_json)
+                size = len(stage_name) + 4
+                json_ctx = get_tf(json_ctx[size:], tf_json)
             else:
                 print(PyColor.RED + "tf: ", json_ctx, " : ", "not patter match" + PyColor.END)
 
