@@ -89,6 +89,7 @@ class ScanAPI(APIBase):
     def schedule(self, scan_uuid):
         body = super()._get_request_body()
         scan = self.__get_scan_by_uuid(scan_uuid, raw=True)
+        self.app.log.error(1)
 
         if scan["scheduled"] is True:
             raise Exception("scan-scheduled")
@@ -96,21 +97,26 @@ class ScanAPI(APIBase):
             raise Exception("'schedule': Must be contained.")
 
         schedule_range = body["schedule"]
+        self.app.log.error(2)
 
         if "start_at" not in schedule_range:
             raise Exception("'start_at': Must be contained.")
         if "end_at" not in schedule_range:
             raise Exception("'end_at': Must be contained.")
 
+        self.app.log.error(3)
         start_at = schedule_range["start_at"]
         end_at = schedule_range["end_at"]
 
+        self.app.log.error(4)
         if ScanValidator.is_valid_time_range(start_at, end_at) is False:
             raise Exception("'start_at' or 'end_at' is invalid.")
 
+        self.app.log.error(5)
         schedule_uuid = self.__get_schedule_uuid()
         schedule = {"start_at": start_at, "end_at": end_at, "scheduled": True, "schedule_uuid": schedule_uuid}
 
+        self.app.log.error(6)
         scan_validator = ScanValidator()
         scan_validator.validate(schedule, only=schedule)
         if scan_validator.errors:
