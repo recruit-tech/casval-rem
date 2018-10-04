@@ -1,7 +1,4 @@
-import os
-import uuid
 from datetime import datetime
-
 from peewee import BooleanField
 from peewee import CharField
 from peewee import DateTimeField
@@ -10,6 +7,9 @@ from peewee import Model
 from peewee import MySQLDatabase
 from peewee import TextField
 from peewee import UUIDField
+
+import os
+import uuid
 
 db = MySQLDatabase(
     os.environ["DB_NAME"],

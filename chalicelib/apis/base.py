@@ -1,15 +1,14 @@
-import datetime
-import ipaddress
-import logging
-import os
-
-import jwt
 from chalice import BadRequestError
 from chalice import ForbiddenError
 from chalice import NotFoundError
 from chalice import UnauthorizedError
-
 from chalicelib.core.models import Audit
+
+import datetime
+import ipaddress
+import jwt
+import logging
+import os
 
 logger = logging.getLogger("peewee")
 # logger.setLevel(logging.DEBUG)

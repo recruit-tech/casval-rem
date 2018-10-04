@@ -1,7 +1,8 @@
+from collections import OrderedDict
+
 import json
 import os
 import re
-from collections import OrderedDict
 
 path = os.path.abspath(".")
 repatter = re.compile("^__.*__.*")

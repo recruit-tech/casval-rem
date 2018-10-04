@@ -1,5 +1,3 @@
-from peewee import fn
-
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit
 from chalicelib.core.models import Contact
@@ -7,6 +5,7 @@ from chalicelib.core.models import db
 from chalicelib.core.validators import AuditValidator
 from chalicelib.core.validators import ContactValidator
 from chalicelib.core.validators import PagenationValidator
+from peewee import fn
 
 
 class AuditAPI(APIBase):

@@ -1,23 +1,22 @@
-import binascii
-import hashlib
-import ipaddress
-import os
-import socket
+from chalicelib.apis.base import APIBase
 from datetime import datetime
-
-import pytz
-import requests
-import validators
 from peewee_validates import BooleanField
 from peewee_validates import DateTimeField
 from peewee_validates import IntegerField
 from peewee_validates import StringField
-from peewee_validates import ValidationError
-from peewee_validates import Validator
 from peewee_validates import validate_email
 from peewee_validates import validate_regexp
+from peewee_validates import ValidationError
+from peewee_validates import Validator
 
-from chalicelib.apis.base import APIBase
+import binascii
+import hashlib
+import ipaddress
+import os
+import pytz
+import requests
+import socket
+import validators
 
 PASSWORD_HASH_ALG = os.environ["PASSWORD_HASH_ALG"]
 MAX_COMMENT_LENGTH = int(os.environ["MAX_COMMENT_LENGTH"])
