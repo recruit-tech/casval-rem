@@ -216,8 +216,5 @@ class AuditAPI(APIBase):
             f.seek(0)
             output = f.read()
 
-        headers = {
-            "Content-Disposition": 'attachment; filename="{}.csv"'.format(audit_uuid),
-            "Content-Type": "text/csv",
-        }
+        headers = {"Content-Type": "text/csv"}
         return Response(body=output, headers=headers, status_code=200)
