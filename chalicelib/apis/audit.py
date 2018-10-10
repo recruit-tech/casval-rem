@@ -1,11 +1,32 @@
+from chalice import Response
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import Audit
 from chalicelib.core.models import Contact
 from chalicelib.core.models import db
+from chalicelib.core.models import Result
+from chalicelib.core.models import Scan
+from chalicelib.core.models import Vuln
 from chalicelib.core.validators import AuditValidator
 from chalicelib.core.validators import ContactValidator
 from chalicelib.core.validators import PagenationValidator
 from peewee import fn
+
+import csv
+import tempfile
+
+AUDIT_DOWNLOAD_COLUMNS = [
+    "target",
+    "port",
+    "name",
+    "cve",
+    "cvss_base",
+    "severity_rank",
+    "fix_required",
+    "description",
+    "oid",
+    "created_at",
+    "comment",
+]
 
 
 class AuditAPI(APIBase):
@@ -168,3 +189,32 @@ class AuditAPI(APIBase):
         Audit.update(audit_validator.data).where(Audit.uuid == audit_uuid).execute()
 
         return super()._get_audit_by_uuid(audit_uuid)
+
+    @APIBase.exception_handler
+    def download(self, audit_uuid):
+        audits = Audit.select().where(Audit.uuid == audit_uuid)
+
+        scan_ids = []
+        for scan in audits[0].scans.dicts():
+            if scan["processed"] is True:
+                scan_ids.append(scan["id"])
+
+        results = (
+            Result.select(Result, Scan, Vuln)
+            .join(Scan)
+            .join(Vuln, on=(Result.vuln_id == Vuln.oid))
+            .where(Result.scan_id.in_(scan_ids))
+            .order_by(Result.scan_id)
+        )
+
+        with tempfile.TemporaryFile("r+") as f:
+            writer = csv.DictWriter(f, AUDIT_DOWNLOAD_COLUMNS, extrasaction="ignore")
+            writer.writeheader()
+            for result in results.dicts():
+                writer.writerow(result)
+            f.flush()
+            f.seek(0)
+            output = f.read()
+
+        headers = {"Content-Type": "text/csv"}
+        return Response(body=output, headers=headers)
