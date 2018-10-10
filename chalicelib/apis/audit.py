@@ -217,4 +217,4 @@ class AuditAPI(APIBase):
             output = f.read()
 
         headers = {"Content-Type": "text/csv"}
-        return Response(body=output, headers=headers, status_code=200)
+        return Response(body=output, headers=headers)

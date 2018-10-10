@@ -41,11 +41,11 @@ print(token)
 ### Local Testing
 
 ```
-$ docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-$ pipenv shell
-$ pipenv install -d
-$ pipenv install -d pip==10.0.1
-$ chalice local --port 3000 --stage local
+docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+pipenv shell
+pipenv install -d
+pipenv install -d pip==10.0.1
+chalice local --port 3000 --stage local
 ```
 Note that pip 10.0.1 is required by chalice.
 
