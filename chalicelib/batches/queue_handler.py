@@ -5,7 +5,7 @@ from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
 from chalicelib.core.models import Vuln
 from chalicelib.core.queues import Queue
-from chalicelib.core.storage import Storage
+from chalicelib.core.report import Report
 from datetime import datetime
 from datetime import timedelta
 from peewee import fn
@@ -145,12 +145,14 @@ class QueueHandler(object):
             self.__set_scan_error(body["schedule_uuid"], body["error"])
             stopped_queue.delete(entry)
         else:
-            report = self.__load_report(body["audit_id"], body["scan_id"])
+            report_obj = Report(body["audit_id"], body["scan_id"])
+            report = report_obj.load()
             if report is None:
                 self.app.log.debug("Report not found. Retrieve from scanner")
                 report = scanner.get_report(body["session"])
                 self.app.log.debug("Report retrieved: {} bytes".format(len(report)))
-                self.__store_report(body["audit_id"], body["scan_id"], report)
+                report_obj = Report(body["audit_id"], body["scan_id"])
+                report_obj.store(report)
 
             self.app.log.debug("Parse report")
             records = scanner.parse_report(report)
@@ -182,20 +184,6 @@ class QueueHandler(object):
         scan = {"error_reason": "", "schedule_uuid": None, "scheduled": False, "processed": True}
         query = Scan.update(scan).where(Scan.schedule_uuid == schedule_uuid)
         query.execute()
-
-    def __load_report(self, audit_id, scan_id):
-        try:
-            storage = Storage(os.getenv("S3_BUCKET_NAME"))
-            key = storage.get_report_key(audit_id=audit_id, scan_id=scan_id)
-            return storage.load(key)
-        except Exception as e:
-            self.app.log.debug(e)
-            return None
-
-    def __store_report(self, audit_id, scan_id, report):
-        storage = Storage(os.getenv("S3_BUCKET_NAME"))
-        key = storage.get_report_key(audit_id=audit_id, scan_id=scan_id)
-        return storage.store(key, report)
 
     def __is_scan_schedule_active(self, schedule_uuid):
         query = (

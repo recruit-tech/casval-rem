@@ -84,6 +84,13 @@ def audit_submit_cancel(audit_uuid):
         return audit_api.submit_cancel(audit_uuid)
 
 
+@app.route("/audit/{audit_uuid}/download", methods=["GET"], cors=cors_config, authorizer=authorize)
+def audit_download(audit_uuid):
+    if __authorized_scope() in [audit_uuid, "*"]:
+        audit_api = AuditAPI(app)
+        return audit_api.download(audit_uuid)
+
+
 # Scan API
 
 
