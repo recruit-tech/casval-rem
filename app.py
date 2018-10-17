@@ -5,6 +5,7 @@ from chalicelib.apis import AuditAPI
 from chalicelib.apis import AuthAPI
 from chalicelib.apis import ScanAPI
 from chalicelib.apis import VulnAPI
+from chalicelib.apis import TestAPI
 from chalicelib.batches import QueueHandler
 from chalicelib.core import authorizer
 
@@ -27,7 +28,7 @@ def authorize(auth_request):
 # Audit API
 
 
-@app.route("/audit", methods=["GET"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_index():
     # For administration users only
     if __authorized_scope() == "*":
@@ -35,14 +36,14 @@ def audit_index():
         return audit_api.index()
 
 
-@app.route("/audit/{audit_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_get(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         audit_api = AuditAPI(app)
         return audit_api.get(audit_uuid)
 
 
-@app.route("/audit", methods=["POST"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_post():
     # For administration users only
     if __authorized_scope() == "*":
@@ -50,41 +51,41 @@ def audit_post():
         return audit_api.post()
 
 
-@app.route("/audit/{audit_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def audit_patch(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         audit_api = AuditAPI(app)
         return audit_api.patch(audit_uuid)
 
 
-@app.route("/audit/{audit_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def audit_delete(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         audit_api = AuditAPI(app)
         return audit_api.delete(audit_uuid)
 
 
-@app.route("/audit/{audit_uuid}/tokens", methods=["POST"], cors=cors_config)
+@app.route("/audits.json/{audit_uuid}/tokens", methods=["POST"], cors=cors_config)
 def audit_tokens(audit_uuid):
     audit_api = AuditAPI(app)
     return audit_api.tokens(audit_uuid)
 
 
-@app.route("/audit/{audit_uuid}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/submit", methods=["POST"], cors=cors_config, authorizer=authorize)
 def audit_submit(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         audit_api = AuditAPI(app)
         return audit_api.submit(audit_uuid)
 
 
-@app.route("/audit/{audit_uuid}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/submit", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def audit_submit_cancel(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         audit_api = AuditAPI(app)
         return audit_api.submit_cancel(audit_uuid)
 
 
-@app.route("/audit/{audit_uuid}/download", methods=["GET"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/download", methods=["GET"], cors=cors_config, authorizer=authorize)
 def audit_download(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         audit_api = AuditAPI(app)
@@ -94,28 +95,28 @@ def audit_download(audit_uuid):
 # Scan API
 
 
-@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/scan/{scan_uuid}", methods=["GET"], cors=cors_config, authorizer=authorize)
 def scan_get(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
         return scan_api.get(scan_uuid)
 
 
-@app.route("/audit/{audit_uuid}/scan", methods=["POST"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/scan", methods=["POST"], cors=cors_config, authorizer=authorize)
 def scan_post(audit_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
         return scan_api.post()
 
 
-@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/scan/{scan_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def scan_patch(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
         return scan_api.patch(scan_uuid)
 
 
-@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
+@app.route("/audits.json/{audit_uuid}/scan/{scan_uuid}", methods=["DELETE"], cors=cors_config, authorizer=authorize)
 def scan_delete(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
@@ -123,7 +124,7 @@ def scan_delete(audit_uuid, scan_uuid):
 
 
 @app.route(
-    "/audit/{audit_uuid}/scan/{scan_uuid}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize
+    "/audits.json/{audit_uuid}/scan/{scan_uuid}/schedule", methods=["PATCH"], cors=cors_config, authorizer=authorize
 )
 def scan_schedule(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
@@ -132,7 +133,7 @@ def scan_schedule(audit_uuid, scan_uuid):
 
 
 @app.route(
-    "/audit/{audit_uuid}/scan/{scan_uuid}/schedule",
+    "/audits.json/{audit_uuid}/scan/{scan_uuid}/schedule",
     methods=["DELETE"],
     cors=cors_config,
     authorizer=authorize,
@@ -212,6 +213,23 @@ def process_scan_stopped_queue_for_debug():
     handler = QueueHandler(app)
     return handler.process_scan_stopped_queue()
 
+
+@app.route(
+    "/tests/setup/db",
+    methods=["POST"],
+)
+def tests_setup_db_seed():
+    test = TestAPI(app)
+    return test.post()
+
+
+@app.route(
+    "/tests/setup/db",
+    methods=["DELETE"]
+)
+def tests_setup_db_drop():
+    test = TestAPI(app)
+    return test.delete()
 
 # Private functions
 

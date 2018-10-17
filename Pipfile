@@ -12,6 +12,7 @@ PyMySQL = "*"
 pytz = "*"
 requests = "*"
 validators = "*"
+peewee-seed = "*"
 
 [dev-packages]
 hacking = {git = "https://github.com/aruneko/hacking.git"}
