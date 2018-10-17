@@ -21,8 +21,61 @@ jobs:
       - store_artifacts:
           path: /home/circleci/project/cover/
 
+  test_apispec:
+    docker:
+      - image: circleci/python:3.6.7-stretch-node-browsers-legacy
+      - image: mysql:5.6
+        environment:
+          MYSQL_DATABASE: casval_local
+          MYSQL_ROOT_PASSWORD: admin123
+        command: |
+          mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+
+    steps:
+      - checkout
+      - run:
+          name: install development deps
+          command: |
+            pipenv install -d
+            pipenv install -d pip==10.0.1
+      - run:
+          name: Wait for DB
+          command: dockerize -wait tcp://127.0.0.1:3306 -timeout 120s
+      - run:
+          name: Update PATH and Define Environment Variable at Runtime
+          command: |
+            echo 'export PATH=~/.npm-global/bin:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: Clone casval-doc
+          command: |
+            git clone git@github.com:recruit-tech/casval-doc.git
+            cd casval-doc
+            git checkout enhance/testing
+            cd ..
+      - run:
+          name: Compile apib files
+          command: |
+            yarn add aglio
+            yarn run aglio -c -i ./casval-doc/base.apib -o ./hooks/all.apib
+      - run:
+          name: install dredd
+          command: |
+            yarn global add dredd
+            cat << 'EOF' >> Pipfile
+            dredd = "dredd ./hooks/all.apib localhost:3000 --language=python --hookfiles='./hooks/*.py' --hooks-worker-timeout 20000"
+            EOF
+      - run:
+          name: Run chalice & dredd
+          command: |
+            export PATH="$PATH:`yarn global bin`"
+            pipenv run chalice local --port 3000 --stage local &
+            sleep 5;pipenv run python ./chalicelib/apis/fixtures/seed_requests.py seed
+            sleep 5;pipenv run dredd
+
 workflows:
   version: 2
   tests:
     jobs:
       - check_format
+      - test_apispec

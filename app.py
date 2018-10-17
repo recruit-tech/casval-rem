@@ -4,6 +4,7 @@ from chalice import Cron
 from chalicelib.apis import AuditAPI
 from chalicelib.apis import AuthAPI
 from chalicelib.apis import ScanAPI
+from chalicelib.apis import TestAPI
 from chalicelib.apis import VulnAPI
 from chalicelib.batches import QueueHandler
 from chalicelib.core import authorizer
@@ -211,6 +212,18 @@ def process_scan_running_queue_for_debug():
 def process_scan_stopped_queue_for_debug():
     handler = QueueHandler(app)
     return handler.process_scan_stopped_queue()
+
+
+@app.route("/tests/setup/db", methods=["POST"])
+def tests_setup_db_seed():
+    test = TestAPI(app)
+    return test.post()
+
+
+@app.route("/tests/setup/db", methods=["DELETE"])
+def tests_setup_db_drop():
+    test = TestAPI(app)
+    return test.delete()
 
 
 # Private functions

@@ -1,0 +1,62 @@
+[
+	{
+		"model": "chalicelib.core.models.Result",
+		"id": 1,
+		"fields": {
+			"scan_id": 1,
+			"name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
+			"port": "443",
+			"vuln_id": "1",
+			"description": null,
+			"qod": "",
+			"severity": "",
+			"severity_rank": "",
+			"scanner": ""
+		}
+	},
+	{
+		"model": "chalicelib.core.models.Result",
+		"id": 2,
+		"fields": {
+			"scan_id": 2,
+			"name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
+			"port": "443",
+			"vuln_id": "2",
+			"description": null,
+			"qod": "",
+			"severity": "",
+			"severity_rank": "",
+			"scanner": ""
+		}
+	},
+	{
+		"model": "chalicelib.core.models.Result",
+		"id": 3,
+		"fields": {
+			"scan_id": 3,
+			"name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
+			"port": "443",
+			"vuln_id": "3",
+			"description": null,
+			"qod": "",
+			"severity": "",
+			"severity_rank": "",
+			"scanner": ""
+		}
+	},
+	{
+		"model": "chalicelib.core.models.Result",
+		"id": 4,
+		"fields": {
+			"scan_id": 4,
+			"name": "SSL/TLS: HTTP Strict Transport Security (HSTS) Missing",
+			"port": "443",
+			"vuln_id": "4",
+			"description": null,
+			"qod": "",
+			"severity": "",
+			"severity_rank": "",
+			"scanner": ""
+		}
+	}
+]
