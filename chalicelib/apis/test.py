@@ -1,7 +1,8 @@
-import os
 from chalicelib.apis.base import APIBase
 from chalicelib.core.models import db
 from peewee_seed import PeeweeSeed
+
+import os
 
 
 class TestAPI(APIBase):
@@ -12,7 +13,6 @@ class TestAPI(APIBase):
 
     def post(self):
         body = super()._get_request_body()
-        print(body)
         seed = PeeweeSeed(db)
         _, models = seed.load_fixtures([body])
         seed.create_table_all(models)
