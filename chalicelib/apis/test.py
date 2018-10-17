@@ -31,5 +31,5 @@ class TestAPI(APIBase):
         return {"status": "success"}
 
     def _check_stage(self):
-        if os.environ["STAGE"] != "dev":
-            raise Exception("stage is not dev")
+        if os.environ["STAGE"] == "prod":
+            raise Exception("prod is seed endpoint Unavailable")
