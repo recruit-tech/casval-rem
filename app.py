@@ -109,7 +109,7 @@ def scan_post(audit_uuid):
         return scan_api.post()
 
 
-@app.route("/audits/{audit_uuid}/scan/{scan_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
+@app.route("/audit/{audit_uuid}/scan/{scan_uuid}", methods=["PATCH"], cors=cors_config, authorizer=authorize)
 def scan_patch(audit_uuid, scan_uuid):
     if __authorized_scope() in [audit_uuid, "*"]:
         scan_api = ScanAPI(app, audit_uuid)
