@@ -17,7 +17,7 @@ CASVAL dynamically generates Chalice's configuration file with Terraform's `.tfs
 ### Administrator Password Hash Generation
 
 The default administrator password of CASVAL is `admin123`. If you would like to change the password, you need to calculate a password hash and store it to the `ADMIN_PASSWORD_HASH` in `config.json`.
-Below is an example of password hash for `admin123`. Then you may get the password hash `1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1`. 
+Below is an example of password hash for `admin123`. Then you may get the password hash `1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1`.
 
 ```
 import binascii
@@ -64,6 +64,11 @@ pipenv run imports app.py
 pipenv run imports chalicelib/
 pipenv run lint app.py
 pipenv run lint chalicelib/
+```
+
+### Code Update
+```
+pre-commit install
 ```
 
 ### Generate requirements.txt

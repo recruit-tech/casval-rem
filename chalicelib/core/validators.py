@@ -1,5 +1,6 @@
 from chalicelib.apis.base import APIBase
 from datetime import datetime
+from enum import IntFlag
 from peewee_validates import BooleanField
 from peewee_validates import DateTimeField
 from peewee_validates import IntegerField
@@ -65,6 +66,18 @@ def valid_ipv4_or_fqdn(field, data):
         raise Exception("target-is-not-fqdn-or-ipv4")
 
 
+def valid_error_reason(field, data):
+    try:
+        if field.value.find("-") == -1:
+            key = field.value.replace("-", "_")
+            if not (key == ""):
+                ErrorReasonEnum[key]
+        else:
+            raise Exception()
+    except Exception:
+        raise Exception("error_reason_invalid_key")
+
+
 def password_not_empty(field, data):
     if field.value is True and "password" not in data:
         raise ValidationError("password_not_empty")
@@ -115,12 +128,25 @@ class ContactValidator(Validator):
     email = StringField(required=True, max_length=256, validators=[validate_email()])
 
 
+class ErrorReasonEnum(IntFlag):
+    audit_id_not_found = 0
+    audit_submitted = 1
+    target_is_private_ip = 2
+    could_not_resolve_target_fqdn = 3
+    target_is_not_fqdn_or_ipv4 = 4
+
+    @property
+    def name(self):
+        return super().name.replace("_", "-")
+
+
 class ScanValidator(Validator):
     target = StringField(required=True, validators=[valid_ipv4_or_fqdn])
     start_at = DateTimeField(default=0)
     end_at = DateTimeField(default=0)
     schedule_uuid = StringField()
     scheduled = BooleanField(default=False)
+    error_reason = StringField(required=True, validators=[valid_error_reason])
     updated_at = DateTimeField()
     comment = StringField(max_length=MAX_COMMENT_LENGTH, min_length=0)
 
