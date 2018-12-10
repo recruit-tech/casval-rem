@@ -1,5 +1,6 @@
 from chalicelib.apis.base import APIBase
 from datetime import datetime
+from enum import IntFlag
 from peewee_validates import BooleanField
 from peewee_validates import DateTimeField
 from peewee_validates import IntegerField
@@ -57,12 +58,12 @@ def is_host_resolvable(value):
 def valid_ipv4_or_fqdn(field, data):
     if is_ipv4(field.value):
         if not is_public_address(field.value):
-            raise Exception("target-is-private-ip")
+            raise Exception({"error_reason": ErrorReasonEnum.target_is_private_ip.name})
     elif is_domain(field.value):
         if not is_host_resolvable(field.value):
-            raise Exception("could-not-resolve-target-fqdn")
+            raise Exception({"error_reason": ErrorReasonEnum.could_not_resolve_target_fqdn.name})
     else:
-        raise Exception("target-is-not-fqdn-or-ipv4")
+        raise Exception({"error_reason": ErrorReasonEnum.target_is_not_fqdn_or_ipv4.name})
 
 
 def password_not_empty(field, data):
@@ -113,6 +114,18 @@ class PagenationValidator(Validator):
 class ContactValidator(Validator):
     name = StringField(required=True, max_length=128, min_length=1, validators=[validate_regexp("^[^,]+$")])
     email = StringField(required=True, max_length=256, validators=[validate_email()])
+
+
+class ErrorReasonEnum(IntFlag):
+    audit_id_not_found = 0
+    audit_submitted = 1
+    target_is_private_ip = 2
+    could_not_resolve_target_fqdn = 3
+    target_is_not_fqdn_or_ipv4 = 4
+
+    @property
+    def name(self):
+        return super().name.replace("_", "-")
 
 
 class ScanValidator(Validator):
