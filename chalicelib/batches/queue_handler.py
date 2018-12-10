@@ -146,8 +146,9 @@ class QueueHandler(object):
             stopped_queue.delete(entry)
         else:
             report_obj = Report(body["audit_id"], body["scan_id"])
-            report = report_obj.load()
+            report, exception_info = report_obj.load()
             if report is None:
+                self.app.log.debug(exception_info)
                 self.app.log.debug("Report not found. Retrieve from scanner")
                 report = scanner.get_report(body["session"])
                 self.app.log.debug("Report retrieved: {} bytes".format(len(report)))
