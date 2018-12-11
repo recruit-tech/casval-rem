@@ -16,8 +16,8 @@ class Report(object):
         try:
             report = self.storage.load(self.key)
             return report
-        except Exception:
-            return None
+        except Exception as e:
+            return None, e
 
     def store(self, report):
         return self.storage.store(self.key, report)
