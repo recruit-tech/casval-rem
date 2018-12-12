@@ -98,6 +98,74 @@ resource "aws_subnet" "sn_secondary" {
   }
 }
 
+resource "aws_subnet" "sn_public" {
+  availability_zone = "${data.aws_availability_zones.az.names[2]}"
+  vpc_id = "${aws_vpc.vpc.id}"
+  cidr_block = "10.0.0.0/24"
+  tags {
+    Name = "CASVAL-SUBNET-PUBLIC"
+  }
+}
+
+resource "aws_eip" "eip" {
+}
+
+resource "aws_nat_gateway" "ngw" {
+  allocation_id = "${aws_eip.eip.id}"
+  subnet_id     = "${aws_subnet.sn_public.id}"
+
+  tags {
+    Name = "CASVAL-NAT-GATEWAY"
+  }
+}
+
+resource "aws_internet_gateway" "igw" {
+  vpc_id = "${aws_vpc.vpc.id}"
+
+  tags {
+    Name = "CASVAL-INTERNET-GATEWAY"
+  }
+}
+
+resource "aws_route_table" "sn_public" {
+  vpc_id = "${aws_vpc.vpc.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.igw.id}"
+  }
+  tags {
+    Name = "CASVAL-PUBLIC-SUBNET-ROUTE-TABLE"
+  }
+}
+
+resource "aws_route_table" "sn_private" {
+  vpc_id = "${aws_vpc.vpc.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_nat_gateway.ngw.id}"
+  }
+  tags {
+    Name = "CASVAL-PRIVATE-SUBNET-ROUTE-TABLE"
+  }
+}
+
+resource "aws_route_table_association" "public_sn_route" {
+  subnet_id      = "${aws_subnet.sn_public.id}"
+  route_table_id = "${aws_route_table.sn_public.id}"
+}
+
+resource "aws_route_table_association" "private_p_sn_route" {
+  subnet_id      = "${aws_subnet.sn_primary.id}"
+  route_table_id = "${aws_route_table.sn_private.id}"
+}
+
+resource "aws_route_table_association" "priavte_s_sn_route" {
+  subnet_id      = "${aws_subnet.sn_secondary.id}"
+  route_table_id = "${aws_route_table.sn_private.id}"
+}
+
 resource "aws_security_group" "sg" {
   vpc_id = "${aws_vpc.vpc.id}"
   ingress {
