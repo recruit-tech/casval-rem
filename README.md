@@ -58,12 +58,16 @@ pipenv run unused chalicelib/apis/*
 pipenv run unused chalicelib/batches/*
 pipenv run unused chalicelib/core/*
 pipenv run unused chalicelib/core/stub/*
+pipenv run unused hooks/*
 pipenv run fmt app.py
 pipenv run fmt chalicelib/
+pipenv run fmt hooks/
 pipenv run imports app.py
 pipenv run imports chalicelib/
+pipenv run imports hooks/
 pipenv run lint app.py
 pipenv run lint chalicelib/
+pipenv run lint hooks/
 ```
 
 ### Code Update

@@ -12,6 +12,7 @@ PyMySQL = "*"
 pytz = "*"
 requests = "*"
 validators = "*"
+peewee-seed = "==0.1.7"
 
 [dev-packages]
 hacking = {git = "https://github.com/aruneko/hacking.git"}
@@ -21,6 +22,8 @@ isort = "*"
 autoflake = "*"
 pip = "==10.0.1"
 pre-commit = "*"
+argumentparser = "*"
+dredd-hooks = "*"
 
 [requires]
 python_version = "3.6"

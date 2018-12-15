@@ -1,0 +1,62 @@
+[
+	{
+		"model": "chalicelib.core.models.Audit",
+		"id": 1,
+		"fields": {
+			"uuid": "3cd708cefd58401f9d43ff953f063467",
+			"name": "A_コーポレートサイト",
+			"submitted": false,
+			"ip_restriction": true,
+			"password_protection": false,
+			"password": "7a020f4e38f8b88a5103f7326d59c53317a18d53f4ff1aab66eacb27052c2050",
+			"rejected_reason": "深刻な脆弱性が修正されていません",
+			"created_at": "2018-10-05 23:59:59",
+			"updated_at": "2018-10-05 23:59:59"
+		}
+	},
+	{
+		"model": "chalicelib.core.models.Audit",
+		"id": 2,
+		"fields": {
+			"uuid": "3cd708cefd58401f9d43ff953f063468",
+			"name": "B_コーポレートサイト",
+			"submitted": false,
+			"ip_restriction": true,
+			"password_protection": false,
+			"password": "7a020f4e38f8b88a5103f7326d59c53317a18d53f4ff1aab66eacb27052c2050",
+			"rejected_reason": "深刻な脆弱性が修正されていません",
+			"created_at": "2018-10-06 23:59:59",
+			"updated_at": "2018-10-06 23:59:59"
+		}
+	},
+	{
+		"model": "chalicelib.core.models.Audit",
+		"id": 3,
+		"fields": {
+			"uuid": "3cd708cefd58401f9d43ff953f063469",
+			"name": "C_コーポレートサイト",
+			"submitted": false,
+			"ip_restriction": true,
+			"password_protection": false,
+			"password": "7a020f4e38f8b88a5103f7326d59c53317a18d53f4ff1aab66eacb27052c2050",
+			"rejected_reason": "深刻な脆弱性が修正されていません",
+			"created_at": "2018-10-07 23:59:59",
+			"updated_at": "2018-10-07 23:59:59"
+		}
+	},
+	{
+		"model": "chalicelib.core.models.Audit",
+		"id": 4,
+		"fields": {
+			"uuid": "3cd708cefd58401f9d43ff953f063470",
+			"name": "D_コーポレートサイト",
+			"submitted": false,
+			"ip_restriction": true,
+			"password_protection": false,
+			"password": "7a020f4e38f8b88a5103f7326d59c53317a18d53f4ff1aab66eacb27052c2050",
+			"rejected_reason": "深刻な脆弱性が修正されていません",
+			"created_at": "2018-10-07 23:59:59",
+			"updated_at": "2018-10-07 23:59:59"
+		}
+	}
+]
