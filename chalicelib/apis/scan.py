@@ -43,7 +43,7 @@ class ScanAPI(APIBase):
             raise Exception(scan_validator.errors)
         target = scan_validator.data["target"]
 
-        selected_audit = Audit.where(Audit.uuid == body)
+        selected_audit = Audit.select().where(Audit.uuid == self.audit["uuid"])
 
         if len(selected_audit.dicts()) == 0:
             raise Exception({"error_reason": ErrorReasonEnum.audit_id_not_found.name})
