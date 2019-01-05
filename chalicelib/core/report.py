@@ -1,4 +1,4 @@
-from chalicelib.core.storage import Storage
+from chalicelib.core import Storage
 
 import os
 

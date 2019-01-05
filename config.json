@@ -21,7 +21,7 @@
         "AUDIT_GET_DEFAULT_COUNT":"30",
         "AUDIT_LIST_MAX_COUNT":"300",
         "SCANNER":"casval-stub",
-        "STAGE":"dev",
+        "STAGE":"local",
         "S3_BUCKET_NAME": "__dev__bucket",
         "DB_NAME":"casval_local",
         "DB_ENDPOINT":"localhost",

@@ -16,100 +16,34 @@ class Scanner(object):
         return '<report content_type="text/xml"></report>'
 
     def parse_report(self, report):
-        return [
-            {
-                "@id": "60c9d423-509e-43e8-9bba-ad66e61cd7ff",
-                "name": "Apache Web Server Detection",
-                "owner": {"name": "admin"},
-                "comment": None,
-                "creation_time": "2018-08-13T22:40:45Z",
-                "modification_time": "2018-08-13T22:40:45Z",
-                "user_tags": {"count": "0"},
-                "host": {
-                    "asset": {"@asset_id": "589af578-3361-4223-a585-f84a333344e2"},
-                    "#text": "153.120.5.32",
-                },
-                "port": "8080/tcp",
-                "nvt": {
-                    "@oid": "1.3.6.1.4.1.25623.1.0.900498",
-                    "type": "nvt",
-                    "name": "Apache Web Server Detection",
-                    "family": "Product detection",
-                    "cvss_base": "0.0",
-                    "cve": "NOCVE",
-                    "bid": "NOBID",
-                    "xref": "NOXREF",
-                    "tags": "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N|"
-                    "summary=Detects the installed version of Apache Web Server\n\n  "
-                    "The script detects the version of Apache HTTP Server on remote host and sets the KB.|"
-                    "qod_type=remote_banner",
-                    "cert": None,
-                },
-                "scan_nvt_version": "$Revision: 10290 $",
-                "threat": "Log",
-                "severity": "0.0",
-                "qod": {"value": "80", "type": "remote_banner"},
-                "description": "Detected Apache\n\nVersion:  unknown\n"
-                "Location: 8080/tcp\nCPE: cpe:/a:apache:http_server",
-            },
-            {
-                "@id": "c15a893f-70dd-46b8-ac40-67d3f07a87aa",
-                "name": "CPE Inventory",
-                "owner": {"name": "admin"},
-                "comment": None,
-                "creation_time": "2018-08-13T22:46:22Z",
-                "modification_time": "2018-08-13T22:46:22Z",
-                "user_tags": {"count": "0"},
-                "host": {
-                    "asset": {"@asset_id": "589af578-3361-4223-a585-f84a333344e2"},
-                    "#text": "153.120.5.32",
-                },
-                "port": "general/CPE-T",
-                "nvt": {
-                    "@oid": "1.3.6.1.4.1.25623.1.0.810002",
-                    "type": "nvt",
-                    "name": "CPE Inventory",
-                    "family": "Service detection",
-                    "cvss_base": "0.0",
-                    "cve": "NOCVE",
-                    "bid": "NOBID",
-                    "xref": "NOXREF",
-                    "tags": "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N|"
-                    "summary=This routine uses information collected by other routines about\n  "
-                    "CPE identities (http://cpe.mitre.org/) of operating systems, services and\n "
-                    " applications detected during the scan.|"
-                    "qod_type=remote_banner",
-                    "cert": None,
-                },
-                "scan_nvt_version": "$Revision: 8140 $",
-                "threat": "Log",
-                "severity": "0.0",
-                "qod": {"value": "80", "type": "remote_banner"},
-                "description": "153.120.5.32|cpe:/a:apache:http_server\n153.120.5.32|"
-                "cpe:/a:dovecot:dovecot\n153.120.5.32|"
-                "cpe:/a:openbsd:openssh:6.6.1p1\n153.120.5.32|"
-                "cpe:/o:canonical:ubuntu_linux:14.04",
-            },
-        ]
-
-    def parse_record(self, record):
-        nvt = record["nvt"]
 
         vuln = {}
-        vuln["oid"] = nvt["@oid"]
-        vuln["name"] = nvt["name"]
-        vuln["cvss_base"] = nvt["cvss_base"]
-        vuln["cve"] = nvt["cve"]
-        vuln["description"] = nvt["tags"]
+        vuln["oid"] = "1.3.6.1.4.1.25623.1.0.900498"
+        vuln["name"] = "Apache Web Server Detection"
+        vuln["cvss_base"] = "0.0"
+        vuln["cve"] = "NOCVE"
+        vuln["description"] = (
+            "cvss_base_vector=AV:N/AC:L/Au:N/C:N/I:N/A:N| "
+            "summary=Detects the installed version of Apache "
+            "Web Server\n\n "
+            "The script detects the version of Apache HTTP Server on remote host and sets the KB.| "
+            "qod_type=remote_banner"
+        )
 
         result = {}
-        result["name"] = record["name"]
-        result["port"] = record["port"]
-        result["vuln_id"] = vuln["oid"]
-        result["description"] = record["description"]
-        result["qod"] = ""
-        result["severity"] = record["severity"]
-        result["severity_rank"] = record["threat"]
+        result["name"] = "Apache Web Server Detection"
+        result["port"] = "general/CPE-T"
+        result["vuln_id"] = ""
+        result["description"] = (
+            "153.120.5.32|cpe:/a:apache:http_server\n153.120.5.32|"
+            "cpe:/a:dovecot:dovecot\n153.120.5.32|"
+            "cpe:/a:openbsd:openssh:6.6.1p1\n153.120.5.32|"
+            "cpe:/o:canonical:ubuntu_linux:14.04"
+        )
+
+        result["qod"] = {"value": "80", "type": "remote_banner"}
+        result["severity"] = "0.0"
+        result["severity_rank"] = ""
         result["scanner"] = ""
 
-        return vuln, result
+        return {"results": [result], "vulns": [vuln]}

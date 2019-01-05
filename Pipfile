@@ -6,13 +6,14 @@ name = "pypi"
 [packages]
 boto3 = "*"
 chalice = "*"
-peewee-validates = "*"
 PyJWT = "*"
 PyMySQL = "*"
 pytz = "*"
 requests = "*"
 validators = "*"
-peewee-seed = "==0.1.7"
+peewee = "*"
+peewee-validates = {git = "https://github.com/timster/peewee-validates.git"}
+peewee-seed = "*"
 
 [dev-packages]
 hacking = {git = "https://github.com/aruneko/hacking.git"}
@@ -24,13 +25,20 @@ pip = "==10.0.1"
 pre-commit = "*"
 argumentparser = "*"
 dredd-hooks = "*"
+pytest = "*"
+moto = "*"
+freezegun = "*"
 
 [requires]
 python_version = "3.6"
 
+[pipenv]
+allow_prereleases = true
+
 [scripts]
-fmt = "black --py36 --line-length 110"
+fmt = "black"
 lint = "flake8"
 unused = "autoflake -i --remove-all-unused-imports --remove-unused-variables"
 imports = "isort -fas -fass --recursive --force-single-line"
 types = "pyre check"
+test = "pytest ."

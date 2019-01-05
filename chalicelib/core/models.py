@@ -11,13 +11,21 @@ from peewee import UUIDField
 import os
 import uuid
 
-db = MySQLDatabase(
-    os.environ["DB_NAME"],
-    user=os.environ["DB_USER"],
-    password=os.environ["DB_PASSWORD"],
-    host=os.environ["DB_ENDPOINT"],
-    port=int(os.environ["DB_PORT"]),
-)
+# this use unit test only
+# memo: it`s sqlite OnConflict using so this The version corresponding to 3.24.0 <= X for require
+if os.getenv("DB_TYPE") == "sqlite":
+    from peewee import SqliteDatabase
+
+    db = SqliteDatabase(":memory:")
+    db.pragma("foreign_keys", 1, permanent=True)
+else:
+    db = MySQLDatabase(
+        os.environ["DB_NAME"],
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        host=os.environ["DB_ENDPOINT"],
+        port=int(os.environ["DB_PORT"]),
+    )
 
 
 class BaseModel(Model):
