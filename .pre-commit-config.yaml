@@ -8,6 +8,11 @@ repos:
     rev: v4.3.4
     hooks:
     -   id: isort
+        args:
+          - -fas
+          - -fass
+          - --recursive
+          - --force-single-line
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v1.4.0
   hooks:
