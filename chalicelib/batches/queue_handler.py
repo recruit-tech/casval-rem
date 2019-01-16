@@ -146,6 +146,7 @@ class QueueHandler(object):
             stopped_queue.delete(entry)
         else:
             report_obj = Report(body["audit_id"], body["scan_id"])
+
             report, exception_info = report_obj.load()
             if report is None:
                 self.app.log.debug(exception_info)
@@ -156,25 +157,28 @@ class QueueHandler(object):
                 report_obj.store(report)
 
             self.app.log.debug("Parse report")
-            records = scanner.parse_report(report)
+            parse_report = scanner.parse_report(report)
 
             with db.atomic():
                 self.__set_scan_complete(body["schedule_uuid"])
                 self.__delete_scan_results(body["scan_id"])
-                for record in records:
-                    self.__set_scan_result(body["scan_id"], scanner, record)
+                self.__set_scan_result(body["scan_id"], parse_report)
 
             stopped_queue.delete(entry)
 
     def __delete_scan_results(self, scan_id):
         Result.delete().where(Result.scan_id == scan_id).execute()
 
-    def __set_scan_result(self, scan_id, scanner, record):
-        vuln, result = scanner.parse_record(record)
-        Vuln.insert(vuln).on_conflict(preserve=[Vuln.fix_required], update=vuln).execute()
+    def __set_scan_result(self, scan_id, report):
+        # vuln, result = scanner.parse_record(record)
+        for vuln in report["vulns"]:
+            query = Vuln.insert(vuln).on_conflict(preserve=[Vuln.fix_required], update=vuln)
+            query.execute()
 
-        result["scan_id"] = scan_id
-        Result.insert(result).execute()
+        for result in report["results"]:
+            result["scan_id"] = scan_id
+            query = Result.insert(result)
+            query.execute()
 
     def __set_scan_error(self, schedule_uuid, error):
         scan = {"error_reason": error, "schedule_uuid": None, "scheduled": False, "processed": True}
