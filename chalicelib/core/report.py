@@ -15,7 +15,7 @@ class Report(object):
     def load(self):
         try:
             report = self.storage.load(self.key)
-            return report
+            return report, None
         except Exception as e:
             return None, e
 

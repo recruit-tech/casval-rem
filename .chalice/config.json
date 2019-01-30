@@ -4,7 +4,7 @@
     "stages": {
         "local": {
             "environment_variables": {
-                "ORIGIN": "http://localhost:8080",
+                "ORIGIN": "*",
                 "PASSWORD_SALT": "a93bae912d8740c0bfddb4ec33417bf7",
                 "PASSWORD_ITERATION": "1000",
                 "AWS_IP_RANGES_URL": "https://ip-ranges.amazonaws.com/ip-ranges.json",
@@ -22,7 +22,7 @@
                 "AUDIT_LIST_MAX_COUNT": "300",
                 "SCANNER": "casval-stub",
                 "STAGE": "dev",
-                "S3_BUCKET_NAME": "casval-dev20181017064358523100000001",
+                "S3_BUCKET_NAME": "casval-dev20181203091304763500000001",
                 "DB_NAME": "casval_local",
                 "DB_ENDPOINT": "localhost",
                 "DB_USER": "root",
@@ -35,14 +35,14 @@
             "lambda_memory_size": 512,
             "lambda_timeout": 300,
             "subnet_ids": [
-                "subnet-0258e0090498fd744",
-                "subnet-0de2633db146b3088"
+                "subnet-0b44d5ba8d96d4b08",
+                "subnet-07dd8db75db5799be"
             ],
             "security_group_ids": [
-                "sg-0d93bd7722acebb9d"
+                "sg-00f45c1c935861d76"
             ],
             "environment_variables": {
-                "ORIGIN": "http://localhost:8080",
+                "ORIGIN": "*",
                 "PASSWORD_SALT": "a93bae912d8740c0bfddb4ec33417bf7",
                 "PASSWORD_ITERATION": "1000",
                 "AWS_IP_RANGES_URL": "https://ip-ranges.amazonaws.com/ip-ranges.json",
@@ -60,7 +60,7 @@
                 "AUDIT_LIST_MAX_COUNT": "300",
                 "SCANNER": "casval-openvas-dev",
                 "STAGE": "dev",
-                "S3_BUCKET_NAME": "casval-dev20181017064358523100000001",
+                "S3_BUCKET_NAME": "casval-dev20181203091304763500000001",
                 "DB_NAME": "casval_dev",
                 "DB_ENDPOINT": "casval-aurora-cluster.cluster-ccykysrksugc.us-east-1.rds.amazonaws.com",
                 "DB_USER": "admin",

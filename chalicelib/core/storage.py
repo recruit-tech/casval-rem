@@ -13,5 +13,5 @@ class Storage(object):
 
     def store(self, key, body):
         obj = self.s3.Object(self.bucket, key)
-        obj.put(Body=body.encode("utf-8"), ContentEncoding="utf-8")
+        obj.put(Body=str(body).encode("utf-8"), ContentEncoding="utf-8")
         return True
