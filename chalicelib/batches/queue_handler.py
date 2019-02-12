@@ -1,10 +1,10 @@
 from chalicelib.apis.base import APIBase
+from chalicelib.core import Queue
 from chalicelib.core import Scanner
 from chalicelib.core.models import db
 from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
 from chalicelib.core.models import Vuln
-from chalicelib.core.queues import Queue
 from chalicelib.core.report import Report
 from datetime import datetime
 from datetime import timedelta
@@ -170,10 +170,16 @@ class QueueHandler(object):
         Result.delete().where(Result.scan_id == scan_id).execute()
 
     def __set_scan_result(self, scan_id, report):
-        # vuln, result = scanner.parse_record(record)
-        for vuln in report["vulns"]:
-            query = Vuln.insert(vuln).on_conflict(preserve=[Vuln.fix_required], update=vuln)
-            query.execute()
+        # this use unit test only.
+        if os.getenv("DB_TYPE") == "sqlite":
+            for vuln in report["vulns"]:
+                Vuln.insert(vuln).on_conflict(
+                    preserve=[Vuln.fix_required], update=vuln, conflict_target=[Vuln.oid]
+                ).execute()
+        else:
+            for vuln in report["vulns"]:
+                query = Vuln.insert(vuln).on_conflict(preserve=[Vuln.fix_required], update=vuln)
+                query.execute()
 
         for result in report["results"]:
             result["scan_id"] = scan_id
