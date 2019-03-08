@@ -43,16 +43,22 @@ def session_factory():
     return entry, body
 
 
-def db_seed():
+def db_seed(remove=False):
     path = path_carrent + "/chalicelib/apis/fixtures/"
-    seeds = PeeweeSeed(db, path, ["audits.json", "scans.json", "contacts.json", "results.json", "vulns.json"])
-    seeds.create_table_all()
-    seeds.db_data_input()
+    fixtures_list = ["audits.json", "scans.json", "contacts.json", "results.json", "vulns.json"]
+    seeds = PeeweeSeed(db, path, fixtures_list)
+    if remove:
+        # bugfix to Library
+        seeds.drop_table_all(fixtures_list, foreign_key_checks=True)
+    else:
+        seeds.create_table_all()
+        seeds.db_data_input()
 
 
 class TestQueueHandler(object):
     def setup_class(self):
-        db_seed()
+        # db_seed()
+        os.environ["GEN_CREATE_QUEUE"] = str(0)
 
     def teardown_method(self):
         SQSMock.dispose()

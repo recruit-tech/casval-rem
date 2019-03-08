@@ -38,8 +38,8 @@ class SQSMock(object):
         self.queue.delete_messages(Entries=[entry])
 
     def message_count(self):
-        if int(os.environ["GEN_CREATE_QUEUE"]) == -1:
-            client = boto3.client("sqs", region_name="us-east-1")
+        if int(os.getenv("GEN_CREATE_QUEUE", 0)) == -1:
+            client = boto3.client("sqs")
             response = client.get_queue_attributes(
                 QueueUrl=self.queue.url,
                 AttributeNames=["ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible"],
@@ -50,7 +50,7 @@ class SQSMock(object):
             total_message_num = int(message_num) + int(message_num_not_visible)
             return total_message_num
         else:
-            return int(os.environ["GEN_CREATE_QUEUE"])
+            return int(os.getenv("GEN_CREATE_QUEUE", 0))
 
     @staticmethod
     def dispose():

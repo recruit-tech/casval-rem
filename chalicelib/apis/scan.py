@@ -1,5 +1,6 @@
 from chalicelib.apis.base import APIBase
 from chalicelib.core import Queue
+from chalicelib.core.deploy import Deploy
 from chalicelib.core.models import Audit
 from chalicelib.core.models import Result
 from chalicelib.core.models import Scan
@@ -212,5 +213,6 @@ class ScanAPI(APIBase):
             "schedule_uuid": schedule_uuid,
             "scan_id": scan_id,
             "audit_id": audit_id,
+            "req_ip": Deploy().on_push_message(),
         }
         queue.enqueue(message)

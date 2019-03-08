@@ -14,6 +14,7 @@ validators = "*"
 peewee = "*"
 peewee-validates = {git = "https://github.com/timster/peewee-validates.git"}
 peewee-seed = "*"
+kubernetes = "*"
 
 [dev-packages]
 hacking = {git = "https://github.com/aruneko/hacking.git"}
