@@ -21,7 +21,7 @@ class SQSMock(object):
             return
 
         self.__initialized = True
-        self.sqs = boto3.resource("sqs")
+        self.sqs = boto3.resource("sqs", region_name="us-east-1")
         self.sqs.create_queue(QueueName=Queue.SCAN_PENDING)
         self.sqs.create_queue(QueueName=Queue.SCAN_RUNNING)
         self.sqs.create_queue(QueueName=Queue.SCAN_STOPPED)
@@ -39,7 +39,7 @@ class SQSMock(object):
 
     def message_count(self):
         if int(os.environ["GEN_CREATE_QUEUE"]) == -1:
-            client = boto3.client("sqs")
+            client = boto3.client("sqs", region_name="us-east-1")
             response = client.get_queue_attributes(
                 QueueUrl=self.queue.url,
                 AttributeNames=["ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible"],
