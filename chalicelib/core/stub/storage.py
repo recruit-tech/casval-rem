@@ -17,10 +17,10 @@ class S3Mock(object):
             return
 
         self.__initialized = True
-        self.s3 = boto3.resource("s3")
+        self.s3 = boto3.resource("s3", region_name="us-east-1")
         self.bucket = bucket
 
-        s3client = boto3.client("s3")
+        s3client = boto3.client("s3", region_name="us-east-1")
         s3client.create_bucket(Bucket=self.bucket)
 
     def load(self, key):
