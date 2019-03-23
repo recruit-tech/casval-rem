@@ -1,0 +1,31 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: casval-openvas1
+  labels:
+    app.kubernetes.io/name: casval_openvas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: casval_openvas
+      app.kubernetes.io/instance: casval_openvas
+      role: casval_openvas
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: casval_openvas
+        app.kubernetes.io/instance: casval
+        role: casval_openvas
+    spec:
+      containers:
+        - name: casval_openvas
+          image: mikesplain/openvas:9
+          imagePullPolicy: Always
+          ports:
+            - name: omp
+              containerPort: 9390
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
