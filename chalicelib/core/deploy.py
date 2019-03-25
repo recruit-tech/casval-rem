@@ -1,13 +1,5 @@
 from kubernetes import client
 
-import os
-
-base_path = os.path.abspath("..")
-deployment_yaml_path = base_path + "/k8s_config/openvas_deployment.yaml"
-service_yaml_path = base_path + "/k8s_config/openvas_service.yaml"
-
-mock_address = "10.0.0.1"
-
 
 class Deploy(object):
     def __init__(self, target_host=None, target_name=None):
