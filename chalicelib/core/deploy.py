@@ -1,4 +1,9 @@
 from kubernetes import client
+from kubernetes import config
+
+import os
+
+base_path = os.path.abspath("..")
 
 
 class Deploy(object):
@@ -35,18 +40,11 @@ class KubeDeploy(object):
         self.__namespace = namespace
         # get k8s ip(use env value)
         self.k8s_ip = k8s_ip
-        self.configuration = client.Configuration()
-
-        self.configuration.api_key["authorization"] = "<bearer_token>"
-        self.configuration.api_key_prefix["authorization"] = "Bearer"
-
-        self.configuration.host = "https://" + self.k8s_ip
-
-        self.configuration.ssl_ca_cert = "<path_to_cluster_ca_certificate>"
+        config.load_kube_config(os.path.join(base_path, ".kube/config"))
 
         # make api instance
-        self.__k8s_core = client.CoreV1Api(client.ApiClient(self.configuration))
-        self.__k8s_beta = client.ExtensionsV1beta1Api(client.ApiClient(self.configuration))
+        self.__k8s_core = client.CoreV1Api()
+        self.__k8s_beta = client.ExtensionsV1beta1Api()
 
     def create_deployment(self, target=""):
         deployment_body = {
