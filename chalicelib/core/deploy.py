@@ -1,7 +1,6 @@
 from kubernetes import client
 
 import os
-import yaml
 
 base_path = os.path.abspath("..")
 deployment_yaml_path = base_path + "/k8s_config/openvas_deployment.yaml"
@@ -18,12 +17,12 @@ class Deploy(object):
     def on_push_message(self):
         return self.__on_push()
 
-    def __on_push(self):
+    def __on_push(self, target):
         # u mocking use k8s ip
         # return mock_address
         k8s = KubeDeploy()
-        k8s.create_service()
-        k8s.create_deployment()
+        k8s.create_service(target)
+        k8s.create_deployment(target)
         return k8s.get_service_ip_address()
 
     @staticmethod
@@ -39,11 +38,11 @@ class Deploy(object):
 
 
 class KubeDeploy(object):
-    def __init__(self, service_ip="", namespace="default"):
-        self.__service_ip = service_ip
+    def __init__(self, k8s_ip="", namespace="default"):
+        self.__service_ip = ""
         self.__namespace = namespace
         # get k8s ip(use env value)
-        self.k8s_ip = ""
+        self.k8s_ip = k8s_ip
         self.configuration = client.Configuration()
 
         self.configuration.api_key["authorization"] = "<bearer_token>"
@@ -57,14 +56,51 @@ class KubeDeploy(object):
         self.__k8s_core = client.CoreV1Api(client.ApiClient(self.configuration))
         self.__k8s_beta = client.ExtensionsV1beta1Api(client.ApiClient(self.configuration))
 
-    def create_deployment(self):
-        # use make yaml deployment
-        with open(deployment_yaml_path) as f:
-            deployment_body = yaml.load(f)
-            try:
-                self.__k8s_core.create_namespaced_deployment(body=deployment_body, namespace=self.__namespace)
-            except Exception as e:
-                raise e
+    def create_deployment(self, target=""):
+        deployment_body = {
+            "apiVersion": "apps/v1beta2",
+            "kind": "Deployment",
+            "metadata": {
+                "name": f"{target}_deployment",
+                "labels": {"app.kubernetes.io/name": f"{target}_deployment"},
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "matchLabels": {
+                        "app.kubernetes.io/name": "casval_openvas",
+                        "app.kubernetes.io/instance": "casval_openvas",
+                        "role": "casval_openvas",
+                    }
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app.kubernetes.io/name": "casval_openvas",
+                            "app.kubernetes.io/instance": "casval",
+                            "role": "casval_openvas",
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "openvas",
+                                "image": "mikesplain/openvas:9",
+                                "imagePullPolicy": "Always",
+                                "ports": [
+                                    {"name": f"{target}_omp", "containerPort": 9390, "protocol": "TCP"},
+                                    {"name": f"{target}_http", "containerPort": 443, "protocol": "TCP"},
+                                ],
+                            }
+                        ]
+                    },
+                },
+            },
+        }
+        try:
+            self.__k8s_core.create_namespaced_deployment(body=deployment_body, namespace=self.__namespace)
+        except Exception as e:
+            raise e
 
     def delete_deployment(self, name, namespace="default", **kwargs):
         body = client.V1DeleteOptions(**kwargs)
@@ -78,18 +114,29 @@ class KubeDeploy(object):
 
         return respd, respr, respp
 
-    def create_service(self):
-        with open(service_yaml_path) as f:
-            service_body = yaml.load(f)
-            try:
-                resp = self.__k8s_core.create_namespaced_service(
-                    body=service_body, namespace=self.__namespace
-                )
-                self.__service_ip = resp.status.load_balancer.ingress[0].ip
-            except Exception as e:
-                raise e
+    def create_service(self, target=""):
+        service_body = {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": f"{target}_service",
+                "labels": {"app.kubernetes.io/name": f"{target}_service"},
+            },
+            "spec": {
+                "type": "NodePort",
+                "ports": [
+                    {"name": "omp", "port": 9390, "targetPort": 9390, "protocol": "TCP", "nodePort": 30000}
+                ],
+                "selector": {"app.kubernetes.io/name": f"{target}_deployment"},
+            },
+        }
+        try:
+            resp = self.__k8s_core.create_namespaced_service(body=service_body, namespace=self.__namespace)
+            self.__service_ip = resp.status.load_balancer.ingress[0].ip
+        except Exception as e:
+            raise e
 
-    def delete_service(self, name, namespace, **kwargs):
+    def delete_service(self, name, namespace="default", **kwargs):
         resp = self.__k8s_core.delete_namespaced_service(name, namespace, **kwargs)
         return resp
 
