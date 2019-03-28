@@ -9,6 +9,7 @@ from chalicelib.core.validators import ErrorReasonEnum
 from chalicelib.core.validators import ScanValidator
 from peewee import fn
 
+import os
 import uuid
 
 
@@ -206,6 +207,8 @@ class ScanAPI(APIBase):
 
     def __request_scan(self, target, start_at, end_at, schedule_uuid, scan_id, audit_id):
         queue = Queue(Queue.SCAN_PENDING)
+        service_ip = os.getenv("DEPLOY_SERVICE_MOCE_IP", 0)
+        service_ip = service_ip if service_ip != 0 else Deploy().on_push_message()
         message = {
             "target": target,
             "start_at": start_at,
@@ -213,6 +216,6 @@ class ScanAPI(APIBase):
             "schedule_uuid": schedule_uuid,
             "scan_id": scan_id,
             "audit_id": audit_id,
-            "req_ip": Deploy().on_push_message(),
+            "req_ip": service_ip,
         }
         queue.enqueue(message)

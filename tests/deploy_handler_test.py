@@ -15,7 +15,6 @@ from chalicelib.core.stub.queues import SQSMock
 from moto import mock_sqs
 from peewee_seed import PeeweeSeed
 
-import chalicelib.core.deploy as dp
 import freezegun
 import json
 
@@ -76,7 +75,7 @@ class TestQueueHandler(object):
 
         scanapi = ScanAPI(app, "3cd708cefd58401f9d43ff953f063467")
 
-        dp.mock_address = "10.0.0.10"
+        os.environ["DEPLOY_SERVICE_MOCE_IP"] = "10.0.0.10"
         entry, body = session_factory()
 
         scanapi._ScanAPI__request_scan(
