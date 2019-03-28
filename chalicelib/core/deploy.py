@@ -23,14 +23,14 @@ class Deploy(object):
         return k8s.get_service_ip_address()
 
     @staticmethod
-    def delete_service(name, service_ip):
-        k8s = KubeDeploy(service_ip)
+    def delete_service(name):
+        k8s = KubeDeploy()
         # ip_addrを取って渡す
         return k8s.delete_service(name)
 
     @staticmethod
-    def delete_deployment(name, service_ip):
-        k8s = KubeDeploy(service_ip)
+    def delete_deployment(name):
+        k8s = KubeDeploy()
         return k8s.delete_deployment(name)
 
 
