@@ -14,7 +14,7 @@ python_version = "3.7"
 
 [scripts]
 format = "sh -c \"autoflake -i --remove-all-unused-imports --remove-unused-variables -r .; isort --recursive --force-single-line .; black -l 110 -t py37 .;\""
-dev = "sh -c \"FLASK_APP=main.py FLASK_ENV=development flask run\""
+serve = "sh -c \"FLASK_APP=main.py FLASK_ENV=development flask run\""
 freeze = "sh -c \"pipenv lock -r > requirements.txt\""
 
 [packages]
