@@ -5,14 +5,17 @@ from flask_restplus import fields
 from flask_restplus import inputs
 from flask_restplus import reqparse
 
+from core import Audit
+from core import db
+
 api = Namespace("audit")
 
 ContactModel = api.model(
-    "Contact", {"name": fields.String(required=True), "email": fields.String(required=True)}
+    "ContactModel", {"name": fields.String(required=True), "email": fields.String(required=True)}
 )
 
 AuditModel = api.model(
-    "Audit",
+    "AuditModel",
     {
         "id": fields.Integer(required=True),
         "uuid": fields.String(required=True),
@@ -29,7 +32,7 @@ AuditModel = api.model(
 )
 
 ScanResultModel = api.model(
-    "ScanResult",
+    "ScanResultModel",
     {
         "id": fields.Integer(required=True),
         "scan_id": fields.Integer(required=True),
@@ -46,15 +49,17 @@ ScanResultModel = api.model(
 )
 
 ScanStatusModel = api.model(
-    "ScanStatus", {"scheduled": fields.Boolean(required=True), "processed": fields.Boolean(required=True)}
+    "ScanStatusModel",
+    {"scheduled": fields.Boolean(required=True), "processed": fields.Boolean(required=True)},
 )
 
 ScanScheduleModel = api.model(
-    "ScanSchedule", {"start_at": fields.DateTime(required=True), "end_at": fields.DateTime(required=True)}
+    "ScanScheduleModel",
+    {"start_at": fields.DateTime(required=True), "end_at": fields.DateTime(required=True)},
 )
 
 ScanModel = api.model(
-    "Scan",
+    "ScanModel",
     {
         "target": fields.String(required=True),
         "uuid": fields.String(required=True),
@@ -104,6 +109,12 @@ class AuditList(Resource):
         """Register new audit"""
         data = request.json["name"]
         print(data)
+
+        # TODO: Implement all features
+        with db.atomic():
+            audit = Audit(name=request.json["name"])
+            audit.save()
+
         return None
 
 
@@ -132,7 +143,7 @@ class AuditToken(Resource):
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
-class Audit(Resource):
+class AuditItem(Resource):
 
     AuditPatchInputModel = api.model(
         "AuditPatchInput",
@@ -234,7 +245,7 @@ class ScanList(Resource):
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
-class Scan(Resource):
+class ScanItem(Resource):
 
     ScanPatchInputModel = api.model("ScanPatchInput", {"comment": fields.String(required=True)})
 

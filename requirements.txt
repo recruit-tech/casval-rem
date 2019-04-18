@@ -8,6 +8,8 @@ itsdangerous==1.1.0
 jinja2==2.10.1
 jsonschema==3.0.1
 markupsafe==1.1.1
+mysqlclient==1.4.2.post1
+peewee==3.9.4
 pyrsistent==0.14.11
 pytz==2019.1
 six==1.12.0

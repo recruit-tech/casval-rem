@@ -3,20 +3,23 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[requires]
+python_version = "3.7"
+
+[packages]
+flask = "==1.0.2"
+flask-restplus = "==0.12.1"
+peewee = "*"
+mysqlclient = "*"
+
 [dev-packages]
 isort = "*"
 autoflake = "*"
 pip = "*"
 black = "==19.3b0"
 
-[requires]
-python_version = "3.7"
-
 [scripts]
 format = "sh -c \"autoflake -i --remove-all-unused-imports --remove-unused-variables -r .; isort --recursive --force-single-line .; black -l 110 -t py37 .;\""
-serve = "sh -c \"FLASK_APP=main.py FLASK_ENV=development flask run\""
+serve = "flask run"
 freeze = "sh -c \"pipenv lock -r > requirements.txt\""
-
-[packages]
-flask = "==1.0.2"
-flask-restplus = "==0.12.1"
+deploy = "gcloud -q app deploy"

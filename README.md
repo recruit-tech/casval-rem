@@ -4,7 +4,7 @@
 ## Deploy
 
 ```
-pipenv lock -r > requirements.txt
+pipenv run freeze
 gcloud -q app deploy
 ```
 
@@ -19,7 +19,15 @@ pipenv run format
 ### Local Testing Environment
 
 ```
-docker run -e MYSQL_DATABASE=casval_local -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.6 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+docker run -e MYSQL_DATABASE=casval -e MYSQL_ROOT_PASSWORD=admin123 -d -p 3306:3306 mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+export FLASK_APP='main.py'
+export FLASK_ENV='development'
+export SECRET_KEY='5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a'
+export DB_NAME='casval'
+export DB_USER='root'
+export DB_PASSWORD='admin123'
+export DB_ENDPOINT='127.0.0.1'
+export DB_PORT='3306'
 pipenv shell
 pipenv install -d
 pipenv run serve
