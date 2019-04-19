@@ -20,11 +20,11 @@ if len(os.getenv("DB_INSTANCE_NAME", "")) > 0:
     )
 else:
     db = MySQLDatabase(
-        os.environ["DB_NAME"],
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-        host=os.environ["DB_ENDPOINT"],
-        port=int(os.environ["DB_PORT"]),
+        os.getenv("DB_NAME", "casval"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        host=os.getenv("DB_ENDPOINT", "127.0.0.1"),
+        port=int(os.getenv("DB_PORT", "3306")),
     )
 
 

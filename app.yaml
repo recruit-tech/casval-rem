@@ -1,11 +1,5 @@
 service: rem
 runtime: python37
 
-env_variables:
-  SECRET_KEY: '5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a'
-  DB_NAME: 'casval'
-  DB_USER: 'root'
-  DB_PASSWORD: 'admin123'
-  DB_ENDPOINT: '127.0.0.1'
-  DB_PORT: '3306'
-  DB_INSTANCE_NAME: 'frank1:asia-east2:casval-test-01'
+includes:
+- config.yaml
