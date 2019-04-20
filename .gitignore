@@ -109,12 +109,6 @@ venv.bak/
 .pyre
 .pyre_configuration
 
-# Chalice
-.chalice/deployments/
-.chalice/venv/
-.chalice/deployed/
-# .chalice/config.json
-
 # Editor directories and files
 .idea
 .vscode
@@ -141,3 +135,6 @@ crash.log
 
 # node
 .node_modules/
+
+# CASVAL
+config.json

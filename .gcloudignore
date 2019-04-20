@@ -21,3 +21,4 @@ __pycache__/
 Pipfile
 Pipfile.lock
 
+.DS_Store

@@ -1,7 +1,3 @@
-variable "secret_key" {
-  default = "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
-}
-
 variable "db_name" {
   default = "casval"
 }
@@ -16,6 +12,22 @@ variable "db_password" {
 
 variable "db_tier" {
   default = "db-n1-standard-1"
+}
+
+output "DB_NAME" {
+  value = "${google_sql_database.casval.name}"
+}
+
+output "DB_USER" {
+  value = "${google_sql_user.user.name}"
+}
+
+output "DB_PASSWORD" {
+  value = "${google_sql_user.user.password}"
+}
+
+output "DB_INSTANCE_NAME" {
+  value = "${google_sql_database_instance.master.connection_name}"
 }
 
 provider "google" {
@@ -41,45 +53,15 @@ resource "google_sql_database_instance" "master" {
   }
 }
 
-resource "google_sql_user" "users" {
-  name     = "root"
+resource "google_sql_user" "user" {
+  name     = "${var.db_user}"
   instance = "${google_sql_database_instance.master.name}"
-  password = "admin123"
+  password = "${var.db_password}"
 }
 
 resource "google_sql_database" "casval" {
-  name      = "casval"
+  name      = "${var.db_name}"
   instance  = "${google_sql_database_instance.master.name}"
   charset   = "utf8mb4"
   collation = "utf8mb4_unicode_ci"
-}
-
-resource "null_resource" "generate-config" {
-  depends_on = ["google_sql_database_instance.master"]
-
-  provisioner "local-exec" {
-    command = <<SCRIPT
-echo "
-env_variables:
-  SECRET_KEY: '$SECRET_KEY'
-  DB_NAME: '$DB_NAME'
-  DB_USER: '$DB_USER'
-  DB_PASSWORD: '$DB_PASSWORD'
-  DB_INSTANCE_NAME: '$DB_INSTANCE_NAME'
-" > ./config.yaml
-SCRIPT
-
-    environment {
-      SECRET_KEY       = "${var.secret_key}"
-      DB_NAME          = "${var.db_name}"
-      DB_USER          = "${var.db_user}"
-      DB_PASSWORD      = "${var.db_password}"
-      DB_INSTANCE_NAME = "${google_sql_database_instance.master.connection_name}"
-    }
-  }
-
-  provisioner "local-exec" {
-    when    = "destroy"
-    command = "echo '' > ./config.yaml"
-  }
 }

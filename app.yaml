@@ -1,5 +1,5 @@
 service: rem
 runtime: python37
 
-includes:
-- config.yaml
+env_variables:
+  FLASK_CONFIG_JSON_FILE: 'config.json'

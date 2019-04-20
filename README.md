@@ -3,10 +3,25 @@
 
 ## Deploy
 
+### Production (on Google App Engine)
+
 ```
+terraform init
+terraform apply
+pipenv run config
 pipenv run freeze
 pipenv run deploy
 ```
+
+### Local Development
+
+```
+docker run -e MYSQL_DATABASE=casval -e MYSQL_ROOT_PASSWORD=Passw0rd! -d -p 3306:3306 mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+pipenv shell
+pipenv install -d
+pipenv run server
+```
+
 
 ## For Developers
 
@@ -14,16 +29,4 @@ pipenv run deploy
 
 ```
 pipenv run format
-```
-
-### Local Testing Environment
-
-```
-docker run -e MYSQL_DATABASE=casval -e MYSQL_ROOT_PASSWORD="" -d -p 3306:3306 mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-export FLASK_APP='main.py'
-export FLASK_ENV='development'
-export SECRET_KEY='5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a'
-pipenv shell
-pipenv install -d
-pipenv run serve
 ```

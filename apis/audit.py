@@ -1,3 +1,4 @@
+from flask import current_app as app
 from flask import request
 from flask_restplus import Namespace
 from flask_restplus import Resource
@@ -107,12 +108,11 @@ class AuditList(Resource):
     @api.marshal_with(AuditModel)
     def post(self):
         """Register new audit"""
-        data = request.json["name"]
-        print(data)
+        request.json["name"]
 
         # TODO: Implement all features
-        with db.atomic():
-            audit = Audit(name=request.json["name"])
+        with db.database.atomic():
+            audit = Audit(app=app, name=request.json["name"])
             audit.save()
 
         return None

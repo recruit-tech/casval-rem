@@ -5,4 +5,9 @@ from .models import Scan
 from .models import Vuln
 from .models import db
 
-db.create_tables([Audit, Contact, Scan, Vuln, Result])
+
+def keep(*module):
+    pass
+
+
+keep(Audit, Contact, Result, Scan, Vuln, db)

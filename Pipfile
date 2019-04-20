@@ -20,6 +20,7 @@ black = "==19.3b0"
 
 [scripts]
 format = "sh -c \"autoflake -i --remove-all-unused-imports --remove-unused-variables -r .; isort --recursive --force-single-line .; black -l 110 -t py37 .;\""
-serve = "flask run"
+config = "sh -c \"terraform output -json > config.json\""
 freeze = "sh -c \"pipenv lock -r > requirements.txt\""
+server = "sh -c \"FLASK_CONFIG_JSON_FILE=config.json FLASK_APP=main.py FLASK_ENV=development flask run\""
 deploy = "gcloud -q app deploy"

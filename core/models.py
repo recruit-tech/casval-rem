@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime
 
@@ -6,34 +5,14 @@ from peewee import BooleanField
 from peewee import CharField
 from peewee import DateTimeField
 from peewee import ForeignKeyField
-from peewee import Model
-from peewee import MySQLDatabase
 from peewee import TextField
 from peewee import UUIDField
+from playhouse.flask_utils import FlaskDB
 
-if len(os.getenv("DB_INSTANCE_NAME", "")) > 0:
-    db = MySQLDatabase(
-        os.environ["DB_NAME"],
-        unix_socket=os.path.join("/cloudsql", os.environ["DB_INSTANCE_NAME"]),
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-    )
-else:
-    db = MySQLDatabase(
-        os.getenv("DB_NAME", "casval"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        host=os.getenv("DB_ENDPOINT", "127.0.0.1"),
-        port=int(os.getenv("DB_PORT", "3306")),
-    )
+db = FlaskDB()
 
 
-class BaseModel(Model):
-    class Meta(object):
-        database = db
-
-
-class Audit(BaseModel):
+class Audit(db.Model):
     uuid = UUIDField(unique=True, default=uuid.uuid4)
     name = CharField()
     submitted = BooleanField(default=False)
@@ -45,13 +24,13 @@ class Audit(BaseModel):
     updated_at = DateTimeField(default=datetime.utcnow)
 
 
-class Contact(BaseModel):
+class Contact(db.Model):
     audit_id = ForeignKeyField(Audit, backref="contacts", on_delete="CASCADE", on_update="CASCADE")
     name = CharField()
     email = CharField()
 
 
-class Scan(BaseModel):
+class Scan(db.Model):
     uuid = UUIDField(unique=True, default=uuid.uuid4)
     audit_id = ForeignKeyField(Audit, backref="scans", on_delete="CASCADE", on_update="CASCADE")
     target = CharField()
@@ -67,7 +46,7 @@ class Scan(BaseModel):
     comment = TextField(default="")
 
 
-class Vuln(BaseModel):
+class Vuln(db.Model):
     oid = CharField(unique=True, max_length=191, null=True, default=None)
     fix_required = BooleanField(null=True)
     name = CharField(null=True)
@@ -76,7 +55,7 @@ class Vuln(BaseModel):
     description = TextField(null=True)
 
 
-class Result(BaseModel):
+class Result(db.Model):
     scan_id = ForeignKeyField(Scan, backref="results", on_delete="CASCADE", on_update="CASCADE")
     name = CharField(null=True)
     port = CharField(null=True)
