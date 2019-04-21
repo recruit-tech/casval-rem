@@ -1,16 +1,16 @@
-from .authorizers import admin_token_required
+from .authorizers import Authorizer
 from .authorizers import jwt
-from .authorizers import token_required
 from .models import Audit
 from .models import Contact
 from .models import Result
 from .models import Scan
 from .models import Vuln
 from .models import db
+from .utils import Utils
 
 
-def keep(*module):
+def noop(*args):
     pass
 
 
-keep(Audit, Contact, Result, Scan, Vuln, db, jwt, token_required, admin_token_required)
+noop(Audit, Contact, Result, Scan, Vuln, db, jwt, Authorizer, Utils)

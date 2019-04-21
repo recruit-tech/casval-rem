@@ -7,9 +7,8 @@ from flask_restplus import inputs
 from flask_restplus import reqparse
 
 from core import Audit
-from core import admin_token_required
+from core import Authorizer
 from core import db
-from core import token_required
 
 api = Namespace("audit")
 
@@ -100,7 +99,7 @@ class AuditList(Resource):
 
     @api.expect(AuditListGetParser, validate=True)
     @api.marshal_with(AuditModel, as_list=True)
-    @admin_token_required
+    @Authorizer.admin_token_required
     def get(self):
         """Get audit list"""
         data = request.args.get("count")
@@ -109,7 +108,7 @@ class AuditList(Resource):
 
     @api.expect(AuditListPostInputModel, validate=True)
     @api.marshal_with(AuditModel)
-    @admin_token_required
+    @Authorizer.admin_token_required
     def post(self):
         """Register new audit"""
         request.json["name"]
@@ -161,7 +160,7 @@ class AuditItem(Resource):
     )
 
     @api.marshal_with(AuditModel)
-    @token_required
+    @Authorizer.token_required
     def get(self, audit_uuid):
         """Get the specified audit"""
         print(audit_uuid)
@@ -170,13 +169,13 @@ class AuditItem(Resource):
     @api.expect(AuditPatchInputModel, validate=True)
     @api.marshal_with(AuditModel)
     @api.response(400, "Bad Request")
-    @token_required
+    @Authorizer.token_required
     def patch(self, audit_uuid):
         """Update the specified audit"""
         print(audit_uuid)
         return {}
 
-    @token_required
+    @Authorizer.token_required
     def delete(self, audit_uuid):
         """Delete the specified audit"""
         print(audit_uuid)
@@ -190,14 +189,14 @@ class AuditItem(Resource):
 @api.response(404, "Not Found")
 class AuditSubmission(Resource):
     @api.marshal_with(AuditModel)
-    @token_required
+    @Authorizer.token_required
     def post(self, audit_uuid):
         """Submit the specified audit result"""
         print(audit_uuid)
         return {}
 
     @api.marshal_with(AuditModel)
-    @token_required
+    @Authorizer.token_required
     def delete(self, audit_uuid):
         """Withdraw the submission of the specified audit result"""
         print(audit_uuid)
@@ -210,7 +209,7 @@ class AuditSubmission(Resource):
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
 class AuditDownload(Resource):
-    @token_required
+    @Authorizer.token_required
     def get(self, audit_uuid):
         """Download the specified audit result"""
         print(audit_uuid)
@@ -244,7 +243,7 @@ class ScanList(Resource):
     @api.expect(ScanListPostInputModel, validate=True)
     @api.marshal_with(ScanModel)
     @api.response(400, "Bad Request", ScanListPostErrorResponseModel)
-    @token_required
+    @Authorizer.token_required
     def post(self, audit_uuid):
         """Register new scan"""
         print(audit_uuid)
@@ -261,7 +260,7 @@ class ScanItem(Resource):
     ScanPatchInputModel = api.model("ScanPatchInput", {"comment": fields.String(required=True)})
 
     @api.marshal_with(ScanModel)
-    @token_required
+    @Authorizer.token_required
     def get(self, audit_uuid, scan_uuid):
         """Retrieve the specified scan"""
         print(audit_uuid)
@@ -270,13 +269,13 @@ class ScanItem(Resource):
     @api.expect(ScanPatchInputModel, validate=True)
     @api.marshal_with(ScanModel)
     @api.response(400, "Bad Request")
-    @token_required
+    @Authorizer.token_required
     def patch(self, audit_uuid, scan_uuid):
         """Update the specified scan"""
         print(audit_uuid)
         return {}
 
-    @token_required
+    @Authorizer.token_required
     def delete(self, audit_uuid, scan_uuid):
         """Delete the specified scan"""
         print(audit_uuid)
@@ -297,13 +296,13 @@ class ScanSchedule(Resource):
     @api.expect(ScanSchedulePatchInputModel, validate=True)
     @api.marshal_with(ScanModel)
     @api.response(400, "Bad Request")
-    @token_required
+    @Authorizer.token_required
     def patch(self, audit_uuid, scan_uuid):
         """Schedule the specified scan"""
         print(audit_uuid)
         return {}
 
-    @token_required
+    @Authorizer.token_required
     def delete(self, audit_uuid, scan_uuid):
         """Cancel the specified scan schedule"""
         print(audit_uuid)

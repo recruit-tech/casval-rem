@@ -8,27 +8,27 @@ from flask_jwt_extended import verify_jwt_in_request
 jwt = JWTManager()
 
 
-def token_required(f):
-    @wraps(f)
-    def decorate(*args, **kwargs):
-        verify_jwt_in_request()
-        identity = get_jwt_identity()
-        if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
-            abort(401, "Token is invalid for the audit")
-        else:
-            return f(*args, **kwargs)
+class Authorizer:
+    def token_required(f):
+        @wraps(f)
+        def decorate(*args, **kwargs):
+            verify_jwt_in_request()
+            identity = get_jwt_identity()
+            if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
+                abort(401, "Token is invalid for the audit")
+            else:
+                return f(*args, **kwargs)
 
-    return decorate
+        return decorate
 
+    def admin_token_required(f):
+        @wraps(f)
+        def decorate(*args, **kwargs):
+            verify_jwt_in_request()
+            identity = get_jwt_identity()
+            if identity["scope"] != "*":
+                abort(401, "Token is insufficient privileges")
+            else:
+                return f(*args, **kwargs)
 
-def admin_token_required(f):
-    @wraps(f)
-    def decorate(*args, **kwargs):
-        verify_jwt_in_request()
-        identity = get_jwt_identity()
-        if identity["scope"] != "*":
-            abort(401, "Token is insufficient privileges")
-        else:
-            return f(*args, **kwargs)
-
-    return decorate
+        return decorate
