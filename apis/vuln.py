@@ -5,6 +5,8 @@ from flask_restplus import fields
 from flask_restplus import inputs
 from flask_restplus import reqparse
 
+from core import admin_token_required
+
 api = Namespace("vuln")
 
 
@@ -37,6 +39,7 @@ class VulneravilityList(Resource):
 
     @api.expect(VulnListGetParser, validate=True)
     @api.marshal_with(VulnModel, as_list=True)
+    @admin_token_required
     def get(self):
         """Get vulnerability list"""
         data = request.args.get("count")
@@ -55,6 +58,7 @@ class Vulnerability(Resource):
     VulnPatchInputModel = api.model("VulnPatchInput", {"fix_required": fields.Boolean(required=True)})
 
     @api.expect(VulnPatchInputModel, validate=True)
+    @admin_token_required
     def patch(self, vuln_id):
         """Decide whether the specified vulnerability requires to be fixed"""
         print(vuln_id)
