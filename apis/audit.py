@@ -1,5 +1,7 @@
 from flask import current_app as app
 from flask import request
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
 from flask_restplus import Namespace
 from flask_restplus import Resource
 from flask_restplus import fields
@@ -106,9 +108,11 @@ class AuditList(Resource):
 
     @api.expect(AuditListPostInputModel, validate=True)
     @api.marshal_with(AuditModel)
+    @jwt_required
     def post(self):
         """Register new audit"""
         request.json["name"]
+        print(get_jwt_identity())
 
         # TODO: Implement all features
         with db.database.atomic():

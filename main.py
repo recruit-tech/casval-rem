@@ -10,39 +10,40 @@ from core import Result
 from core import Scan
 from core import Vuln
 from core import db
+from core import jwt
 
 app = Flask(__name__)
 
-if os.getenv("FLASK_ENV", "") == "development":
-    mysql_db = MySQLDatabase(
+if len(os.getenv("FLASK_CONFIG_JSON_FILE", "")) > 0:
+    # for production environment
+    app.config["AUDIT_REPORT_BUCKET_NAME"] = ""
+    app.config.from_json(os.environ["FLASK_CONFIG_JSON_FILE"], silent=True)
+    app.config["DATABASE"] = MySQLDatabase(
+        app.config["DB_NAME"]["value"],
+        unix_socket=os.path.join("/cloudsql", app.config["DB_INSTANCE_NAME"]["value"]),
+        user=app.config["DB_USER"]["value"],
+        password=app.config["DB_PASSWORD"]["value"],
+    )
+else:
+    # for development environment
+    app.config["AUDIT_REPORT_BUCKET_NAME"] = ""
+    app.config["DATABASE"] = MySQLDatabase(
         os.getenv("DB_NAME", "casval"),
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", "Passw0rd!"),
         host=os.getenv("DB_ENDPOINT", "127.0.0.1"),
         port=int(os.getenv("DB_PORT", "3306")),
     )
-    app.config["AUDIT_REPORT_BUCKET_NAME"] = ""
-else:
-    app.config.from_json(os.environ["FLASK_CONFIG_JSON_FILE"], silent=True)
-    mysql_db = MySQLDatabase(
-        app.config["DB_NAME"]["value"],
-        unix_socket=os.path.join("/cloudsql", app.config["DB_INSTANCE_NAME"]["value"]),
-        user=app.config["DB_USER"]["value"],
-        password=app.config["DB_PASSWORD"]["value"],
-    )
-    app.config["AUDIT_REPORT_BUCKET_NAME"] = ""
 
 app.config["SCANNER"] = os.getenv("SCANNER", "casval-stub")
 app.config["PERMITTED_IP_ADDRESS_RANGE"] = os.getenv("PERMITTED_IP_ADDRESS_RANGE", "127.0.0.0/8")
 app.config["PASSWORD_SALT"] = os.getenv("PASSWORD_SALT", "")
 app.config["PASSWORD_ITERATION"] = 1000
 app.config["PASSWORD_HASH_ALG"] = "sha256"
-app.config["TOKEN_SECRET_KEY"] = os.getenv("SECRET_KEY", "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a")
-app.config["TOKEN_EXPIRATION_IN_HOUR"] = 3
-app.config["DATABASE"] = mysql_db
-
+app.config["JWT_SECRET_KEY"] = os.getenv("SECRET_KEY", "super-secret")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 3 * 3600  # 3 hours
+app.config["JWT_IDENTITY_CLAIM"] = "sub"
 app.config["ADMIN_PASSWORD_HASH"] = "1f1eb4713b3d5e9ede7848207152b52fd6ed763f9818856d121dcdd6bf31c4f1"
-
 app.config["RESTPLUS_MASK_SWAGGER"] = False
 app.config["SWAGGER_UI_REQUEST_DURATION"] = True
 app.config["SWAGGER_UI_DOC_EXPANSION"] = "list"
@@ -78,3 +79,5 @@ app.config["AUDIT_DOWNLOAD_COLUMNS"] = [
 api.init_app(app)
 db.init_app(app)
 db.database.create_tables([Audit, Contact, Scan, Vuln, Result])
+jwt.init_app(app)
+jwt._set_error_handler_callbacks(api)

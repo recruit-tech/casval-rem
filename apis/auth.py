@@ -1,4 +1,5 @@
 from flask import request
+from flask_jwt_extended import create_access_token
 from flask_restplus import Namespace
 from flask_restplus import Resource
 from flask_restplus import fields
@@ -22,5 +23,8 @@ class Authenticate(Resource):
     def post(self):
         """Publish an API token for administrators"""
         post_data = request.json
+        # TODO: Authenticate administrator
         print(post_data)
-        return None
+
+        token = create_access_token(identity={"scope": "*"})
+        return {"token": token}, 200

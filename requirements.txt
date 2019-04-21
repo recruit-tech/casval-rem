@@ -2,6 +2,7 @@
 aniso8601==6.0.0
 attrs==19.1.0
 click==7.0
+flask-jwt-extended==3.18.1
 flask-restplus==0.12.1
 flask==1.0.2
 itsdangerous==1.1.0
@@ -10,6 +11,7 @@ jsonschema==3.0.1
 markupsafe==1.1.1
 mysqlclient==1.4.2.post1
 peewee==3.9.4
+pyjwt==1.7.1
 pyrsistent==0.14.11
 pytz==2019.1
 six==1.12.0
