@@ -1,3 +1,4 @@
+from flask import abort
 from flask import current_app as app
 from flask import request
 from flask_restplus import Namespace
@@ -5,9 +6,11 @@ from flask_restplus import Resource
 from flask_restplus import fields
 from flask_restplus import inputs
 from flask_restplus import reqparse
+from marshmallow import ValidationError
 
 from core import Audit
 from core import Authorizer
+from core import ContactSchema
 from core import db
 
 api = Namespace("audit")
@@ -111,12 +114,16 @@ class AuditList(Resource):
     @Authorizer.admin_token_required
     def post(self):
         """Register new audit"""
-        request.json["name"]
+        try:
+            contact = ContactSchema(strict=True, exclude={"email"})
+            result = contact.load(request.json)
+            with db.database.atomic():
+                print(result.data)
+                audit = Audit(app=app, name=request.json["name"])
+                audit.save()
 
-        # TODO: Implement all features
-        with db.database.atomic():
-            audit = Audit(app=app, name=request.json["name"])
-            audit.save()
+        except ValidationError as error:
+            abort(400, error.messages)
 
         return None
 

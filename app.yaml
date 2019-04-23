@@ -2,4 +2,4 @@ service: rem
 runtime: python37
 
 env_variables:
-  FLASK_CONFIG_JSON_FILE: 'config.json'
+  CONFIG_ENV_FILE_PATH: 'config.env'

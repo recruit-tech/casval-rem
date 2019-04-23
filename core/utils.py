@@ -1,6 +1,16 @@
+import binascii
+import hashlib
 import ipaddress
+import os
+import re
+import socket
 
+import validators
 from flask import current_app as app
+
+PASSWORD_SALT = os.getenv("PASSWORD_SALT", "password-salt")
+PASSWORD_HASH_ALG = "sha256"
+PASSWORD_ITERATION = 1000
 
 
 class Utils:
@@ -18,3 +28,51 @@ class Utils:
                 return True
 
         return False
+
+    @staticmethod
+    def load_env_from_config_file(config_file_path):
+        with open(config_file_path, "r") as f:
+            content = f.readlines()
+            content = [re.split("\s*=\s*", x.strip(), 1) for x in content if "=" in x]
+            for k, v in dict(content).items():
+                os.environ[k] = v
+            return True
+
+    @staticmethod
+    def get_password_hash(password):
+        return binascii.hexlify(
+            hashlib.pbkdf2_hmac(
+                PASSWORD_HASH_ALG,
+                password.encode(),
+                os.environ["PASSWORD_SALT"].encode(),
+                int(os.environ["PASSWORD_ITERATION"]),
+            )
+        ).decode("utf-8")
+
+    @staticmethod
+    def is_ipv4(value):
+        try:
+            return validators.ip_address.ipv4(value)
+        except Exception:
+            return False
+
+    @staticmethod
+    def is_public_address(value):
+        try:
+            return ipaddress.ip_address(value).is_global
+        except Exception:
+            return False
+
+    @staticmethod
+    def is_domain(value):
+        try:
+            return validators.domain(value)
+        except Exception:
+            return False
+
+    @staticmethod
+    def is_host_resolvable(value):
+        try:
+            return len(socket.gethostbyname(value)) > 0
+        except Exception:
+            return False

@@ -6,6 +6,7 @@ from flask_restplus import inputs
 from flask_restplus import reqparse
 
 from core import Authorizer
+from core import PagenationSchema
 
 api = Namespace("vuln")
 
@@ -37,13 +38,14 @@ class VulneravilityList(Resource):
     VulnListGetParser.add_argument("page", type=int, default=1, location="args")
     VulnListGetParser.add_argument("count", type=int, default=10, location="args")
 
-    @api.expect(VulnListGetParser, validate=True)
+    @api.expect(VulnListGetParser, validate=False)
     @api.marshal_with(VulnModel, as_list=True)
     @Authorizer.admin_token_required
     def get(self):
         """Get vulnerability list"""
-        data = request.args.get("count")
-        print(data)
+        pagenation = PagenationSchema()
+        pages = pagenation.load(request.args)
+        print(pages)
         return []
 
 

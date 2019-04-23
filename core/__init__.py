@@ -7,10 +7,28 @@ from .models import Scan
 from .models import Vuln
 from .models import db
 from .utils import Utils
+from .validators import AuthInputSchema
+from .validators import ContactSchema
+from .validators import PagenationSchema
+from .validators import marshmallow
 
 
 def noop(*args):
     pass
 
 
-noop(Audit, Contact, Result, Scan, Vuln, db, jwt, Authorizer, Utils)
+noop(
+    Audit,
+    Contact,
+    Result,
+    Scan,
+    Vuln,
+    db,
+    jwt,
+    marshmallow,
+    Authorizer,
+    Utils,
+    ContactSchema,
+    AuthInputSchema,
+    PagenationSchema,
+)

@@ -13,6 +13,8 @@ peewee = "*"
 mysqlclient = "*"
 flask-jwt-extended = "*"
 flask-cors = "*"
+flask-marshmallow = "*"
+validators = "*"
 
 [dev-packages]
 isort = "*"
@@ -22,7 +24,7 @@ black = "==19.3b0"
 
 [scripts]
 format = "sh -c \"autoflake -i --remove-all-unused-imports --remove-unused-variables -r .; isort --recursive --force-single-line .; black -l 110 -t py37 .;\""
-config = "sh -c \"terraform output -json > config.json\""
+config = "sh -c \"terraform output > config.env\""
 freeze = "sh -c \"pipenv lock -r > requirements.txt\""
 server = "sh -c \"FLASK_APP=main.py FLASK_ENV=development flask run\""
 deploy = "gcloud -q app deploy"

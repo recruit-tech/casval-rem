@@ -30,6 +30,18 @@ output "DB_INSTANCE_NAME" {
   value = "${google_sql_database_instance.master.connection_name}"
 }
 
+output "PASSWORD_SALT" {
+  value = "${random_string.password_salt.result}"
+}
+
+resource "random_string" "password_salt" {
+  length      = 32
+  min_upper   = 4
+  min_lower   = 4
+  min_numeric = 4
+  special     = false
+}
+
 provider "google" {
   project = "frank1"
   region  = "asia-east2"
