@@ -12,10 +12,11 @@ from playhouse.flask_utils import FlaskDB
 db = FlaskDB()
 
 
-class Audit(db.Model):
+class AuditTable(db.Model):
     uuid = UUIDField(unique=True, default=uuid.uuid4)
     name = CharField()
     submitted = BooleanField(default=False)
+    approved = BooleanField(default=False)
     ip_restriction = BooleanField(default=True)
     password_protection = BooleanField(default=False)
     password = CharField(default="")
@@ -24,15 +25,15 @@ class Audit(db.Model):
     updated_at = DateTimeField(default=datetime.utcnow)
 
 
-class Contact(db.Model):
-    audit_id = ForeignKeyField(Audit, backref="contacts", on_delete="CASCADE", on_update="CASCADE")
+class ContactTable(db.Model):
+    audit_id = ForeignKeyField(AuditTable, backref="contacts", on_delete="CASCADE", on_update="CASCADE")
     name = CharField()
     email = CharField()
 
 
-class Scan(db.Model):
+class ScanTable(db.Model):
     uuid = UUIDField(unique=True, default=uuid.uuid4)
-    audit_id = ForeignKeyField(Audit, backref="scans", on_delete="CASCADE", on_update="CASCADE")
+    audit_id = ForeignKeyField(AuditTable, backref="scans", on_delete="CASCADE", on_update="CASCADE")
     target = CharField()
     start_at = DateTimeField(default=0)
     end_at = DateTimeField(default=0)
@@ -42,21 +43,20 @@ class Scan(db.Model):
     scheduled = BooleanField(default=False)
     schedule_uuid = UUIDField(unique=True, null=True, default=None)
     processed = BooleanField(default=False)
-    platform = CharField(default="")
     comment = TextField(default="")
 
 
-class Vuln(db.Model):
+class VulnTable(db.Model):
     oid = CharField(unique=True, max_length=191, null=True, default=None)
-    fix_required = BooleanField(null=True)
+    fix_required = CharField(default="")
     name = CharField(null=True)
     cvss_base = CharField(null=True)
     cve = CharField(null=True)
     description = TextField(null=True)
 
 
-class Result(db.Model):
-    scan_id = ForeignKeyField(Scan, backref="results", on_delete="CASCADE", on_update="CASCADE")
+class ResultTable(db.Model):
+    scan_id = ForeignKeyField(ScanTable, backref="results", on_delete="CASCADE", on_update="CASCADE")
     name = CharField(null=True)
     port = CharField(null=True)
     vuln_id = CharField(null=True)

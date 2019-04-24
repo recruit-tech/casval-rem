@@ -19,7 +19,7 @@ class Authenticate(Resource):
     AdminTokenModel = api.model("AdminTokenModel", {"token": fields.String(required=True)})
 
     @api.doc(security=None)
-    @api.expect(AuthInputModel, validate=False)
+    @api.expect(AuthInputModel)
     @api.marshal_with(AdminTokenModel, description="API Token for Administrators")
     @api.response(200, "Success")
     @api.response(400, "Bad Request")

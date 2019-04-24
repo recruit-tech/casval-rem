@@ -1,15 +1,15 @@
 from .authorizers import Authorizer
 from .authorizers import jwt
-from .models import Audit
-from .models import Contact
-from .models import Result
-from .models import Scan
-from .models import Vuln
+from .models import AuditTable
+from .models import ContactTable
+from .models import ResultTable
+from .models import ScanTable
+from .models import VulnTable
 from .models import db
 from .utils import Utils
 from .validators import AuthInputSchema
 from .validators import ContactSchema
-from .validators import PagenationSchema
+from .validators import VulnListInputSchema
 from .validators import marshmallow
 
 
@@ -18,11 +18,11 @@ def noop(*args):
 
 
 noop(
-    Audit,
-    Contact,
-    Result,
-    Scan,
-    Vuln,
+    AuditTable,
+    ContactTable,
+    ResultTable,
+    ScanTable,
+    VulnTable,
     db,
     jwt,
     marshmallow,
@@ -30,5 +30,5 @@ noop(
     Utils,
     ContactSchema,
     AuthInputSchema,
-    PagenationSchema,
+    VulnListInputSchema,
 )

@@ -1,18 +1,19 @@
+from flask import abort
 from flask import request
 from flask_restplus import Namespace
 from flask_restplus import Resource
 from flask_restplus import fields
-from flask_restplus import inputs
 from flask_restplus import reqparse
 
 from core import Authorizer
-from core import PagenationSchema
+from core import VulnListInputSchema
+from core import VulnTable
 
 api = Namespace("vuln")
 
 
-VulnModel = api.model(
-    "Vuln",
+VulnOutputModel = api.model(
+    "VulnOutput",
     {
         "id": fields.Integer(required=True),
         "oid": fields.String(required=True),
@@ -33,20 +34,40 @@ VulnModel = api.model(
 class VulneravilityList(Resource):
 
     VulnListGetParser = reqparse.RequestParser()
-    VulnListGetParser.add_argument("fix_required", type=inputs.boolean, default=None, location="args")
+    VulnListGetParser.add_argument("fix_required", type=str, location="args")
     VulnListGetParser.add_argument("keyword", type=str, location="args")
-    VulnListGetParser.add_argument("page", type=int, default=1, location="args")
-    VulnListGetParser.add_argument("count", type=int, default=10, location="args")
+    VulnListGetParser.add_argument("page", type=int, location="args")
+    VulnListGetParser.add_argument("count", type=int, location="args")
 
-    @api.expect(VulnListGetParser, validate=False)
-    @api.marshal_with(VulnModel, as_list=True)
+    @api.expect(VulnListGetParser)
+    @api.marshal_with(VulnOutputModel, as_list=True)
     @Authorizer.admin_token_required
     def get(self):
         """Get vulnerability list"""
-        pagenation = PagenationSchema()
-        pages = pagenation.load(request.args)
-        print(pages)
-        return []
+        schema = VulnListInputSchema()
+        params, errors = schema.load(request.args)
+        if errors:
+            abort(400, errors)
+
+        vuln_query = VulnTable.select(VulnTable)
+
+        if "fix_required" in params:
+            vuln_query = vuln_query.where(VulnTable.fix_required == params["fix_required"])
+
+        if "keyword" in params:
+            vuln_query = vuln_query.where(
+                (VulnTable.oid ** "%{}%".format(params["keyword"]))
+                | (VulnTable.name ** "%{}%".format(params["keyword"]))
+            )
+
+        vuln_query = vuln_query.order_by(VulnTable.oid.desc())
+        vuln_query = vuln_query.paginate(params["page"], params["count"])
+
+        response = []
+        for vulnerability in vuln_query.dicts():
+            response.append(vulnerability)
+
+        return response
 
 
 @api.route("/<string:vuln_id>")

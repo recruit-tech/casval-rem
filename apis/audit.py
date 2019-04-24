@@ -8,7 +8,7 @@ from flask_restplus import inputs
 from flask_restplus import reqparse
 from marshmallow import ValidationError
 
-from core import Audit
+from core import AuditTable
 from core import Authorizer
 from core import ContactSchema
 from core import db
@@ -19,8 +19,8 @@ ContactModel = api.model(
     "ContactModel", {"name": fields.String(required=True), "email": fields.String(required=True)}
 )
 
-AuditModel = api.model(
-    "AuditModel",
+AuditOutputModel = api.model(
+    "AuditOutputModel",
     {
         "id": fields.Integer(required=True),
         "uuid": fields.String(required=True),
@@ -63,8 +63,8 @@ ScanScheduleModel = api.model(
     {"start_at": fields.DateTime(required=True), "end_at": fields.DateTime(required=True)},
 )
 
-ScanModel = api.model(
-    "ScanModel",
+ScanOutputModel = api.model(
+    "ScanOutputModel",
     {
         "target": fields.String(required=True),
         "uuid": fields.String(required=True),
@@ -100,8 +100,8 @@ class AuditList(Resource):
         },
     )
 
-    @api.expect(AuditListGetParser, validate=True)
-    @api.marshal_with(AuditModel, as_list=True)
+    @api.expect(AuditListGetParser)
+    @api.marshal_with(AuditOutputModel, as_list=True)
     @Authorizer.admin_token_required
     def get(self):
         """Get audit list"""
@@ -109,8 +109,8 @@ class AuditList(Resource):
         print(data)
         return [{"id": 1, "name": "foo"}, {"id": 2, "name": "bar"}]
 
-    @api.expect(AuditListPostInputModel, validate=True)
-    @api.marshal_with(AuditModel)
+    @api.expect(AuditListPostInputModel)
+    @api.marshal_with(AuditOutputModel)
     @Authorizer.admin_token_required
     def post(self):
         """Register new audit"""
@@ -119,8 +119,8 @@ class AuditList(Resource):
             result = contact.load(request.json)
             with db.database.atomic():
                 print(result.data)
-                audit = Audit(app=app, name=request.json["name"])
-                audit.save()
+                audit_table = AuditTable(app=app, name=request.json["name"])
+                audit_table.save()
 
         except ValidationError as error:
             abort(400, error.messages)
@@ -137,7 +137,7 @@ class AuditToken(Resource):
 
     AuditTokenModel = api.model("AuditToken", {"token": fields.String(required=True)})
 
-    @api.expect(AuditTokenInputModel, validate=True)
+    @api.expect(AuditTokenInputModel)
     @api.marshal_with(AuditTokenModel)
     @api.response(401, "Invalid Password")
     @api.response(403, "Invalid Source IP")
@@ -166,15 +166,15 @@ class AuditItem(Resource):
         },
     )
 
-    @api.marshal_with(AuditModel)
+    @api.marshal_with(AuditOutputModel)
     @Authorizer.token_required
     def get(self, audit_uuid):
         """Get the specified audit"""
         print(audit_uuid)
         return {}
 
-    @api.expect(AuditPatchInputModel, validate=True)
-    @api.marshal_with(AuditModel)
+    @api.expect(AuditPatchInputModel)
+    @api.marshal_with(AuditOutputModel)
     @api.response(400, "Bad Request")
     @Authorizer.token_required
     def patch(self, audit_uuid):
@@ -195,14 +195,14 @@ class AuditItem(Resource):
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
 class AuditSubmission(Resource):
-    @api.marshal_with(AuditModel)
+    @api.marshal_with(AuditOutputModel)
     @Authorizer.token_required
     def post(self, audit_uuid):
         """Submit the specified audit result"""
         print(audit_uuid)
         return {}
 
-    @api.marshal_with(AuditModel)
+    @api.marshal_with(AuditOutputModel)
     @Authorizer.token_required
     def delete(self, audit_uuid):
         """Withdraw the submission of the specified audit result"""
@@ -247,8 +247,8 @@ class ScanList(Resource):
         },
     )
 
-    @api.expect(ScanListPostInputModel, validate=True)
-    @api.marshal_with(ScanModel)
+    @api.expect(ScanListPostInputModel)
+    @api.marshal_with(ScanOutputModel)
     @api.response(400, "Bad Request", ScanListPostErrorResponseModel)
     @Authorizer.token_required
     def post(self, audit_uuid):
@@ -266,15 +266,15 @@ class ScanItem(Resource):
 
     ScanPatchInputModel = api.model("ScanPatchInput", {"comment": fields.String(required=True)})
 
-    @api.marshal_with(ScanModel)
+    @api.marshal_with(ScanOutputModel)
     @Authorizer.token_required
     def get(self, audit_uuid, scan_uuid):
         """Retrieve the specified scan"""
         print(audit_uuid)
         return {}
 
-    @api.expect(ScanPatchInputModel, validate=True)
-    @api.marshal_with(ScanModel)
+    @api.expect(ScanPatchInputModel)
+    @api.marshal_with(ScanOutputModel)
     @api.response(400, "Bad Request")
     @Authorizer.token_required
     def patch(self, audit_uuid, scan_uuid):
@@ -300,8 +300,8 @@ class ScanSchedule(Resource):
         "ScanSchedulePatchInput", {"schedule": fields.Nested(ScanScheduleModel, required=True)}
     )
 
-    @api.expect(ScanSchedulePatchInputModel, validate=True)
-    @api.marshal_with(ScanModel)
+    @api.expect(ScanSchedulePatchInputModel)
+    @api.marshal_with(ScanOutputModel)
     @api.response(400, "Bad Request")
     @Authorizer.token_required
     def patch(self, audit_uuid, scan_uuid):

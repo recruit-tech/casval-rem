@@ -23,9 +23,25 @@ SCAN_SCHEDULABLE_DAYS_FROM_NOW = 10
 SCAN_SCHEDULABLE_DAYS_FROM_START_DATE = 5
 SCAN_MIN_DURATION_IN_SECONDS = 2 * 3600  # 2 hours
 
+VULN_FIX_REQUIRED_STATUS = ["required", "should", "not_required", "undefined"]
+
 
 class AuthInputSchema(marshmallow.Schema):
     password = marshmallow.String(required=True, validate=[validate.Length(min=1, max=128)])
+
+
+class PagenationInputSchema(marshmallow.Schema):
+    page = marshmallow.Integer(required=False, validate=[validate.Range(min=1)], missing=1)
+    count = marshmallow.Integer(
+        required=False,
+        validate=[validate.Range(min=1, max=AUDIT_LIST_MAX_COUNT)],
+        missing=AUDIT_GET_DEFAULT_COUNT,
+    )
+
+
+class VulnListInputSchema(PagenationInputSchema):
+    fix_required = marshmallow.String(required=False, validate=[validate.OneOf(VULN_FIX_REQUIRED_STATUS)])
+    keyword = marshmallow.String(required=False)
 
 
 class ContactSchema(marshmallow.Schema):
@@ -36,15 +52,6 @@ class ContactSchema(marshmallow.Schema):
     def add_timestamp(self, data):
         data["updated_at"] = datetime.utcnow()
         return data
-
-
-class PagenationSchema(marshmallow.Schema):
-    page = marshmallow.Integer(required=True, validate=[validate.Range(min=1)], default=1)
-    count = marshmallow.Integer(
-        required=True,
-        validate=[validate.Range(min=1, max=AUDIT_LIST_MAX_COUNT)],
-        default=AUDIT_GET_DEFAULT_COUNT,
-    )
 
 
 class AuditSchema(marshmallow.Schema):

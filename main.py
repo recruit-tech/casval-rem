@@ -5,12 +5,12 @@ from flask_cors import CORS
 from peewee import MySQLDatabase
 
 from apis import api
-from core import Audit
-from core import Contact
-from core import Result
-from core import Scan
+from core import AuditTable
+from core import ContactTable
+from core import ResultTable
+from core import ScanTable
 from core import Utils
-from core import Vuln
+from core import VulnTable
 from core import db
 from core import jwt
 from core import marshmallow
@@ -72,7 +72,7 @@ app.config["AUDIT_DOWNLOAD_COLUMNS"] = [
 
 api.init_app(app)
 db.init_app(app)
-db.database.create_tables([Audit, Contact, Scan, Vuln, Result])
+db.database.create_tables([AuditTable, ContactTable, ScanTable, VulnTable, ResultTable])
 jwt.init_app(app)
 jwt._set_error_handler_callbacks(api)
 marshmallow.init_app(app)
