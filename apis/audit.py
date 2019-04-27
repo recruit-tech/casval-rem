@@ -1,17 +1,25 @@
+import logging
+
 from flask import abort
-from flask import current_app as app
 from flask import request
 from flask_restplus import Namespace
 from flask_restplus import Resource
 from flask_restplus import fields
 from flask_restplus import inputs
 from flask_restplus import reqparse
-from marshmallow import ValidationError
+from peewee import fn
 
+from core import AuditInputSchema
+from core import AuditListInputSchema
 from core import AuditTable
 from core import Authorizer
 from core import ContactSchema
+from core import ContactTable
 from core import db
+
+logger = logging.getLogger("peewee")
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
 
 api = Namespace("audit")
 
@@ -23,9 +31,10 @@ AuditOutputModel = api.model(
     "AuditOutputModel",
     {
         "id": fields.Integer(required=True),
-        "uuid": fields.String(required=True),
+        "uuid": fields.String(required=True, attribute=lambda audit: audit["uuid"].hex),
         "name": fields.String(required=True),
         "submitted": fields.Boolean(required=True),
+        "approved": fields.Boolean(required=True),
         "rejected_reason": fields.String(required=True),
         "ip_restriction": fields.Boolean(required=True),
         "password_protection": fields.Boolean(required=True),
@@ -105,27 +114,55 @@ class AuditList(Resource):
     @Authorizer.admin_token_required
     def get(self):
         """Get audit list"""
-        data = request.args.get("count")
-        print(data)
-        return [{"id": 1, "name": "foo"}, {"id": 2, "name": "bar"}]
+        schema = AuditListInputSchema()
+        params, errors = schema.load(request.args)
+        if errors:
+            abort(400, errors)
+
+        audit_query = (
+            AuditTable.select(
+                AuditTable,
+                fn.GROUP_CONCAT(
+                    ContactTable.name,
+                    ContactSchema.SEPARATER_NAME_EMAIL,
+                    ContactTable.email,
+                    python_value=(
+                        lambda contacts: [
+                            dict(zip(["name", "email"], contact.rsplit(ContactSchema.SEPARATER_NAME_EMAIL)))
+                            for contact in contacts.split(ContactSchema.SEPARATER_CONTACTS)
+                        ]
+                    ),
+                ).alias("contacts"),
+            )
+            .where(AuditTable.submitted == params["submitted"])
+            .join(ContactTable, on=(AuditTable.id == ContactTable.audit_id))
+            .group_by(AuditTable.id)
+            .order_by(AuditTable.updated_at.desc())
+            .paginate(params["page"], params["count"])
+        )
+
+        return list(audit_query.dicts())
 
     @api.expect(AuditListPostInputModel)
     @api.marshal_with(AuditOutputModel)
     @Authorizer.admin_token_required
     def post(self):
         """Register new audit"""
-        try:
-            contact = ContactSchema(strict=True, exclude={"email"})
-            result = contact.load(request.json)
-            with db.database.atomic():
-                print(result.data)
-                audit_table = AuditTable(app=app, name=request.json["name"])
-                audit_table.save()
+        schema = AuditInputSchema()
+        params, errors = schema.load(request.json)
+        if errors:
+            abort(400, errors)
 
-        except ValidationError as error:
-            abort(400, error.messages)
+        with db.database.atomic():
+            audit = AuditTable(**params)
+            audit.save()
 
-        return None
+            for contact in params["contacts"]:
+                contact["audit_id"] = audit.id
+
+            ContactTable.insert_many(params["contacts"]).execute()
+
+        return AuditItem.get_by_uuid(audit.uuid)
 
 
 @api.route("/<string:audit_uuid>/tokens")
@@ -170,8 +207,7 @@ class AuditItem(Resource):
     @Authorizer.token_required
     def get(self, audit_uuid):
         """Get the specified audit"""
-        print(audit_uuid)
-        return {}
+        return AuditItem.get_by_uuid(audit_uuid)
 
     @api.expect(AuditPatchInputModel)
     @api.marshal_with(AuditOutputModel)
@@ -187,6 +223,22 @@ class AuditItem(Resource):
         """Delete the specified audit"""
         print(audit_uuid)
         return None
+
+    @staticmethod
+    def get_by_uuid(audit_uuid):
+        audit_query = AuditTable.select().where(AuditTable.uuid == audit_uuid)
+
+        audit = audit_query.dicts()[0]
+
+        audit["contacts"] = []
+        for contact in audit_query[0].contacts.dicts():
+            audit["contacts"].append(contact)
+
+        audit["scans"] = []
+        for scan in audit_query[0].scans.dicts():
+            audit["scans"].append(scan["uuid"].hex)
+
+        return audit
 
 
 @api.route("/<string:audit_uuid>/submit")

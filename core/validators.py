@@ -12,7 +12,7 @@ from core import Utils
 
 marshmallow = Marshmallow()
 
-DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 AUDIT_LIST_MAX_COUNT = 300
 AUDIT_GET_DEFAULT_COUNT = 10
@@ -39,26 +39,36 @@ class PagenationInputSchema(marshmallow.Schema):
     )
 
 
+class AuditListInputSchema(PagenationInputSchema):
+    submitted = marshmallow.Boolean(required=False, missing=False)
+
+
 class VulnListInputSchema(PagenationInputSchema):
     fix_required = marshmallow.String(required=False, validate=[validate.OneOf(VULN_FIX_REQUIRED_STATUS)])
     keyword = marshmallow.String(required=False)
 
 
 class ContactSchema(marshmallow.Schema):
-    name = marshmallow.String(required=True, validate=[validate.Length(min=1, max=128)])
+
+    SEPARATER_NAME_EMAIL = ":"
+    SEPARATER_CONTACTS = ","
+    EXCLUDE_SEPARATERS = r"^[^:,]+$"
+
+    name = marshmallow.String(
+        required=True, validate=[validate.Length(min=1, max=128), validate.Regexp(EXCLUDE_SEPARATERS)]
+    )
     email = marshmallow.String(required=True, validate=[validate.Email(), validate.Length(min=1, max=256)])
 
-    @post_load
-    def add_timestamp(self, data):
-        data["updated_at"] = datetime.utcnow()
-        return data
 
-
-class AuditSchema(marshmallow.Schema):
-
+class AuditInputSchema(marshmallow.Schema):
     name = marshmallow.String(required=True, validate=[validate.Length(min=1, max=128)])
+    contacts = marshmallow.Nested(ContactSchema, required=True, many=True, validate=validate.Length(min=1))
+
+
+class AuditSchema(AuditInputSchema):
     password = marshmallow.String(required=False, validate=[validate.Length(min=8, max=128)])
     submitted = marshmallow.Boolean(required=True)
+    approved = marshmallow.Boolean(required=True)
     ip_restriction = marshmallow.Boolean(required=True)
     password_protection = marshmallow.Boolean(required=True)
     rejected_reason = marshmallow.String(required=True, validate=[validate.Length(min=1, max=128)])

@@ -13,6 +13,9 @@ db = FlaskDB()
 
 
 class AuditTable(db.Model):
+    class Meta:
+        db_table = "audit"
+
     uuid = UUIDField(unique=True, default=uuid.uuid4)
     name = CharField()
     submitted = BooleanField(default=False)
@@ -26,12 +29,18 @@ class AuditTable(db.Model):
 
 
 class ContactTable(db.Model):
+    class Meta:
+        db_table = "contact"
+
     audit_id = ForeignKeyField(AuditTable, backref="contacts", on_delete="CASCADE", on_update="CASCADE")
     name = CharField()
     email = CharField()
 
 
 class ScanTable(db.Model):
+    class Meta:
+        db_table = "scan"
+
     uuid = UUIDField(unique=True, default=uuid.uuid4)
     audit_id = ForeignKeyField(AuditTable, backref="scans", on_delete="CASCADE", on_update="CASCADE")
     target = CharField()
@@ -47,6 +56,9 @@ class ScanTable(db.Model):
 
 
 class VulnTable(db.Model):
+    class Meta:
+        db_table = "vuln"
+
     oid = CharField(unique=True, max_length=191, null=True, default=None)
     fix_required = CharField(default="")
     name = CharField(null=True)
@@ -56,6 +68,9 @@ class VulnTable(db.Model):
 
 
 class ResultTable(db.Model):
+    class Meta:
+        db_table = "result"
+
     scan_id = ForeignKeyField(ScanTable, backref="results", on_delete="CASCADE", on_update="CASCADE")
     name = CharField(null=True)
     port = CharField(null=True)

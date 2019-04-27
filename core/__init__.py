@@ -1,34 +1,16 @@
-from .authorizers import Authorizer
-from .authorizers import jwt
-from .models import AuditTable
-from .models import ContactTable
-from .models import ResultTable
-from .models import ScanTable
-from .models import VulnTable
-from .models import db
-from .utils import Utils
-from .validators import AuthInputSchema
-from .validators import ContactSchema
-from .validators import VulnListInputSchema
-from .validators import marshmallow
-
-
-def noop(*args):
-    pass
-
-
-noop(
-    AuditTable,
-    ContactTable,
-    ResultTable,
-    ScanTable,
-    VulnTable,
-    db,
-    jwt,
-    marshmallow,
-    Authorizer,
-    Utils,
-    ContactSchema,
-    AuthInputSchema,
-    VulnListInputSchema,
-)
+from .authorizers import authorizers  # noqa
+from .authorizers import jwt  # noqa
+from .models import AuditTable  # noqa
+from .models import ContactTable  # noqa
+from .models import ResultTable  # noqa
+from .models import ScanTable  # noqa
+from .models import VulnTable  # noqa
+from .models import db  # noqa
+from .utils import Utils  # noqa
+from .validators import AuditInputSchema  # noqa
+from .validators import AuditListInputSchema  # noqa
+from .validators import AuditSchema  # noqa
+from .validators import AuthInputSchema  # noqa
+from .validators import ContactSchema  # noqa
+from .validators import VulnListInputSchema  # noqa
+from .validators import marshmallow  # noqa
