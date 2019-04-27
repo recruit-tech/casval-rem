@@ -3,6 +3,7 @@ from enum import IntFlag
 
 import pytz
 from flask_marshmallow import Marshmallow
+from marshmallow import ValidationError
 from marshmallow import post_load
 from marshmallow import validate
 from marshmallow import validates
@@ -69,19 +70,15 @@ class AuditInputSchema(marshmallow.Schema):
     contacts = marshmallow.Nested(ContactSchema, required=True, many=True, validate=validate.Length(min=1))
 
 
-class AuditSchema(AuditInputSchema):
+class AuditUpdateSchema(marshmallow.Schema):
+    name = marshmallow.String(required=False, validate=[validate.Length(min=1, max=128)])
+    contacts = marshmallow.Nested(ContactSchema, required=False, many=True, validate=validate.Length(min=1))
     password = marshmallow.String(required=False, validate=[validate.Length(min=8, max=128)])
     submitted = marshmallow.Boolean(required=True)
     approved = marshmallow.Boolean(required=True)
-    ip_restriction = marshmallow.Boolean(required=True)
-    password_protection = marshmallow.Boolean(required=True)
-    rejected_reason = marshmallow.String(required=True, validate=[validate.Length(min=1, max=128)])
-    updated_at = marshmallow.DateTime(required=True)
-
-    @validates_schema
-    def validate_password_presence(field, data):
-        if data["password_protection"] == True and "password" not in data:
-            raise ValidationError("Password must be provided when enforcing protection")
+    ip_restriction = marshmallow.Boolean(required=False)
+    password_protection = marshmallow.Boolean(required=False)
+    rejected_reason = marshmallow.String(required=False, validate=[validate.Length(min=1, max=128)])
 
     @post_load
     def add_timestamp(self, data):

@@ -12,6 +12,7 @@ from core import AuditInputSchema
 from core import AuditListInputSchema
 from core import AuditTable
 from core import AuditTokenInputSchema
+from core import AuditUpdateSchema
 from core import Authorizer
 from core import ContactSchema
 from core import ContactTable
@@ -226,8 +227,32 @@ class AuditItem(Resource):
     @Authorizer.token_required
     def patch(self, audit_uuid):
         """Update the specified audit"""
-        print(audit_uuid)
-        return {}
+        audit = AuditItem.get_by_uuid(audit_uuid)
+
+        schema = AuditUpdateSchema(
+            only=("name", "contacts", "password", "ip_restriction", "password_protection")
+        )
+        params, errors = schema.load(request.json)
+        if errors:
+            abort(400, errors)
+
+        if params.get("password_protection") == True and "password" not in params:
+            abort(400, "Password must be provided when enforcing protection")
+
+        if "contacts" in params:
+            contacts = params["contacts"]
+            params.pop("contacts")
+
+        with db.database.atomic():
+            AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
+
+            if contacts:
+                for contact in contacts:
+                    contact["audit_id"] = audit["id"]
+                ContactTable.delete().where(ContactTable.audit_id == audit["id"]).execute()
+                ContactTable.insert_many(contacts).execute()
+
+        return AuditItem.get_by_uuid(audit["uuid"])
 
     @Authorizer.admin_token_required
     def delete(self, audit_uuid):
