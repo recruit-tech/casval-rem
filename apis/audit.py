@@ -237,7 +237,7 @@ class AuditItem(Resource):
         audit = AuditItem.get_by_uuid(audit_uuid)
 
         schema = AuditUpdateSchema(
-            only=("name", "contacts", "password", "ip_restriction", "password_protection")
+            only=["name", "contacts", "password", "ip_restriction", "password_protection"]
         )
         params, errors = schema.load(request.json)
         if errors:
@@ -304,7 +304,7 @@ class AuditSubmission(Resource):
     def post(self, audit_uuid):
         """Submit the specified audit result"""
         audit = AuditItem.get_by_uuid(audit_uuid)
-        schema = AuditUpdateSchema(only=("submitted", "rejected_reason"))
+        schema = AuditUpdateSchema(only=["submitted", "rejected_reason"])
         params, _errors = schema.load({"submitted": True, "rejected_reason": ""})
 
         with db.database.atomic():
@@ -318,12 +318,45 @@ class AuditSubmission(Resource):
     def delete(self, audit_uuid):
         """Withdraw the submission of the specified audit result"""
         audit = AuditItem.get_by_uuid(audit_uuid)
-        schema = AuditUpdateSchema(only=("submitted", "rejected_reason"))
+        schema = AuditUpdateSchema(only=["submitted", "rejected_reason"])
         params, errors = schema.load(
             {"submitted": False, "rejected_reason": request.json.get("rejected_reason", "")}
         )
         if errors:
             abort(400, errors)
+
+        with db.database.atomic():
+            AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
+
+        return AuditItem.get_by_uuid(audit["uuid"])
+
+
+@api.route("/<string:audit_uuid>/approve")
+@api.doc(security="API Token")
+@api.response(200, "Success")
+@api.response(401, "Invalid Token")
+@api.response(404, "Not Found")
+class AuditApproval(Resource):
+    @api.marshal_with(AuditOutputModel)
+    @Authorizer.admin_token_required
+    def post(self, audit_uuid):
+        """Approve the specified audit submission"""
+        audit = AuditItem.get_by_uuid(audit_uuid)
+        schema = AuditUpdateSchema(only=["approved"])
+        params, _errors = schema.load({"approved": True})
+
+        with db.database.atomic():
+            AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
+
+        return AuditItem.get_by_uuid(audit["uuid"])
+
+    @api.marshal_with(AuditOutputModel)
+    @Authorizer.admin_token_required
+    def delete(self, audit_uuid):
+        """Withdraw the approval of the specified audit submission"""
+        audit = AuditItem.get_by_uuid(audit_uuid)
+        schema = AuditUpdateSchema(only=["approved"])
+        params, _errors = schema.load({"approved": False})
 
         with db.database.atomic():
             AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
