@@ -10,6 +10,7 @@ from .utils import Utils  # noqa
 from .validators import AuditInputSchema  # noqa
 from .validators import AuditListInputSchema  # noqa
 from .validators import AuditSchema  # noqa
+from .validators import AuditTokenInputSchema  # noqa
 from .validators import AuthInputSchema  # noqa
 from .validators import ContactSchema  # noqa
 from .validators import VulnListInputSchema  # noqa

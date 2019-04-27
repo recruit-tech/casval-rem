@@ -1,7 +1,6 @@
-import logging
-
 from flask import abort
 from flask import request
+from flask_jwt_extended import create_access_token
 from flask_restplus import Namespace
 from flask_restplus import Resource
 from flask_restplus import fields
@@ -12,14 +11,12 @@ from peewee import fn
 from core import AuditInputSchema
 from core import AuditListInputSchema
 from core import AuditTable
+from core import AuditTokenInputSchema
 from core import Authorizer
 from core import ContactSchema
 from core import ContactTable
+from core import Utils
 from core import db
-
-logger = logging.getLogger("peewee")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
 
 api = Namespace("audit")
 
@@ -181,8 +178,22 @@ class AuditToken(Resource):
     @api.response(404, "Not Found")
     def post(self, audit_uuid):
         """Publish an API token for the specified audit"""
-        print(audit_uuid)
-        return {}
+        audit = AuditItem.get_by_uuid(audit_uuid)
+
+        if audit["ip_restriction"] == True:
+            if Utils.is_source_ip_permitted(request.access_route[0]) == False:
+                abort(403, "Not allowed to access from your IP address")
+
+        if audit["password_protection"] == True:
+            params, errors = AuditTokenInputSchema().load(request.json)
+            if errors:
+                abort(400, errors)
+
+            if Utils.get_password_hash(params["password"]) != audit["password"]:
+                abort(401, "Invalid password")
+
+        token = create_access_token(identity={"scope": audit_uuid})
+        return {"token": token}, 200
 
 
 @api.route("/<string:audit_uuid>")
@@ -218,7 +229,7 @@ class AuditItem(Resource):
         print(audit_uuid)
         return {}
 
-    @Authorizer.token_required
+    @Authorizer.admin_token_required
     def delete(self, audit_uuid):
         """Delete the specified audit"""
         print(audit_uuid)
@@ -228,7 +239,10 @@ class AuditItem(Resource):
     def get_by_uuid(audit_uuid):
         audit_query = AuditTable.select().where(AuditTable.uuid == audit_uuid)
 
-        audit = audit_query.dicts()[0]
+        try:
+            audit = audit_query.dicts()[0]
+        except:
+            abort(404, "Not Found")
 
         audit["contacts"] = []
         for contact in audit_query[0].contacts.dicts():

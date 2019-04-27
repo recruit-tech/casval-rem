@@ -43,6 +43,10 @@ class AuditListInputSchema(PagenationInputSchema):
     submitted = marshmallow.Boolean(required=False, missing=False)
 
 
+class AuditTokenInputSchema(marshmallow.Schema):
+    password = marshmallow.String(required=False, validate=[validate.Length(min=1, max=128)])
+
+
 class VulnListInputSchema(PagenationInputSchema):
     fix_required = marshmallow.String(required=False, validate=[validate.OneOf(VULN_FIX_REQUIRED_STATUS)])
     keyword = marshmallow.String(required=False)

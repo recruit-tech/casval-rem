@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask import Flask
@@ -16,6 +17,11 @@ from core import jwt
 from core import marshmallow
 
 app = Flask(__name__)
+
+logger = logging.getLogger("peewee")
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
+
 
 if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
     # for production environment
