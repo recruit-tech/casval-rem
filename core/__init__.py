@@ -1,4 +1,4 @@
-from .authorizers import authorizers  # noqa
+from .authorizers import Authorizer  # noqa
 from .authorizers import jwt  # noqa
 from .models import AuditTable  # noqa
 from .models import ContactTable  # noqa
