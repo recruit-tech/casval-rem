@@ -78,7 +78,7 @@ class AuditUpdateSchema(marshmallow.Schema):
     approved = marshmallow.Boolean(required=True)
     ip_restriction = marshmallow.Boolean(required=False)
     password_protection = marshmallow.Boolean(required=False)
-    rejected_reason = marshmallow.String(required=False, validate=[validate.Length(min=1, max=128)])
+    rejected_reason = marshmallow.String(required=False, validate=[validate.Length(min=0, max=128)])
 
     @post_load
     def add_timestamp(self, data):

@@ -1,3 +1,7 @@
+import csv
+import tempfile
+
+from flask import Response
 from flask import abort
 from flask import request
 from flask_jwt_extended import create_access_token
@@ -16,7 +20,10 @@ from core import AuditUpdateSchema
 from core import Authorizer
 from core import ContactSchema
 from core import ContactTable
+from core import ResultTable
+from core import ScanTable
 from core import Utils
+from core import VulnTable
 from core import db
 
 api = Namespace("audit")
@@ -289,19 +296,39 @@ class AuditItem(Resource):
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
 class AuditSubmission(Resource):
+
+    AuditWithdrawalInputModel = api.model("AuditWithdrawalInput", {"rejected_reason": fields.String()})
+
     @api.marshal_with(AuditOutputModel)
     @Authorizer.token_required
     def post(self, audit_uuid):
         """Submit the specified audit result"""
-        print(audit_uuid)
-        return {}
+        audit = AuditItem.get_by_uuid(audit_uuid)
+        schema = AuditUpdateSchema(only=("submitted", "rejected_reason"))
+        params, _errors = schema.load({"submitted": True, "rejected_reason": ""})
 
+        with db.database.atomic():
+            AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
+
+        return AuditItem.get_by_uuid(audit["uuid"])
+
+    @api.expect(AuditWithdrawalInputModel)
     @api.marshal_with(AuditOutputModel)
     @Authorizer.token_required
     def delete(self, audit_uuid):
         """Withdraw the submission of the specified audit result"""
-        print(audit_uuid)
-        return None
+        audit = AuditItem.get_by_uuid(audit_uuid)
+        schema = AuditUpdateSchema(only=("submitted", "rejected_reason"))
+        params, errors = schema.load(
+            {"submitted": False, "rejected_reason": request.json.get("rejected_reason", "")}
+        )
+        if errors:
+            abort(400, errors)
+
+        with db.database.atomic():
+            AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
+
+        return AuditItem.get_by_uuid(audit["uuid"])
 
 
 @api.route("/<string:audit_uuid>/download")
@@ -310,11 +337,50 @@ class AuditSubmission(Resource):
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
 class AuditDownload(Resource):
+
+    AUDIT_CSV_COLUMNS = [
+        "target",
+        "port",
+        "name",
+        "cve",
+        "cvss_base",
+        "severity_rank",
+        "fix_required",
+        "description",
+        "oid",
+        "created_at",
+        "comment",
+    ]
+
     @Authorizer.token_required
     def get(self, audit_uuid):
         """Download the specified audit result"""
-        print(audit_uuid)
-        return {}
+        audit_query = AuditTable.select().where(AuditTable.uuid == audit_uuid)
+
+        scan_ids = []
+        for scan in audit_query[0].scans.dicts():
+            if scan["processed"] is True:
+                scan_ids.append(scan["id"])
+
+        results = (
+            ResultTable.select(ResultTable, ScanTable, VulnTable)
+            .join(ScanTable)
+            .join(VulnTable, on=(ResultTable.vuln_id == VulnTable.oid))
+            .where(ResultTable.scan_id.in_(scan_ids))
+            .order_by(ResultTable.scan_id)
+        )
+
+        with tempfile.TemporaryFile("r+") as f:
+            writer = csv.DictWriter(f, AuditDownload.AUDIT_CSV_COLUMNS, extrasaction="ignore")
+            writer.writeheader()
+            for result in results.dicts():
+                writer.writerow(result)
+            f.flush()
+            f.seek(0)
+            output = f.read()
+
+        headers = {"Content-Type": "text/csv", "Content-Disposition": "attachment"}
+        return Response(response=output, status=200, headers=headers)
 
 
 @api.route("/<string:audit_uuid>/scan")
