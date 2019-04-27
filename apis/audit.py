@@ -232,8 +232,11 @@ class AuditItem(Resource):
     @Authorizer.admin_token_required
     def delete(self, audit_uuid):
         """Delete the specified audit"""
-        print(audit_uuid)
-        return None
+        audit_query = AuditTable.delete().where(AuditTable.uuid == audit_uuid)
+        if audit_query.execute() == 0:
+            abort(404, "Not Found")
+        else:
+            return {}
 
     @staticmethod
     def get_by_uuid(audit_uuid):
