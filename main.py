@@ -10,6 +10,7 @@ from core import AuditTable
 from core import ContactTable
 from core import ResultTable
 from core import ScanTable
+from core import TaskTable
 from core import Utils
 from core import VulnTable
 from core import db
@@ -53,32 +54,12 @@ app.config["RESTPLUS_MASK_SWAGGER"] = False
 app.config["SWAGGER_UI_REQUEST_DURATION"] = True
 app.config["SWAGGER_UI_DOC_EXPANSION"] = "list"
 app.config["SWAGGER_UI_JSONEDITOR"] = True
-app.config["TIMEZONE"] = "Asia/Tokyo"
-app.config["SCAN_MAX_NUMBER_OF_MESSAGES_IN_QUEUE"] = 10
-app.config["SCAN_PENDING_QUEUE_NAME"] = "ScanPending"
-app.config["SCAN_RUNNING_QUEUE_NAME"] = "ScanRunning"
-app.config["SCAN_STOPPED_QUEUE_NAME"] = "ScanStopped"
-app.config["SCAN_MAX_PARALLEL_SESSION"] = 2
+
 app.config["AUDIT_REPORT_BUCKET_KEY"] = "report/{audit_id}/{scan_id}"
-app.config["AUDIT_GET_DEFAULT_COUNT"] = 30
-app.config["AUDIT_LIST_MAX_COUNT"] = 300
-app.config["AUDIT_DOWNLOAD_COLUMNS"] = [
-    "target",
-    "port",
-    "name",
-    "cve",
-    "cvss_base",
-    "severity_rank",
-    "fix_required",
-    "description",
-    "oid",
-    "created_at",
-    "comment",
-]
 
 api.init_app(app)
 db.init_app(app)
-db.database.create_tables([AuditTable, ContactTable, ScanTable, VulnTable, ResultTable])
+db.database.create_tables([AuditTable, ContactTable, ScanTable, TaskTable, VulnTable, ResultTable])
 jwt.init_app(app)
 jwt._set_error_handler_callbacks(api)
 marshmallow.init_app(app)

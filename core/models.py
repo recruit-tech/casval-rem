@@ -1,6 +1,8 @@
 import uuid
-from datetime import datetime
+from enum import Enum
+from enum import auto
 
+from peewee import SQL
 from peewee import BooleanField
 from peewee import CharField
 from peewee import DateTimeField
@@ -9,7 +11,16 @@ from peewee import TextField
 from peewee import UUIDField
 from playhouse.flask_utils import FlaskDB
 
+from .utils import Utils
+
 db = FlaskDB()
+
+
+class TaskProgressValue(Enum):
+    PENDING = auto()
+    RUNNING = auto()
+    STOPPED = auto()
+    DELETED = auto()
 
 
 class AuditTable(db.Model):
@@ -24,8 +35,8 @@ class AuditTable(db.Model):
     password_protection = BooleanField(default=False)
     password = CharField(default="")
     rejected_reason = CharField(default="")
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
+    updated_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")])
 
 
 class ContactTable(db.Model):
@@ -44,15 +55,32 @@ class ScanTable(db.Model):
     uuid = UUIDField(unique=True, default=uuid.uuid4)
     audit_id = ForeignKeyField(AuditTable, backref="scans", on_delete="CASCADE", on_update="CASCADE")
     target = CharField()
-    start_at = DateTimeField(default=0)
-    end_at = DateTimeField(default=0)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    start_at = DateTimeField(default=Utils.get_default_datetime)
+    end_at = DateTimeField(default=Utils.get_default_datetime)
     error_reason = CharField(default="")
-    scheduled = BooleanField(default=False)
-    schedule_uuid = UUIDField(unique=True, null=True, default=None)
+    scheduled = BooleanField(default=True)
+    task_uuid = UUIDField(unique=True, null=True, default=None)
     processed = BooleanField(default=False)
     comment = TextField(default="")
+    created_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
+    updated_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")])
+
+
+class TaskTable(db.Model):
+    class Meta:
+        db_table = "task"
+
+    uuid = UUIDField(unique=True, default=uuid.uuid4)
+    audit_id = ForeignKeyField(AuditTable, null=True, on_delete="SET NULL", on_update="CASCADE")
+    scan_id = ForeignKeyField(ScanTable, null=True, on_delete="SET NULL", on_update="CASCADE")
+    target = CharField()
+    start_at = DateTimeField(default=Utils.get_default_datetime)
+    end_at = DateTimeField(default=Utils.get_default_datetime)
+    error_reason = CharField(default="")
+    session = TextField(default="")
+    progress = CharField(default=TaskProgressValue.PENDING.name)
+    created_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
+    updated_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")])
 
 
 class VulnTable(db.Model):

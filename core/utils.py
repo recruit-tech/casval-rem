@@ -4,6 +4,8 @@ import ipaddress
 import os
 import re
 import socket
+import uuid
+from datetime import datetime
 
 import validators
 from flask import current_app as app
@@ -76,3 +78,11 @@ class Utils:
             return len(socket.gethostbyname(value)) > 0
         except Exception:
             return False
+
+    @staticmethod
+    def get_default_datetime():
+        return datetime(1, 1, 1)
+
+    @staticmethod
+    def get_uuid():
+        return uuid.uuid4().hex
