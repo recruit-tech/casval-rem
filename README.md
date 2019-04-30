@@ -17,6 +17,7 @@ pipenv run deploy
 
 ```
 docker run -e MYSQL_DATABASE=casval -e MYSQL_ROOT_PASSWORD=Passw0rd! -d -p 3306:3306 mysql:5.7 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+docker run -e PUBLIC_HOSTNAME=localhost -d -p 443:443 -p 9390:9390 mikesplain/openvas:9
 pipenv shell
 pipenv install -d
 pipenv run server

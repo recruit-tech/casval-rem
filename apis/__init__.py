@@ -2,6 +2,7 @@ from flask_restplus import Api
 
 from .audit import api as audit
 from .auth import api as auth
+from .handler import api as handler
 from .vuln import api as vuln
 
 authorizations = {"API Token": {"type": "apiKey", "in": "header", "name": "Authorization"}}
@@ -18,3 +19,4 @@ api = Api(
 api.add_namespace(audit, path="/audit")
 api.add_namespace(auth, path="/auth")
 api.add_namespace(vuln, path="/vuln")
+api.add_namespace(handler, path="/handler")

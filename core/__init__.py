@@ -9,7 +9,11 @@ from .models import VulnTable  # noqa
 from .models import db  # noqa
 from .resources import AuditResource  # noqa
 from .resources import ScanResource  # noqa
+from .tasks import DeletedTask  # noqa
+from .tasks import FailedTask  # noqa
 from .tasks import PendingTask  # noqa
+from .tasks import RunningTask  # noqa
+from .tasks import StoppedTask  # noqa
 from .utils import Utils  # noqa
 from .validators import AuditInputSchema  # noqa
 from .validators import AuditListInputSchema  # noqa

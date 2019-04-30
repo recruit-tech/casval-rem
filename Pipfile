@@ -15,6 +15,7 @@ flask-jwt-extended = "*"
 flask-cors = "*"
 flask-marshmallow = "*"
 validators = "*"
+pytz = "*"
 
 [dev-packages]
 isort = "*"

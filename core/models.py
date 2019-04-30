@@ -20,6 +20,7 @@ class TaskProgressValue(Enum):
     PENDING = auto()
     RUNNING = auto()
     STOPPED = auto()
+    FAILED = auto()
     DELETED = auto()
 
 
@@ -58,7 +59,7 @@ class ScanTable(db.Model):
     start_at = DateTimeField(default=Utils.get_default_datetime)
     end_at = DateTimeField(default=Utils.get_default_datetime)
     error_reason = CharField(default="")
-    scheduled = BooleanField(default=True)
+    scheduled = BooleanField(default=False)
     task_uuid = UUIDField(unique=True, null=True, default=None)
     processed = BooleanField(default=False)
     comment = TextField(default="")
