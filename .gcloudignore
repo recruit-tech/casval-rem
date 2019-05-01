@@ -22,3 +22,6 @@ Pipfile
 Pipfile.lock
 
 .DS_Store
+
+# CASVAL report storage for local development environment
+results/

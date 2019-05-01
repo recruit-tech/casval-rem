@@ -120,8 +120,6 @@ class ScanUpdateSchema(marshmallow.Schema):
             jst = pytz.timezone("Asia/Tokyo")
             now = datetime.now(tz=pytz.utc).astimezone(jst)
 
-            if start_at <= now:
-                raise ValidationError("'start_at has elapsed")
             if end_at <= now:
                 raise ValidationError("'end_at' has elapsed")
             if end_at <= start_at:

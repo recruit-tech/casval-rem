@@ -1,4 +1,3 @@
-import logging
 import os
 
 from flask import Flask
@@ -19,9 +18,9 @@ from core import marshmallow
 
 app = Flask(__name__)
 
-logger = logging.getLogger("peewee")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
+# logger = logging.getLogger("peewee")
+# logger.addHandler(logging.StreamHandler())
+# logger.setLevel(logging.DEBUG)
 
 
 if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
@@ -44,7 +43,6 @@ else:
     )
 
 app.config["ADMIN_PASSWORD"] = os.getenv("ADMIN_PASSWORD", "admin-password")
-app.config["SCANNER"] = os.getenv("SCANNER", "casval-stub")
 app.config["PERMITTED_SOURCE_IP_RANGES"] = os.getenv("PERMITTED_SOURCE_IP_RANGES", "")
 app.config["PERMITTED_ORIGINS"] = os.getenv("PERMITTED_ORIGINS", "*")
 app.config["JWT_SECRET_KEY"] = os.getenv("SECRET_KEY", "super-secret")
@@ -54,8 +52,6 @@ app.config["RESTPLUS_MASK_SWAGGER"] = False
 app.config["SWAGGER_UI_REQUEST_DURATION"] = True
 app.config["SWAGGER_UI_DOC_EXPANSION"] = "list"
 app.config["SWAGGER_UI_JSONEDITOR"] = True
-
-app.config["AUDIT_REPORT_BUCKET_KEY"] = "report/{audit_id}/{scan_id}"
 
 api.init_app(app)
 db.init_app(app)

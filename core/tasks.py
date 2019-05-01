@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import datetime
 from datetime import timedelta
 
@@ -6,18 +8,26 @@ from flask import current_app as app
 from peewee import fn
 
 from core import db
-from scanner import Scanner
 
 from .models import ResultTable
 from .models import ScanTable
 from .models import TaskProgressValue
 from .models import TaskTable
 from .models import VulnTable
+from .scanners import Scanner
+from .scanners import ScanStatus
 from .utils import Utils
 
-SCAN_MAX_NUMBER_OF_MESSAGES_IN_QUEUE = 10
-SCAN_MAX_PARALLEL_SESSION = 2
+if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
+    # for production environment
+    from .storages import CloudFileStorage as Storage
+else:
+    # for development environment
+    from .storages import LocalFileStorage as Storage
+
+SCAN_MAX_PARALLEL_SESSION = 1
 TASK_HARD_DELETE = False
+SCAN_REPORT_KEY_NAME = "{audit_id:08}-{scan_id:08}-{task_uuid}.xml"
 
 
 class TaskUtils:
@@ -91,8 +101,8 @@ class PendingTask:
                 break
 
             app.logger.info("Pending task: launched, task_uuid={}".format(task["uuid"]))
-            Scanner.launch(body["target"])
-            task["session"] = "__session__"
+            session = Scanner.launch(task["target"])
+            task["session"] = json.dumps(session)
             task["progress"] = TaskProgressValue.RUNNING.name
             TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
             # Do not continue subsequent loop when new scan has been launched
@@ -118,7 +128,7 @@ class RunningTask:
                 app.logger.info(
                     "Running task: {} removed, scan has been cancelled by user.".format(task["uuid"])
                 )
-                Scanner.terminate(task["session"])
+                Scanner.terminate(json.loads(task["session"]))
                 TaskUtils.delete(task["uuid"])
                 continue
 
@@ -126,18 +136,18 @@ class RunningTask:
             now = datetime.now(tz=pytz.utc).astimezone(pytz.timezone("Asia/Tokyo"))
             if end_at <= now:
                 app.logger.info("Running task: terminated by timeout, task_uuid={}".format(task["uuid"]))
-                Scanner.terminate(test["session"])
+                Scanner.terminate(json.loads(task["session"]))
                 task["error_reason"] = "Scan has been terminated because 'end_at' is over."
                 task["progress"] = TaskProgressValue.FAILED.name
                 TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
                 continue
 
-            status = Scanner.check_status(task["session"])
-            if status == "complete":
+            status = Scanner.check_status(json.loads(task["session"]))
+            if status == ScanStatus.STOPPED:
                 task["progress"] = TaskProgressValue.STOPPED.name
                 TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
-            elif status == "failure":
-                body["error_reason"] = "Scan session has failed."
+            elif status == ScanStatus.FAILED:
+                task["error_reason"] = "Scan session has failed."
                 task["progress"] = TaskProgressValue.FAILED.name
                 TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
             else:
@@ -152,20 +162,16 @@ class StoppedTask:
     def handle():
         for task in TaskUtils.get_tasks(TaskProgressValue.STOPPED.name):
 
-            report_obj = "storage"  # Report(task["audit_id"], task["scan_id"])
-            report = None
-            exception_info = None
+            storage = Storage()
+            key = SCAN_REPORT_KEY_NAME.format(
+                audit_id=task["audit_id"], scan_id=task["scan_id"], task_uuid=task["uuid"]
+            )
 
-            # report, exception_info = report_obj.load()
+            report = storage.load(key)
             if report is None:
-                app.logger.info(exception_info)
-                app.logger.info("Report not found. Retrieve from scanner")
-                report = Scanner.get_report(task["session"])
-                app.logger.info("Report retrieved: {} bytes".format(len(report)))
-                # report_obj = Report(task["audit_id"], task["scan_id"])
-                # report_obj.store(report)
+                report = Scanner.get_report(json.loads(task["session"]))
+                storage.store(key, report)
 
-            app.logger.info("Parse report")
             report = Scanner.parse_report(report)
 
             with db.database.atomic():
