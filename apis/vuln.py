@@ -17,7 +17,7 @@ VulnOutputModel = api.model(
     {
         "id": fields.Integer(required=True),
         "oid": fields.String(required=True),
-        "fix_required": fields.Boolean(required=True),
+        "fix_required": fields.String(required=True),
         "name": fields.String(required=True),
         "cvss_base": fields.String(required=True),
         "cve": fields.String(required=True),
@@ -78,7 +78,7 @@ class VulneravilityList(Resource):
 @api.response(404, "Not Found")
 class Vulnerability(Resource):
 
-    VulnPatchInputModel = api.model("VulnPatchInput", {"fix_required": fields.Boolean(required=True)})
+    VulnPatchInputModel = api.model("VulnPatchInput", {"fix_required": fields.String(required=True)})
 
     @api.expect(VulnPatchInputModel, validate=True)
     @Authorizer.admin_token_required

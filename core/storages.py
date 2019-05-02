@@ -1,6 +1,5 @@
 import os
 
-from flask import abort
 from flask import current_app as app
 
 
@@ -30,6 +29,6 @@ class LocalFileStorage:
                 file.write(body)
         except Exception as e:
             app.logger.error(e)
-            abort(500, "Failed to store file")
+            return False
 
         return True

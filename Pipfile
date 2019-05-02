@@ -16,6 +16,7 @@ flask-cors = "*"
 flask-marshmallow = "*"
 validators = "*"
 pytz = "*"
+requests = "*"
 
 [dev-packages]
 isort = "*"

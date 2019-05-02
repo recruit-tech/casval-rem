@@ -20,10 +20,9 @@ SCAN_MAX_COMMENT_LENGTH = 1000
 
 SCAN_SCHEDULABLE_DAYS_FROM_NOW = 10
 SCAN_SCHEDULABLE_DAYS_FROM_START_DATE = 5
-SCAN_MIN_DURATION_IN_SECONDS = 2 * 3600  # 2 hours
+SCAN_MIN_DURATION_IN_SECONDS = 3600  # 1 hours
 
-# FIXME: Change to enum or another similar type
-VULN_FIX_REQUIRED_STATUS = ["required", "should", "not_required", "undefined"]
+VULN_FIX_REQUIRED_STATUS = ["REQUIRED", "RECOMMENDED", "OPTIONAL", ""]
 
 
 class ErrorReasonEnum(IntFlag):

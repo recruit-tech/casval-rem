@@ -510,7 +510,7 @@ class ScanSchedule(Resource):
 
         with db.database.atomic():
 
-            task = PendingTask.add(
+            task = PendingTask().add(
                 {
                     "audit_id": audit_id,
                     "scan_id": scan["id"],
@@ -522,7 +522,6 @@ class ScanSchedule(Resource):
 
             params["task_uuid"] = task.uuid
             params["scheduled"] = True
-
             ScanTable.update(params).where(ScanTable.id == scan["id"]).execute()
 
         return ScanResource.get_by_uuid(scan_uuid, withResults=False)

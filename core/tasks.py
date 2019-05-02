@@ -2,19 +2,19 @@ import json
 import os
 from datetime import datetime
 from datetime import timedelta
+from enum import Enum
+from enum import auto
 
 import pytz
 from flask import current_app as app
 from peewee import fn
 
-from core import db
-
 from .models import ResultTable
 from .models import ScanTable
-from .models import TaskProgressValue
 from .models import TaskTable
 from .models import VulnTable
-from .scanners import Scanner
+from .models import db
+from .scanners import OpenVASScanner as Scanner
 from .scanners import ScanStatus
 from .utils import Utils
 
@@ -26,194 +26,200 @@ else:
     from .storages import LocalFileStorage as Storage
 
 SCAN_MAX_PARALLEL_SESSION = 1
-TASK_HARD_DELETE = False
-SCAN_REPORT_KEY_NAME = "{audit_id:08}-{scan_id:08}-{task_uuid}.xml"
+SCAN_REPORT_KEY_NAME = "{audit_id:08}-{scan_id:08}-{task_uuid:.8}.xml"
 
 
-class TaskUtils:
-    @staticmethod
-    def get_task_count(progress):
-        task_query = TaskTable.select(fn.Count(TaskTable.id).alias("task_count")).where(
-            TaskTable.progress == progress
-        )
-        return task_query.dicts().get()["task_count"]
+class TaskProgress(Enum):
+    PENDING = auto()
+    RUNNING = auto()
+    STOPPED = auto()
+    FAILED = auto()
+    DELETED = auto()
 
-    @staticmethod
-    def get_tasks(progress):
+
+class BaseTask:
+    def __init__(self, progress):
+        self.progress = progress
+
+    def handle(self):
+        for task in self._get_tasks():
+            try:
+                self._process(task)
+            except Exception as error:
+                app.logger.error("[Task] Exception, task={}, error={}".format(task, error))
+
+        return True
+
+    def _get_tasks(self):
         task_query = (
-            TaskTable.select().where(TaskTable.progress == progress).order_by(TaskTable.updated_at.desc())
+            TaskTable.select()
+            .where(TaskTable.progress == self.progress)
+            .order_by(TaskTable.updated_at.desc())
         )
         return list(task_query.dicts())
 
-    @staticmethod
-    def is_task_expired(task_uuid):
+    def _get_running_task_count(self):
+        task_query = TaskTable.select(fn.Count(TaskTable.id).alias("count")).where(
+            TaskTable.progress == TaskProgress.RUNNING.name
+        )
+        return task_query.dicts().get()["count"]
+
+    def _is_task_expired(self, task):
         scan_query = (
             ScanTable()
-            .select(fn.Count(ScanTable.id).alias("scan_count"))
-            .where((ScanTable.task_uuid == task_uuid))
+            .select(fn.Count(ScanTable.id).alias("count"))
+            .where((ScanTable.task_uuid == task["uuid"]))
         )
-        return scan_query.dicts().get()["scan_count"] == 0
+        return scan_query.dicts().get()["count"] == 0
 
-    @staticmethod
-    def delete(task_uuid):
-        if TASK_HARD_DELETE == True:
-            TaskTable.delete().where(TaskTable.uuid == task_uuid).execute()
-        else:
-            TaskTable.update({"progress": TaskProgressValue.DELETED.name}).where(
-                TaskTable.uuid == task_uuid
-            ).execute()
-        return True
+    def _update(self, task, next_progress):
+        task["progress"] = next_progress
+        TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
+
+    def _process(self, task):
+        app.logger.error("[Task] Error, needs to override `process` method")
 
 
-class PendingTask:
-    @staticmethod
-    def handle():
-        for task in TaskUtils.get_tasks(TaskProgressValue.PENDING.name):
+class PendingTask(BaseTask):
+    def __init__(self):
+        super().__init__(TaskProgress.PENDING.name)
 
-            start_at = task["start_at"].replace(tzinfo=pytz.utc)
-            end_at = task["end_at"].replace(tzinfo=pytz.utc)
-            now = datetime.now(tz=pytz.utc).astimezone(pytz.timezone("Asia/Tokyo"))
-
-            if start_at > now:
-                # The time to scan hasn't come yet, check next task.
-                continue
-
-            if end_at < (now + timedelta(hours=1)):
-                app.logger.info("Pending task: abandoned, task_uuid={}".format(task["uuid"]))
-                task["error_reason"] = "Scan has been abandoned because 'end_at' is soon or over."
-                task["progress"] = TaskProgressValue.FAILED.name
-                TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
-                continue
-
-            if TaskUtils.is_task_expired(task["uuid"]):
-                app.logger.info(
-                    "Pending task: {} removed, scan has been cancelled by user.".format(task["uuid"])
-                )
-                TaskUtils.delete(task["uuid"])
-                continue
-
-            running_task_count = TaskUtils.get_task_count(TaskProgressValue.RUNNING.name)
-            if running_task_count >= SCAN_MAX_PARALLEL_SESSION:
-                # Abandon subsequent process because other scan sessions are running.
-                app.logger.info(
-                    "Pending task: abandoned, running tasks are more than {}.".format(running_task_count)
-                )
-                break
-
-            app.logger.info("Pending task: launched, task_uuid={}".format(task["uuid"]))
-            session = Scanner.launch(task["target"])
-            task["session"] = json.dumps(session)
-            task["progress"] = TaskProgressValue.RUNNING.name
-            TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
-            # Do not continue subsequent loop when new scan has been launched
-            # because each stan required much time and it is likely to reach the parallel running task limit.
-            break
-
-        return True
-
-    @staticmethod
-    def add(entry):
+    def add(self, entry):
+        entry["progress"] = TaskProgress.PENDING.name
         task = TaskTable(**entry)
         task.save()
         return task
 
+    def _process(self, task):
+        start_at = task["start_at"].replace(tzinfo=pytz.utc)
+        end_at = task["end_at"].replace(tzinfo=pytz.utc)
+        now = datetime.now(tz=pytz.utc).astimezone(pytz.timezone("Asia/Tokyo"))
 
-class RunningTask:
-    @staticmethod
-    def handle():
-        for task in TaskUtils.get_tasks(TaskProgressValue.RUNNING.name):
+        if start_at > now:
+            # The scheduled time has not come yet.
+            return
 
-            if TaskUtils.is_task_expired(task["uuid"]):
-                # Force terminate the scan because scan session has been cancelled by user.
-                app.logger.info(
-                    "Running task: {} removed, scan has been cancelled by user.".format(task["uuid"])
-                )
-                Scanner.terminate(json.loads(task["session"]))
-                TaskUtils.delete(task["uuid"])
-                continue
+        if end_at < (now + timedelta(hours=1)):
+            task["error_reason"] = "The scan has been abandoned since the `end_at` is soon or over."
+            app.logger.info("[Pending Task] Abandoned, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.FAILED.name)
+            return
 
-            end_at = task["end_at"].replace(tzinfo=pytz.utc)
-            now = datetime.now(tz=pytz.utc).astimezone(pytz.timezone("Asia/Tokyo"))
-            if end_at <= now:
-                app.logger.info("Running task: terminated by timeout, task_uuid={}".format(task["uuid"]))
-                Scanner.terminate(json.loads(task["session"]))
-                task["error_reason"] = "Scan has been terminated because 'end_at' is over."
-                task["progress"] = TaskProgressValue.FAILED.name
-                TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
-                continue
+        if self._is_task_expired(task):
+            task["error_reason"] = "The scan has been cancelled by user."
+            app.logger.info("[Pending Task] Removed silently, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.DELETED.name)
+            return
 
-            status = Scanner.check_status(json.loads(task["session"]))
-            if status == ScanStatus.STOPPED:
-                task["progress"] = TaskProgressValue.STOPPED.name
-                TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
-            elif status == ScanStatus.FAILED:
-                task["error_reason"] = "Scan session has failed."
-                task["progress"] = TaskProgressValue.FAILED.name
-                TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
-            else:
-                # Do not remove the queue entry because scan session is still running.
-                app.logger.info("Running task: ongoing, task_uuid={}".format(task["uuid"]))
+        running_task_num = self._get_running_task_count()
+        if running_task_num >= SCAN_MAX_PARALLEL_SESSION:
+            app.logger.info("[Pending Task] Abandoned, already running {} task(s).".format(running_task_num))
+            return
 
-        return True
+        session = Scanner().launch_scan(task["target"])
+        task["session"] = json.dumps(session)
+        app.logger.info("[Pending task] Launched successfully, task={task}".format(task=task))
+        self._update(task, next_progress=TaskProgress.RUNNING.name)
+        return
 
 
-class StoppedTask:
-    @staticmethod
-    def handle():
-        for task in TaskUtils.get_tasks(TaskProgressValue.STOPPED.name):
+class RunningTask(BaseTask):
+    def __init__(self):
+        super().__init__(TaskProgress.RUNNING.name)
 
-            storage = Storage()
-            key = SCAN_REPORT_KEY_NAME.format(
-                audit_id=task["audit_id"], scan_id=task["scan_id"], task_uuid=task["uuid"]
-            )
+    def _process(self, task):
+        end_at = task["end_at"].replace(tzinfo=pytz.utc)
+        now = datetime.now(tz=pytz.utc).astimezone(pytz.timezone("Asia/Tokyo"))
 
-            report = storage.load(key)
-            if report is None:
-                report = Scanner.get_report(json.loads(task["session"]))
-                storage.store(key, report)
+        if end_at <= now:
+            Scanner(json.loads(task["session"])).terminate_scan()
+            task["error_reason"] = "The scan has been terminated since the `end_at` is over."
+            app.logger.info("[Running Task] Scan terminated by timeout, task_uuid={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.FAILED.name)
+            return
 
-            report = Scanner.parse_report(report)
+        if self._is_task_expired(task):
+            Scanner(json.loads(task["session"])).terminate_scan()
+            task["error_reason"] = "The scan has been cancelled by user."
+            app.logger.info("[Running Task] Scan terminated forcibly, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.DELETED.name)
+            return
 
-            with db.database.atomic():
+        status = Scanner(json.loads(task["session"])).check_status()
 
-                if TaskUtils.is_task_expired(task["uuid"]) == False:
+        if status == ScanStatus.STOPPED:
+            app.logger.info("[Running Task] Scan stopped successfully, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.STOPPED.name)
+        elif status == ScanStatus.FAILED:
+            task["error_reason"] = "The scan has failed."
+            app.logger.info("[Running Task] Scan failed, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.FAILED.name)
+        else:
+            app.logger.info("[Running Task] Scan ongoing, status={}, task={}".format(status, task))
 
-                    data = {
-                        "error_reason": "",
-                        "task_uuid": None,
-                        "scheduled": False,
-                        "processed": True,
-                        "start_at": Utils.get_default_datetime(),
-                        "end_at": Utils.get_default_datetime(),
-                    }
-
-                    scan_query = ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"])
-                    scan_query.execute()
-
-                    ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
-
-                    for vuln in report["vulns"]:
-                        vuln_query = VulnTable.insert(vuln).on_conflict(
-                            preserve=[VulnTable.fix_required], update=vuln
-                        )
-                        vuln_query.execute()
-
-                    for result in report["results"]:
-                        result["scan_id"] = task["scan_id"]
-                        result_query = ResultTable.insert(result)
-                        result_query.execute()
-
-                TaskUtils.delete(task["uuid"])
-
-        return True
+        return
 
 
-class FailedTask:
-    @staticmethod
-    def handle():
-        for task in TaskUtils.get_tasks(TaskProgressValue.FAILED.name):
+class StoppedTask(BaseTask):
+    def __init__(self):
+        super().__init__(TaskProgress.STOPPED.name)
 
-            data = {
+    def _process(self, task):
+        storage = Storage()
+        key = SCAN_REPORT_KEY_NAME.format(
+            audit_id=task["audit_id"], scan_id=task["scan_id"], task_uuid=task["uuid"].hex
+        )
+
+        report = storage.load(key)
+        if report is None:
+            report = Scanner(json.loads(task["session"])).get_report()
+            storage.store(key, report)
+
+        report = Scanner.parse_report(report)
+
+        with db.database.atomic():
+
+            if self._is_task_expired(task) == False:
+
+                data = {
+                    "error_reason": "",
+                    "task_uuid": None,
+                    "scheduled": False,
+                    "processed": True,
+                    "start_at": Utils.get_default_datetime(),
+                    "end_at": Utils.get_default_datetime(),
+                }
+
+                scan_query = ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"])
+                scan_query.execute()
+
+                for vuln in report["vulns"]:
+                    vuln_query = VulnTable.insert(vuln).on_conflict(
+                        preserve=[VulnTable.fix_required], update=vuln
+                    )
+                    vuln_query.execute()
+
+                ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
+
+                for result in report["results"]:
+                    result["scan_id"] = task["scan_id"]
+                    result_query = ResultTable.insert(result)
+                    result_query.execute()
+
+            task["error_reason"] = "None!"
+            app.logger.info("[Stopped Task] Deleted, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.DELETED.name)
+
+        return
+
+
+class FailedTask(BaseTask):
+    def __init__(self):
+        super().__init__(TaskProgress.FAILED.name)
+
+    def _process(self, task):
+        try:
+            result = {
                 "error_reason": task["error_reason"],
                 "task_uuid": None,
                 "scheduled": False,
@@ -221,12 +227,15 @@ class FailedTask:
                 "start_at": Utils.get_default_datetime(),
                 "end_at": Utils.get_default_datetime(),
             }
-            scan_query = ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"])
+            scan_query = ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"])
             scan_query.execute()
+        except Exception as error:
+            app.logger.error("[Failed Task] Exception, task={}, error={}".format(task, error))
 
-            TaskUtils.delete(task["uuid"])
-
-        return True
+        task["error_reason"] += " (from Failed Task)"
+        app.logger.info("[Failed Task] Deleted, task={task}".format(task=task))
+        self._update(task, next_progress=TaskProgress.DELETED.name)
+        return
 
 
 class DeletedTask:

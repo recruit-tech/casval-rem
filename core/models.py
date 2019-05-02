@@ -1,6 +1,4 @@
 import uuid
-from enum import Enum
-from enum import auto
 
 from peewee import SQL
 from peewee import BooleanField
@@ -14,14 +12,6 @@ from playhouse.flask_utils import FlaskDB
 from .utils import Utils
 
 db = FlaskDB()
-
-
-class TaskProgressValue(Enum):
-    PENDING = auto()
-    RUNNING = auto()
-    STOPPED = auto()
-    FAILED = auto()
-    DELETED = auto()
 
 
 class AuditTable(db.Model):
@@ -79,7 +69,7 @@ class TaskTable(db.Model):
     end_at = DateTimeField(default=Utils.get_default_datetime)
     error_reason = CharField(default="")
     session = TextField(default="")
-    progress = CharField(default=TaskProgressValue.PENDING.name)
+    progress = CharField()
     created_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
     updated_at = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")])
 

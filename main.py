@@ -7,6 +7,7 @@ from peewee import MySQLDatabase
 from apis import api
 from core import AuditTable
 from core import ContactTable
+from core import LocalTaskScheduler
 from core import ResultTable
 from core import ScanTable
 from core import TaskTable
@@ -24,7 +25,7 @@ app = Flask(__name__)
 
 
 if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
-    # for production environment
+    # For production environment
     Utils.load_env_from_config_file(os.environ["CONFIG_ENV_FILE_PATH"])
     app.config["DATABASE"] = MySQLDatabase(
         os.environ["DB_NAME"],
@@ -33,7 +34,7 @@ if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
         password=os.environ["DB_PASSWORD"],
     )
 else:
-    # for development environment
+    # For development environment
     app.config["DATABASE"] = MySQLDatabase(
         os.getenv("DB_NAME", "casval"),
         user=os.getenv("DB_USER", "root"),
@@ -60,3 +61,8 @@ jwt.init_app(app)
 jwt._set_error_handler_callbacks(api)
 marshmallow.init_app(app)
 CORS(app, origins=app.config["PERMITTED_ORIGINS"])
+
+if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) == 0:
+    # Periodic task scheduler for development environment.
+    # We use cron on GAE for production environment instead.
+    LocalTaskScheduler.run()

@@ -3,13 +3,10 @@ from enum import Enum
 from enum import auto
 from xml.etree import ElementTree
 
-from flask import abort
 from flask import current_app as app
 
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
-
-DEFAULT_TIMEOUT = 60
 
 
 class ScanStatus(Enum):
@@ -18,60 +15,53 @@ class ScanStatus(Enum):
     FAILED = auto()
 
 
-class ScannerUtils:
-    @staticmethod
-    def connect(host, port):
-        app.logger.info("Scanner: trying to connect to scanner {}:{} ...".format(host, port))
+class OpenVASScanner:
 
-        return VulnscanManager(
-            host,
-            os.getenv("OPENVAS_USERNAME", "admin"),
-            os.getenv("OPENVAS_PASSWORD", "admin"),
-            port,
-            DEFAULT_TIMEOUT,
-        )
+    SCANNER_NAME = "OpenVAS Default"
+    DEFAULT_TIMEOUT = 60
 
+    def __init__(self, session=None):
 
-class Scanner:
-    @staticmethod
-    def launch(target):
-        host = os.getenv("OPENVAS_ENDPOINT", "127.0.0.1")
-        port = int(os.getenv("OPENVAS_PORT", "9390"))
-        # FIXME
-        # profile = os.getenv("OPENVAS_PROFILE", "Full and fast")
-        profile = os.getenv("OPENVAS_PROFILE", "Discovery")
+        self.host = os.getenv("OPENVAS_ENDPOINT", "127.0.0.1")
+        self.port = int(os.getenv("OPENVAS_PORT", "9390"))
+        self.user = os.getenv("OPENVAS_USERNAME", "admin")
+        self.password = os.getenv("OPENVAS_PASSWORD", "admin")
+        self.profile = os.getenv("OPENVAS_PROFILE", "Full and fast")
+
+        if session != None:
+            self.session = session
+            self.host = session["openvas_host"]
+            self.port = session["openvas_port"]
+            self.profile = session["openvas_profile"]
+
+        self.conn = self._connect()
+
+        return
+
+    def launch_scan(self, target):
         try:
-            app.logger.info("Scanner: try to launch new scan session...")
-
-            conn = ScannerUtils.connect(host, port)
-            openvas_scan_id, openvas_target_id = conn.launch_scan(target=target, profile=profile)
+            app.logger.info("[Scanner] Trying to launch new scan session...")
+            ov_scan_id, ov_target_id = self.conn.launch_scan(target=target, profile=self.profile)
             session = {
-                "openvas_host": host,
-                "openvas_port": port,
-                "openvas_profile": profile,
-                "openvas_scan_id": openvas_scan_id,
-                "openvas_target_id": openvas_target_id,
+                "openvas_host": self.host,
+                "openvas_port": self.port,
+                "openvas_profile": self.profile,
+                "openvas_scan_id": ov_scan_id,
+                "openvas_target_id": ov_target_id,
             }
 
-            app.logger.info("Scanner: scan session launched: {}".format(session))
-
+            app.logger.info("[Scanner] Launched, session={}".format(session))
             return session
 
-        except Exception as e:
-            app.logger.error(e)
-            abort(500, "Failed to launch new scan session")
+        except Exception as error:
+            app.logger.error(error)
+            return None
 
-    @staticmethod
-    def check_status(session):
+    def check_status(self):
         try:
-            conn = ScannerUtils.connect(session["openvas_host"], session["openvas_port"])
-            status = conn.get_scan_status(session["openvas_scan_id"])
+            status = self.conn.get_scan_status(self.session["openvas_scan_id"])
 
-            app.logger.info(
-                "Scanner: scan status({scan_id}): {status}".format(
-                    scan_id=session["openvas_scan_id"], status=status
-                )
-            )
+            app.logger.info("[Scanner] current status={}, session={}".format(status, self.session))
 
             # https://github.com/greenbone/gvmd/blob/577f1b463f5861794bb97066dd0c9c4ab6c223df/src/manage.c#L1482
             # const char*
@@ -103,58 +93,54 @@ class Scanner:
             # }
 
             if status in ["New", "Running", "Requested"]:
-                result = ScanStatus.RUNNING
+                return ScanStatus.RUNNING
             elif status in ["Done"]:
-                result = ScanStatus.STOPPED
+                return ScanStatus.STOPPED
             else:
-                result = ScanStatus.FAILED
-            return result
-        except Exception as e:
-            app.logger.error(e)
+                return ScanStatus.FAILED
+        except Exception as error:
+            app.logger.error(error)
             return ScanStatus.RUNNING
 
-    @staticmethod
-    def terminate(session):
+    def terminate_scan(self):
         try:
-            app.logger.info("Scanner: trying to terminate scan session...")
+            app.logger.info("[Scanner] Trying to terminate scan session...")
 
-            conn = ScannerUtils.connect(session["openvas_host"], session["openvas_port"])
-            conn.delete_scan(session["openvas_scan_id"])
-            conn.delete_target(session["openvas_target_id"])
+            self.conn.delete_scan(self.session["openvas_scan_id"])
+            self.conn.delete_target(self.session["openvas_target_id"])
 
-            app.logger.info("Scanner: scan terminated")
-
+            app.logger.info("[Scanner] Terminated.")
             return True
-        except Exception as e:
-            app.logger.error(e)
-            abort(500, "Failed to terminate scan")
+        except Exception as error:
+            app.logger.error(error)
+            return False
 
-    @staticmethod
-    def get_report(session):
+    def get_report(self):
         try:
-            app.logger.info(
-                "Scanner: trying to get report of scan_id={}...".format(session["openvas_scan_id"])
-            )
+            app.logger.info("[Scanner] Trying to get report...")
 
-            conn = ScannerUtils.connect(session["openvas_host"], session["openvas_port"])
-            openvas_report_id = conn.get_report_id(session["openvas_scan_id"])
+            ov_report_id = self.conn.get_report_id(self.session["openvas_scan_id"])
 
-            app.logger.info("Scanner: report_id found, {}".format(openvas_report_id))
+            app.logger.info("[Scanner] Foubd report_id={}".format(ov_report_id))
 
-            report_xml = conn.get_report_xml(openvas_report_id)
+            report_xml = self.conn.get_report_xml(ov_report_id)
             report_txt = ElementTree.tostring(report_xml, encoding="unicode", method="xml")
-            app.logger.info("Scanner: report retrieved: {size}byte".format(size=len(report_txt)))
-            # FIXME
-            # conn.delete_report(openvas_report_id)
+            app.logger.info("[Scanner] Report downloaded, {} characters.".format(len(report_txt)))
+            self.conn.delete_report(ov_report_id)
             return report_txt
-        except Exception as e:
-            app.logger.error(e)
-            abort(500, "Failed to get report")
+        except Exception as error:
+            app.logger.error(error)
+            return None
 
-    @staticmethod
-    def parse_report(report_txt):
+    def _connect(self):
+        app.logger.info("[Scanner] Trying to connect to {}:{} ...".format(self.host, self.port))
+
+        return VulnscanManager(self.host, self.user, self.password, self.port, self.DEFAULT_TIMEOUT)
+
+    @classmethod
+    def parse_report(cls, report_txt):
         try:
-            app.logger.debug("Scanner: trying to parse report...")
+            app.logger.info("[Scanner] Trying to parse report...")
             parse_records = report_parser_from_text(report_txt, ignore_log_info=False)
             vulns = []
             results = []
@@ -172,16 +158,16 @@ class Scanner:
                 result = {
                     "name": record.host,
                     "port": record.port.port_name,
-                    "vuln_id": vuln["oid"],
-                    "description": vuln["description"],
-                    "qod": "",
-                    "severity": "",
+                    "vuln_id": record.nvt.oid,
+                    "description": record.nvt.tags[0],
+                    "qod": "",  # FIXME: not supported by openvas_lib
+                    "severity": record.severity,
                     "severity_rank": record.threat,
-                    "scanner": "",
+                    "scanner": OpenVASScanner.SCANNER_NAME,
                 }
                 results.append(result)
 
             return {"results": results, "vulns": vulns}
-        except Exception as e:
-            app.logger.error(e)
-            abort(500, "Failed to parse report")
+        except Exception as error:
+            app.logger.error(error)
+            return None

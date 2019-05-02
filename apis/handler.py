@@ -17,16 +17,18 @@ api = Namespace("handler")
 class TaskHandler(Resource):
     def get(self, task):
         """Invoke task handlers"""
+
         if task == "pending":
-            PendingTask.handle()
+            PendingTask().handle()
         elif task == "running":
-            RunningTask.handle()
+            RunningTask().handle()
         elif task == "stopped":
-            StoppedTask.handle()
+            StoppedTask().handle()
         elif task == "failed":
-            FailedTask.handle()
+            FailedTask().handle()
         elif task == "deleted":
-            DeletedTask.handle()
+            DeletedTask().handle()
         else:
             abort(404)
+
         return True
