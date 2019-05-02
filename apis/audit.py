@@ -51,18 +51,17 @@ AuditOutputModel = api.model(
         "created_at": fields.DateTime(required=True),
         "updated_at": fields.DateTime(required=True),
         "contacts": fields.List(fields.Nested(ContactModel), required=True),
-        "scans": fields.List(fields.String(), required=True),
+        "scans": fields.List(fields.String()),
     },
 )
 
 ScanResultModel = api.model(
     "ScanResultModel",
     {
-        "id": fields.Integer(required=True),
-        "scan_id": fields.Integer(required=True),
+        "oid": fields.String(required=True),
         "name": fields.String(required=True),
+        "host": fields.String(required=True),
         "port": fields.String(required=True),
-        "vuln_id": fields.String(required=True),
         "description": fields.String(required=True),
         "qod": fields.String(required=True),
         "severity": fields.String(required=True),
@@ -90,7 +89,7 @@ ScanOutputModel = api.model(
 )
 
 
-@api.route("/")
+@api.route("")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(400, "Bad Request")
@@ -111,7 +110,7 @@ class AuditList(AuditResource):
     )
 
     @api.expect(AuditListGetParser)
-    @api.marshal_with(AuditOutputModel, as_list=True)
+    @api.marshal_with(AuditOutputModel, skip_none=True, as_list=True)
     @Authorizer.admin_token_required
     def get(self):
         """Get audit list"""
@@ -349,6 +348,7 @@ class AuditDownload(AuditResource):
 
     AUDIT_CSV_COLUMNS = [
         "target",
+        "host",
         "port",
         "name",
         "cve",
@@ -374,7 +374,7 @@ class AuditDownload(AuditResource):
         results = (
             ResultTable.select(ResultTable, ScanTable, VulnTable)
             .join(ScanTable)
-            .join(VulnTable, on=(ResultTable.vuln_id == VulnTable.oid))
+            .join(VulnTable, on=(ResultTable.oid == VulnTable.oid))
             .where(ResultTable.scan_id.in_(scan_ids))
             .order_by(ResultTable.scan_id)
         )

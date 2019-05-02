@@ -7,7 +7,6 @@ from peewee import MySQLDatabase
 from apis import api
 from core import AuditTable
 from core import ContactTable
-from core import LocalTaskScheduler
 from core import ResultTable
 from core import ScanTable
 from core import TaskTable
@@ -61,8 +60,3 @@ jwt.init_app(app)
 jwt._set_error_handler_callbacks(api)
 marshmallow.init_app(app)
 CORS(app, origins=app.config["PERMITTED_ORIGINS"])
-
-if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) == 0:
-    # Periodic task scheduler for development environment.
-    # We use cron on GAE for production environment instead.
-    LocalTaskScheduler.run()

@@ -9,7 +9,6 @@ from .models import VulnTable  # noqa
 from .models import db  # noqa
 from .resources import AuditResource  # noqa
 from .resources import ScanResource  # noqa
-from .schedulers import LocalTaskScheduler  # noqa
 from .tasks import DeletedTask  # noqa
 from .tasks import FailedTask  # noqa
 from .tasks import PendingTask  # noqa
@@ -25,4 +24,5 @@ from .validators import ContactSchema  # noqa
 from .validators import ScanInputSchema  # noqa
 from .validators import ScanUpdateSchema  # noqa
 from .validators import VulnListInputSchema  # noqa
+from .validators import VulnUpdateSchema  # noqa
 from .validators import marshmallow  # noqa

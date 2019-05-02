@@ -70,8 +70,8 @@ class ScanResource(Resource):
 
             results = (
                 ResultTable.select(ResultTable, VulnTable.fix_required)
-                .join(VulnTable, on=(ResultTable.vuln_id == VulnTable.oid))
-                .where(VulnTable.fix_required.in_(["required", "should"]))
+                .join(VulnTable, on=(ResultTable.oid == VulnTable.oid))
+                .where(ResultTable.scan_id == scan["id"])
             )
             for result in results.dicts():
                 scan["results"].append(result)

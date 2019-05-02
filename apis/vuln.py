@@ -6,8 +6,10 @@ from flask_restplus import fields
 from flask_restplus import reqparse
 
 from core import Authorizer
+from core import ResultTable
 from core import VulnListInputSchema
 from core import VulnTable
+from core import VulnUpdateSchema
 
 api = Namespace("vuln")
 
@@ -26,7 +28,7 @@ VulnOutputModel = api.model(
 )
 
 
-@api.route("/")
+@api.route("")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(400, "Bad Request")
@@ -49,7 +51,9 @@ class VulneravilityList(Resource):
         if errors:
             abort(400, errors)
 
-        vuln_query = VulnTable.select(VulnTable)
+        vuln_query = VulnTable.select(VulnTable, ResultTable).join(
+            ResultTable, on=(VulnTable.oid == ResultTable.oid)
+        )
 
         if "fix_required" in params:
             vuln_query = vuln_query.where(VulnTable.fix_required == params["fix_required"])
@@ -57,7 +61,7 @@ class VulneravilityList(Resource):
         if "keyword" in params:
             vuln_query = vuln_query.where(
                 (VulnTable.oid ** "%{}%".format(params["keyword"]))
-                | (VulnTable.name ** "%{}%".format(params["keyword"]))
+                | (ResultTable.name ** "%{}%".format(params["keyword"]))
             )
 
         vuln_query = vuln_query.order_by(VulnTable.oid.desc())
@@ -70,7 +74,7 @@ class VulneravilityList(Resource):
         return response
 
 
-@api.route("/<string:vuln_id>")
+@api.route("/<string:oid>")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(400, "Bad Request")
@@ -82,7 +86,13 @@ class Vulnerability(Resource):
 
     @api.expect(VulnPatchInputModel, validate=True)
     @Authorizer.admin_token_required
-    def patch(self, vuln_id):
+    def patch(self, oid):
         """Decide whether the specified vulnerability requires to be fixed"""
-        print(vuln_id)
-        return []
+        schema = VulnUpdateSchema()
+        params, errors = schema.load(request.json)
+        if errors:
+            abort(400, errors)
+
+        VulnTable.update(params).where(VulnTable.oid == oid).execute()
+
+        return {}

@@ -43,6 +43,7 @@ class OpenVASScanner:
             app.logger.info("[Scanner] Trying to launch new scan session...")
             ov_scan_id, ov_target_id = self.conn.launch_scan(target=target, profile=self.profile)
             session = {
+                "target": target,
                 "openvas_host": self.host,
                 "openvas_port": self.port,
                 "openvas_profile": self.profile,
@@ -121,12 +122,14 @@ class OpenVASScanner:
 
             ov_report_id = self.conn.get_report_id(self.session["openvas_scan_id"])
 
-            app.logger.info("[Scanner] Foubd report_id={}".format(ov_report_id))
+            app.logger.info("[Scanner] Found report_id={}".format(ov_report_id))
 
             report_xml = self.conn.get_report_xml(ov_report_id)
             report_txt = ElementTree.tostring(report_xml, encoding="unicode", method="xml")
             app.logger.info("[Scanner] Report downloaded, {} characters.".format(len(report_txt)))
             self.conn.delete_report(ov_report_id)
+            self.conn.delete_scan(self.session["openvas_scan_id"])
+            self.conn.delete_target(self.session["openvas_target_id"])
             return report_txt
         except Exception as error:
             app.logger.error(error)
@@ -142,23 +145,21 @@ class OpenVASScanner:
         try:
             app.logger.info("[Scanner] Trying to parse report...")
             parse_records = report_parser_from_text(report_txt, ignore_log_info=False)
+
             vulns = []
             results = []
 
             for record in parse_records:
-                vuln = {
-                    "oid": record.nvt.oid,
-                    "name": record.nvt.name,
-                    "cvss_base": record.nvt.cvss_base,
-                    "cve": ",".join(record.nvt.cve),
-                    "description": record.nvt.tags[0],
-                }
+                vuln = {"oid": record.nvt.oid}
                 vulns.append(vuln)
 
                 result = {
-                    "name": record.host,
+                    "name": record.nvt.name,
+                    "host": record.host,
                     "port": record.port.port_name,
-                    "vuln_id": record.nvt.oid,
+                    "cvss_base": record.nvt.cvss_base,
+                    "cve": ",".join(record.nvt.cve),
+                    "oid": record.nvt.oid,
                     "description": record.nvt.tags[0],
                     "qod": "",  # FIXME: not supported by openvas_lib
                     "severity": record.severity,

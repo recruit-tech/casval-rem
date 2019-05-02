@@ -80,10 +80,6 @@ class VulnTable(db.Model):
 
     oid = CharField(unique=True, max_length=191, null=True, default=None)
     fix_required = CharField(default="")
-    name = CharField(null=True)
-    cvss_base = CharField(null=True)
-    cve = CharField(null=True)
-    description = TextField(null=True)
 
 
 class ResultTable(db.Model):
@@ -92,8 +88,11 @@ class ResultTable(db.Model):
 
     scan_id = ForeignKeyField(ScanTable, backref="results", on_delete="CASCADE", on_update="CASCADE")
     name = CharField(null=True)
+    host = CharField(null=True)
     port = CharField(null=True)
-    vuln_id = CharField(null=True)
+    cvss_base = CharField(null=True)
+    cve = CharField(null=True)
+    oid = CharField(null=True)
     description = TextField(null=True)
     qod = CharField(null=True)
     severity = CharField(null=True)

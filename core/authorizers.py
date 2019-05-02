@@ -12,8 +12,11 @@ class Authorizer:
     def token_required(f):
         @wraps(f)
         def decorate(*args, **kwargs):
-            verify_jwt_in_request()
-            identity = get_jwt_identity()
+            try:
+                verify_jwt_in_request()
+                identity = get_jwt_identity()
+            except:
+                abort(401, "Token is invalid")
             if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
                 abort(401, "Token is invalid for the audit")
             else:
@@ -24,8 +27,11 @@ class Authorizer:
     def admin_token_required(f):
         @wraps(f)
         def decorate(*args, **kwargs):
-            verify_jwt_in_request()
-            identity = get_jwt_identity()
+            try:
+                verify_jwt_in_request()
+                identity = get_jwt_identity()
+            except:
+                abort(401, "Token is invalid")
             if identity["scope"] != "*":
                 abort(401, "Token is insufficient privileges")
             else:

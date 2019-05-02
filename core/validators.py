@@ -148,3 +148,7 @@ class ScanUpdateSchema(marshmallow.Schema):
 class VulnListInputSchema(PagenationInputSchema):
     fix_required = marshmallow.String(required=False, validate=[validate.OneOf(VULN_FIX_REQUIRED_STATUS)])
     keyword = marshmallow.String(required=False)
+
+
+class VulnUpdateSchema(marshmallow.Schema):
+    fix_required = marshmallow.String(required=True, validate=[validate.OneOf(VULN_FIX_REQUIRED_STATUS)])

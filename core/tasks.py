@@ -44,7 +44,10 @@ class BaseTask:
     def handle(self):
         for task in self._get_tasks():
             try:
-                self._process(task)
+                result = self._process(task)
+                if result == False:
+                    # Skip subsequent tasks and return
+                    return False
             except Exception as error:
                 app.logger.error("[Task] Exception, task={}, error={}".format(task, error))
 
@@ -52,9 +55,7 @@ class BaseTask:
 
     def _get_tasks(self):
         task_query = (
-            TaskTable.select()
-            .where(TaskTable.progress == self.progress)
-            .order_by(TaskTable.updated_at.desc())
+            TaskTable.select().where(TaskTable.progress == self.progress).order_by(TaskTable.updated_at.asc())
         )
         return list(task_query.dicts())
 
@@ -91,36 +92,36 @@ class PendingTask(BaseTask):
         return task
 
     def _process(self, task):
+        running_task_num = self._get_running_task_count()
+        if running_task_num >= SCAN_MAX_PARALLEL_SESSION:
+            app.logger.info("[Pending Task] Abandoned, already running {} task(s).".format(running_task_num))
+            return False
+
         start_at = task["start_at"].replace(tzinfo=pytz.utc)
         end_at = task["end_at"].replace(tzinfo=pytz.utc)
         now = datetime.now(tz=pytz.utc).astimezone(pytz.timezone("Asia/Tokyo"))
 
         if start_at > now:
             # The scheduled time has not come yet.
-            return
+            return True
 
         if end_at < (now + timedelta(hours=1)):
             task["error_reason"] = "The scan has been abandoned since the `end_at` is soon or over."
             app.logger.info("[Pending Task] Abandoned, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
-            return
+            return True
 
         if self._is_task_expired(task):
             task["error_reason"] = "The scan has been cancelled by user."
             app.logger.info("[Pending Task] Removed silently, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
-            return
-
-        running_task_num = self._get_running_task_count()
-        if running_task_num >= SCAN_MAX_PARALLEL_SESSION:
-            app.logger.info("[Pending Task] Abandoned, already running {} task(s).".format(running_task_num))
-            return
+            return True
 
         session = Scanner().launch_scan(task["target"])
         task["session"] = json.dumps(session)
         app.logger.info("[Pending task] Launched successfully, task={task}".format(task=task))
         self._update(task, next_progress=TaskProgress.RUNNING.name)
-        return
+        return True
 
 
 class RunningTask(BaseTask):
@@ -136,14 +137,14 @@ class RunningTask(BaseTask):
             task["error_reason"] = "The scan has been terminated since the `end_at` is over."
             app.logger.info("[Running Task] Scan terminated by timeout, task_uuid={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
-            return
+            return True
 
         if self._is_task_expired(task):
             Scanner(json.loads(task["session"])).terminate_scan()
             task["error_reason"] = "The scan has been cancelled by user."
             app.logger.info("[Running Task] Scan terminated forcibly, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
-            return
+            return True
 
         status = Scanner(json.loads(task["session"])).check_status()
 
@@ -157,7 +158,7 @@ class RunningTask(BaseTask):
         else:
             app.logger.info("[Running Task] Scan ongoing, status={}, task={}".format(status, task))
 
-        return
+        return True
 
 
 class StoppedTask(BaseTask):
@@ -207,10 +208,10 @@ class StoppedTask(BaseTask):
                     result_query.execute()
 
             task["error_reason"] = "None!"
-            app.logger.info("[Stopped Task] Deleted, task={task}".format(task=task))
+            app.logger.info("[Stopped Task] Deleted, task={}".format(task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
 
-        return
+        return True
 
 
 class FailedTask(BaseTask):
