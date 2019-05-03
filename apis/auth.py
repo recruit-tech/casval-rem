@@ -12,7 +12,7 @@ from core import Utils
 api = Namespace("auth")
 
 
-@api.route("")
+@api.route("/")
 class Authenticate(Resource):
 
     AuthInputModel = api.model("AuthInputModel", {"password": fields.String(required=True)})

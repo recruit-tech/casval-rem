@@ -89,7 +89,7 @@ ScanOutputModel = api.model(
 )
 
 
-@api.route("")
+@api.route("/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(400, "Bad Request")
@@ -98,6 +98,7 @@ class AuditList(AuditResource):
 
     AuditListGetParser = reqparse.RequestParser()
     AuditListGetParser.add_argument("submitted", type=inputs.boolean, default=False, location="args")
+    AuditListGetParser.add_argument("approved", type=inputs.boolean, default=False, location="args")
     AuditListGetParser.add_argument("page", type=int, default=1, location="args")
     AuditListGetParser.add_argument("count", type=int, default=10, location="args")
 
@@ -134,7 +135,9 @@ class AuditList(AuditResource):
                     ),
                 ).alias("contacts"),
             )
-            .where(AuditTable.submitted == params["submitted"])
+            .where(
+                (AuditTable.submitted == params["submitted"]) & (AuditTable.approved == params["approved"])
+            )
             .join(ContactTable, on=(AuditTable.id == ContactTable.audit_id))
             .group_by(AuditTable.id)
             .order_by(AuditTable.updated_at.desc())
@@ -165,7 +168,7 @@ class AuditList(AuditResource):
         return AuditResource.get_by_uuid(audit.uuid, withContacts=True, withScans=True)
 
 
-@api.route("/<string:audit_uuid>/tokens")
+@api.route("/<string:audit_uuid>/tokens/")
 @api.doc(security="None")
 @api.response(200, "Success")
 class AuditToken(AuditResource):
@@ -198,7 +201,7 @@ class AuditToken(AuditResource):
         return {"token": token}, 200
 
 
-@api.route("/<string:audit_uuid>")
+@api.route("/<string:audit_uuid>/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
@@ -265,7 +268,7 @@ class AuditItem(AuditResource):
             return {}
 
 
-@api.route("/<string:audit_uuid>/submit")
+@api.route("/<string:audit_uuid>/submit/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
@@ -279,6 +282,13 @@ class AuditSubmission(AuditResource):
     def post(self, audit_uuid):
         """Submit the specified audit result"""
         audit = AuditResource.get_by_uuid(audit_uuid, withContacts=False, withScans=False)
+
+        if audit["submitted"] == True:
+            abort(400, "Already approved")
+
+        if audit["approved"] == True:
+            abort(400, "Already approved by administrator(s)")
+
         schema = AuditUpdateSchema(only=["submitted", "rejected_reason"])
         params, _errors = schema.load({"submitted": True, "rejected_reason": ""})
 
@@ -293,9 +303,16 @@ class AuditSubmission(AuditResource):
     def delete(self, audit_uuid):
         """Withdraw the submission of the specified audit result"""
         audit = AuditResource.get_by_uuid(audit_uuid, withContacts=False, withScans=False)
+
+        if audit["submitted"] == False:
+            abort(400, "Not submitted yet")
+
+        if audit["approved"] == True:
+            abort(400, "Already approved by administrator(s)")
+
         schema = AuditUpdateSchema(only=["submitted", "rejected_reason"])
         params, errors = schema.load(
-            {"submitted": False, "rejected_reason": request.json.get("rejected_reason", "")}
+            {"submitted": False, "rejected_reason": ""}  # TODO: Get rejected reason from UI
         )
         if errors:
             abort(400, errors)
@@ -306,7 +323,7 @@ class AuditSubmission(AuditResource):
         return AuditResource.get_by_uuid(audit["uuid"], withContacts=True, withScans=True)
 
 
-@api.route("/<string:audit_uuid>/approve")
+@api.route("/<string:audit_uuid>/approve/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
@@ -317,8 +334,12 @@ class AuditApproval(AuditResource):
     def post(self, audit_uuid):
         """Approve the specified audit submission"""
         audit = AuditResource.get_by_uuid(audit_uuid, withContacts=False, withScans=False)
-        schema = AuditUpdateSchema(only=["approved"])
-        params, _errors = schema.load({"approved": True})
+
+        if audit["approved"] == True:
+            abort(400, "Already approved")
+
+        schema = AuditUpdateSchema(only=["approved", "submitted"])
+        params, _errors = schema.load({"approved": True, "submitted": True})
 
         with db.database.atomic():
             AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
@@ -330,6 +351,10 @@ class AuditApproval(AuditResource):
     def delete(self, audit_uuid):
         """Withdraw the approval of the specified audit submission"""
         audit = AuditResource.get_by_uuid(audit_uuid, withContacts=False, withScans=False)
+
+        if audit["approved"] == False:
+            abort(400, "Not approved yet")
+
         schema = AuditUpdateSchema(only=["approved"])
         params, _errors = schema.load({"approved": False})
 
@@ -339,7 +364,7 @@ class AuditApproval(AuditResource):
         return AuditResource.get_by_uuid(audit["uuid"], withContacts=True, withScans=True)
 
 
-@api.route("/<string:audit_uuid>/download")
+@api.route("/<string:audit_uuid>/download/")
 @api.doc(security="API Token")
 @api.response(200, "Success", headers={"Content-Type": "text/csv", "Content-Disposition": "attachment"})
 @api.response(401, "Invalid Token")
@@ -392,7 +417,7 @@ class AuditDownload(AuditResource):
         return Response(response=output, status=200, headers=headers)
 
 
-@api.route("/<string:audit_uuid>/scan")
+@api.route("/<string:audit_uuid>/scan/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
@@ -435,7 +460,7 @@ class ScanList(ScanResource):
         return ScanResource.get_by_uuid(scan_insert_query.uuid)
 
 
-@api.route("/<string:audit_uuid>/scan/<string:scan_uuid>")
+@api.route("/<string:audit_uuid>/scan/<string:scan_uuid>/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
@@ -477,7 +502,7 @@ class ScanItem(Resource):
             return {}
 
 
-@api.route("/<string:audit_uuid>/scan/<string:scan_uuid>/schedule")
+@api.route("/<string:audit_uuid>/scan/<string:scan_uuid>/schedule/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")

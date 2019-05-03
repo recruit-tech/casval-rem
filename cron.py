@@ -6,11 +6,11 @@ import requests
 
 REQUEST_SCHEMA = "http://"
 
-PENDING_TASK_ENDPOINT = "/handler/pending"
-RUNNING_TASK_ENDPOINT = "/handler/running"
-STOPPED_TASK_ENDPOINT = "/handler/stopped"
-FAILED_TASK_ENDPOINT = "/handler/failed"
-DELETED_TASK_ENDPOINT = "/handler/deleted"
+PENDING_TASK_ENDPOINT = "/handler/pending/"
+RUNNING_TASK_ENDPOINT = "/handler/running/"
+STOPPED_TASK_ENDPOINT = "/handler/stopped/"
+FAILED_TASK_ENDPOINT = "/handler/failed/"
+DELETED_TASK_ENDPOINT = "/handler/deleted/"
 
 PENDING_TASK_INTERVAL = 1 * 60  # 1 minute
 RUNNING_TASK_INTERVAL = 1 * 60  # 1 minute

@@ -11,7 +11,7 @@ from core import StoppedTask
 api = Namespace("handler")
 
 
-@api.route("/<string:task>")
+@api.route("/<string:task>/")
 @api.doc(security="None")
 @api.response(200, "Success")
 class TaskHandler(Resource):

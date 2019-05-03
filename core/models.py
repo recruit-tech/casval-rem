@@ -79,7 +79,7 @@ class VulnTable(db.Model):
         db_table = "vuln"
 
     oid = CharField(unique=True, max_length=191, null=True, default=None)
-    fix_required = CharField(default="")
+    fix_required = CharField(default="UNDEFINED")
 
 
 class ResultTable(db.Model):

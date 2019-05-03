@@ -17,7 +17,6 @@ api = Namespace("vuln")
 VulnOutputModel = api.model(
     "VulnOutput",
     {
-        "id": fields.Integer(required=True),
         "oid": fields.String(required=True),
         "fix_required": fields.String(required=True),
         "name": fields.String(required=True),
@@ -28,7 +27,7 @@ VulnOutputModel = api.model(
 )
 
 
-@api.route("")
+@api.route("/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(400, "Bad Request")
@@ -51,19 +50,31 @@ class VulneravilityList(Resource):
         if errors:
             abort(400, errors)
 
-        vuln_query = VulnTable.select(VulnTable, ResultTable).join(
-            ResultTable, on=(VulnTable.oid == ResultTable.oid)
-        )
+        vuln_query = VulnTable.select(
+            VulnTable.oid,
+            VulnTable.fix_required,
+            ResultTable.name,
+            ResultTable.cvss_base,
+            ResultTable.cve,
+            ResultTable.description,
+        ).join(ResultTable, on=(VulnTable.oid == ResultTable.oid))
 
-        if "fix_required" in params:
+        if "fix_required" in params and len(params["fix_required"]) > 0:
             vuln_query = vuln_query.where(VulnTable.fix_required == params["fix_required"])
 
-        if "keyword" in params:
+        if "keyword" in params and len(params["keyword"]) > 0:
             vuln_query = vuln_query.where(
                 (VulnTable.oid ** "%{}%".format(params["keyword"]))
                 | (ResultTable.name ** "%{}%".format(params["keyword"]))
             )
-
+        vuln_query = vuln_query.group_by(
+            VulnTable.oid,
+            VulnTable.fix_required,
+            ResultTable.name,
+            ResultTable.cvss_base,
+            ResultTable.cve,
+            ResultTable.description,
+        )
         vuln_query = vuln_query.order_by(VulnTable.oid.desc())
         vuln_query = vuln_query.paginate(params["page"], params["count"])
 
@@ -74,7 +85,7 @@ class VulneravilityList(Resource):
         return response
 
 
-@api.route("/<string:oid>")
+@api.route("/<string:oid>/")
 @api.doc(security="API Token")
 @api.response(200, "Success")
 @api.response(400, "Bad Request")

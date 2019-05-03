@@ -22,7 +22,7 @@ SCAN_SCHEDULABLE_DAYS_FROM_NOW = 10
 SCAN_SCHEDULABLE_DAYS_FROM_START_DATE = 5
 SCAN_MIN_DURATION_IN_SECONDS = 3600  # 1 hours
 
-VULN_FIX_REQUIRED_STATUS = ["REQUIRED", "RECOMMENDED", "OPTIONAL", ""]
+VULN_FIX_REQUIRED_STATUS = ["REQUIRED", "RECOMMENDED", "OPTIONAL", "UNDEFINED", ""]
 
 
 class ErrorReasonEnum(IntFlag):
@@ -53,6 +53,7 @@ class AuthInputSchema(marshmallow.Schema):
 
 class AuditListInputSchema(PagenationInputSchema):
     submitted = marshmallow.Boolean(required=False, missing=False)
+    approved = marshmallow.Boolean(required=False, missing=False)
 
 
 class AuditTokenInputSchema(marshmallow.Schema):
