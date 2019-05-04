@@ -57,7 +57,7 @@ class AuditListInputSchema(PagenationInputSchema):
 
 
 class AuditTokenInputSchema(marshmallow.Schema):
-    password = marshmallow.String(required=False, validate=[validate.Length(min=1, max=128)])
+    password = marshmallow.String(required=False, missing="")
 
 
 class ContactSchema(marshmallow.Schema):

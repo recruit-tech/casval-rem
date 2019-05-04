@@ -243,14 +243,22 @@ class AuditItem(AuditResource):
         if params.get("password_protection") == True and "password" not in params:
             abort(400, "Password must be provided when enforcing protection")
 
+        if "password" in params:
+            params["password"] = Utils.get_password_hash(params["password"])
+
+        if params.get("password_protection") == False:
+            params["password"] = ""
+
+        contacts = []
         if "contacts" in params:
             contacts = params["contacts"]
             params.pop("contacts")
 
         with db.database.atomic():
-            AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
+            if (params != {}):
+                AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
 
-            if contacts:
+            if len(contacts) > 0:
                 for contact in contacts:
                     contact["audit_id"] = audit["id"]
                 ContactTable.delete().where(ContactTable.audit_id == audit["id"]).execute()
@@ -284,7 +292,7 @@ class AuditSubmission(AuditResource):
         audit = AuditResource.get_by_uuid(audit_uuid, withContacts=False, withScans=False)
 
         if audit["submitted"] == True:
-            abort(400, "Already approved")
+            abort(400, "Already submitted")
 
         if audit["approved"] == True:
             abort(400, "Already approved by administrator(s)")
@@ -432,6 +440,7 @@ class ScanList(ScanResource):
                 enum=[
                     "audit-id-not-found",
                     "audit-submitted",
+                    "audit-approved",
                     "target-is-private-ip",
                     "could-not-resolve-target-fqdn",
                     "target-is-not-fqdn-or-ipv4",

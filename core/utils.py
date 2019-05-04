@@ -46,8 +46,8 @@ class Utils:
             hashlib.pbkdf2_hmac(
                 PASSWORD_HASH_ALG,
                 password.encode(),
-                os.environ["PASSWORD_SALT"].encode(),
-                int(os.environ["PASSWORD_ITERATION"]),
+                PASSWORD_SALT.encode(),
+                PASSWORD_ITERATION,
             )
         ).decode("utf-8")
 
