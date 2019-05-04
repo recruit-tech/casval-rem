@@ -255,7 +255,7 @@ class AuditItem(AuditResource):
             params.pop("contacts")
 
         with db.database.atomic():
-            if (params != {}):
+            if params != {}:
                 AuditTable.update(params).where(AuditTable.id == audit["id"]).execute()
 
             if len(contacts) > 0:

@@ -44,10 +44,7 @@ class Utils:
     def get_password_hash(password):
         return binascii.hexlify(
             hashlib.pbkdf2_hmac(
-                PASSWORD_HASH_ALG,
-                password.encode(),
-                PASSWORD_SALT.encode(),
-                PASSWORD_ITERATION,
+                PASSWORD_HASH_ALG, password.encode(), PASSWORD_SALT.encode(), PASSWORD_ITERATION
             )
         ).decode("utf-8")
 
