@@ -1,12 +1,13 @@
 import csv
+import secrets
 import tempfile
+import uuid
 
 from flask import Response
 from flask import abort
 from flask import request
 from flask_jwt_extended import create_access_token
 from flask_restplus import Namespace
-from flask_restplus import Resource
 from flask_restplus import fields
 from flask_restplus import inputs
 from flask_restplus import reqparse
@@ -21,15 +22,15 @@ from core import AuditUpdateSchema
 from core import Authorizer
 from core import ContactSchema
 from core import ContactTable
-from core import PendingTask
 from core import ResultTable
 from core import ScanInputSchema
 from core import ScanResource
 from core import ScanTable
-from core import ScanUpdateSchema
 from core import Utils
 from core import VulnTable
 from core import db
+
+from .scan import ScanOutputModel
 
 api = Namespace("audit")
 
@@ -52,39 +53,6 @@ AuditOutputModel = api.model(
         "updated_at": fields.DateTime(required=True),
         "contacts": fields.List(fields.Nested(ContactModel), required=True),
         "scans": fields.List(fields.String()),
-    },
-)
-
-ScanResultModel = api.model(
-    "ScanResultModel",
-    {
-        "oid": fields.String(required=True),
-        "name": fields.String(required=True),
-        "host": fields.String(required=True),
-        "port": fields.String(required=True),
-        "description": fields.String(required=True),
-        "qod": fields.String(required=True),
-        "severity": fields.String(required=True),
-        "severity_rank": fields.String(required=True),
-        "scanner": fields.String(required=True),
-        "fix_required": fields.String(required=True),
-    },
-)
-
-ScanOutputModel = api.model(
-    "ScanOutputModel",
-    {
-        "target": fields.String(required=True),
-        "uuid": fields.String(required=True, attribute=lambda scan: scan["uuid"].hex),
-        "error_reason": fields.String(required=True),
-        "comment": fields.String(required=True),
-        "created_at": fields.DateTime(required=True),
-        "updated_at": fields.DateTime(required=True),
-        "scheduled": fields.Boolean(required=True),
-        "processed": fields.Boolean(required=True),
-        "start_at": fields.DateTime(required=True),
-        "end_at": fields.DateTime(required=True),
-        "results": fields.List(fields.Nested(ScanResultModel), required=True),
     },
 )
 
@@ -155,6 +123,10 @@ class AuditList(AuditResource):
         params, errors = schema.load(request.json)
         if errors:
             abort(400, errors)
+
+        # Audit UUID must be 'NNNNNNNN-NNNN-NNNN-NNNN-NNNN00000000'
+        # because lower 32 bits are used for UUID of scans/tasks.
+        params["uuid"] = uuid.UUID(secrets.token_hex(12) + "0" * 8)
 
         with db.database.atomic():
             audit = AuditTable(**params)
@@ -430,7 +402,7 @@ class AuditDownload(AuditResource):
 @api.response(200, "Success")
 @api.response(401, "Invalid Token")
 @api.response(404, "Not Found")
-class ScanList(ScanResource):
+class AuditScan(AuditResource):
 
     ScanListPostInputModel = api.model("ScanListPostInput", {"target": fields.String(required=True)})
     ScanListPostErrorResponseModel = api.model(
@@ -462,121 +434,11 @@ class ScanList(ScanResource):
         if errors:
             abort(400, errors)
 
-        audit_id = AuditResource.get_audit_id_by_uuid(audit_uuid)
+        # Scan UUID consists of upper 96 bits of audit UUID (=A) and 32 bits random number (=B),
+        # i.e., 'AAAAAAAA-AAAA-AAAA-AAAA-AAAABBBBBBBB'.
+        params["uuid"] = uuid.UUID(audit_uuid[0:24] + secrets.token_hex(4))
+        params["audit_id"] = AuditResource.get_audit_id_by_uuid(audit_uuid)
 
-        scan_insert_query = ScanTable(target=params["target"], audit_id=audit_id)
+        scan_insert_query = ScanTable(**params)
         scan_insert_query.save()
         return ScanResource.get_by_uuid(scan_insert_query.uuid)
-
-
-@api.route("/<string:audit_uuid>/scan/<string:scan_uuid>/")
-@api.doc(security="API Token")
-@api.response(200, "Success")
-@api.response(401, "Invalid Token")
-@api.response(404, "Not Found")
-class ScanItem(Resource):
-
-    ScanPatchInputModel = api.model("ScanPatchInput", {"comment": fields.String(required=True)})
-
-    @api.marshal_with(ScanOutputModel)
-    @Authorizer.token_required
-    def get(self, audit_uuid, scan_uuid):
-        """Retrieve the specified scan"""
-        return ScanResource.get_by_uuid(scan_uuid, withResults=True)
-
-    @api.expect(ScanPatchInputModel)
-    @api.marshal_with(ScanOutputModel)
-    @api.response(400, "Bad Request")
-    @Authorizer.token_required
-    @ScanResource.reject_if_submitted_or_approved
-    def patch(self, audit_uuid, scan_uuid):
-        """Update the specified scan"""
-        scan = ScanResource.get_by_uuid(scan_uuid, withResults=False)
-        schema = ScanUpdateSchema(only=["comment"])
-        params, errors = schema.load(request.json)
-        if errors:
-            abort(400, errors)
-
-        ScanTable.update(params).where(ScanTable.id == scan["id"]).execute()
-        return ScanResource.get_by_uuid(scan_uuid, withResults=False)
-
-    @Authorizer.token_required
-    @ScanResource.reject_if_submitted_or_approved
-    def delete(self, audit_uuid, scan_uuid):
-        """Delete the specified scan"""
-        scan_query = ScanTable.delete().where(ScanTable.uuid == scan_uuid)
-        if scan_query.execute() == 0:
-            abort(404, "Not Found")
-        else:
-            return {}
-
-
-@api.route("/<string:audit_uuid>/scan/<string:scan_uuid>/schedule/")
-@api.doc(security="API Token")
-@api.response(200, "Success")
-@api.response(401, "Invalid Token")
-@api.response(404, "Not Found")
-class ScanSchedule(Resource):
-
-    ScanSchedulePatchInputModel = api.model(
-        "ScanSchedulePatchInput",
-        {"start_at": fields.DateTime(required=True), "end_at": fields.DateTime(required=True)},
-    )
-
-    @api.expect(ScanSchedulePatchInputModel)
-    @api.marshal_with(ScanOutputModel)
-    @api.response(400, "Bad Request")
-    @Authorizer.token_required
-    @ScanResource.reject_if_submitted_or_approved
-    def patch(self, audit_uuid, scan_uuid):
-        """Schedule the specified scan"""
-        scan = ScanResource.get_by_uuid(scan_uuid, withResults=False)
-
-        if scan["scheduled"] == True:
-            abort(400, "Already scheduled")
-
-        schema = ScanUpdateSchema(only=["start_at", "end_at"])
-        params, errors = schema.load(request.json)
-        if errors:
-            abort(400, errors)
-
-        audit_id = AuditResource.get_audit_id_by_uuid(audit_uuid)
-
-        with db.database.atomic():
-
-            task = PendingTask().add(
-                {
-                    "audit_id": audit_id,
-                    "scan_id": scan["id"],
-                    "target": scan["target"],
-                    "start_at": params["start_at"],
-                    "end_at": params["end_at"],
-                }
-            )
-
-            params["task_uuid"] = task.uuid
-            params["scheduled"] = True
-            ScanTable.update(params).where(ScanTable.id == scan["id"]).execute()
-
-        return ScanResource.get_by_uuid(scan_uuid, withResults=False)
-
-    @api.marshal_with(ScanOutputModel)
-    @api.response(400, "Bad Request")
-    @Authorizer.token_required
-    @ScanResource.reject_if_submitted_or_approved
-    def delete(self, audit_uuid, scan_uuid):
-        """Cancel the specified scan schedule"""
-        scan = ScanResource.get_by_uuid(scan_uuid, withResults=False)
-
-        if scan["scheduled"] == False:
-            abort(400, "Already canceled")
-
-        data = {
-            "start_at": Utils.get_default_datetime(),
-            "end_at": Utils.get_default_datetime(),
-            "scheduled": False,
-            "task_uuid": None,
-        }
-
-        ScanTable.update(data).where(ScanTable.id == scan["id"]).execute()
-        return ScanResource.get_by_uuid(scan_uuid, withResults=False)

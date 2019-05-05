@@ -47,7 +47,15 @@ class ScanResource(Resource):
     def reject_if_submitted_or_approved(f):
         @wraps(f)
         def decorate(self, *args, **kwargs):
-            audit = AuditResource.get_by_uuid(kwargs["audit_uuid"])
+
+            if "audit_uuid" in kwargs:
+                audit_uuid = kwargs["audit_uuid"]
+            elif "scan_uuid" in kwargs:
+                audit_uuid = kwargs["scan_uuid"][0:24] + "0" * 8
+            else:
+                abort(400, "Requested endpoint has no `audit_uuid` or `scan_uuid`")
+
+            audit = AuditResource.get_by_uuid(audit_uuid)
             if audit["submitted"] or audit["approved"]:
                 abort(400, "Audit has been submitted or approved")
             else:

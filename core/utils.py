@@ -4,7 +4,6 @@ import ipaddress
 import os
 import re
 import socket
-import uuid
 from datetime import datetime
 
 import validators
@@ -79,7 +78,3 @@ class Utils:
     @staticmethod
     def get_default_datetime():
         return datetime(1, 1, 1)
-
-    @staticmethod
-    def get_uuid():
-        return uuid.uuid4().hex

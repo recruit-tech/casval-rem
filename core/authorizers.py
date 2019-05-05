@@ -17,10 +17,17 @@ class Authorizer:
                 identity = get_jwt_identity()
             except:
                 abort(401, "Token is invalid")
-            if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
-                abort(401, "Token is invalid for the audit")
-            else:
-                return f(*args, **kwargs)
+
+            if "audit_uuid" in kwargs:
+                if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
+                    abort(401, "Token is invalid for the audit")
+
+            if "scan_uuid" in kwargs:
+                audit_uuid = kwargs["scan_uuid"][0:24] + "0" * 8
+                if identity["scope"] not in [audit_uuid, "*"]:
+                    abort(401, "Token is invalid for the scan")
+
+            return f(*args, **kwargs)
 
         return decorate
 

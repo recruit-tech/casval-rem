@@ -18,7 +18,7 @@ class AuditTable(db.Model):
     class Meta:
         db_table = "audit"
 
-    uuid = UUIDField(unique=True, default=uuid.uuid4)
+    uuid = UUIDField(unique=True)
     name = CharField()
     submitted = BooleanField(default=False)
     approved = BooleanField(default=False)
@@ -43,7 +43,7 @@ class ScanTable(db.Model):
     class Meta:
         db_table = "scan"
 
-    uuid = UUIDField(unique=True, default=uuid.uuid4)
+    uuid = UUIDField(unique=True)
     audit_id = ForeignKeyField(AuditTable, backref="scans", on_delete="CASCADE", on_update="CASCADE")
     target = CharField()
     start_at = DateTimeField(default=Utils.get_default_datetime)
