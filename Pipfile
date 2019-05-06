@@ -17,6 +17,7 @@ flask-marshmallow = "*"
 validators = "*"
 pytz = "*"
 requests = "*"
+google-cloud-storage = "*"
 
 [dev-packages]
 isort = "*"

@@ -14,6 +14,14 @@ variable "db_tier" {
   default = "db-n1-standard-1"
 }
 
+variable "region" {
+  default = "asia-east2"
+}
+
+variable "project" {
+  default = "frank1"
+}
+
 output "DB_NAME" {
   value = "${google_sql_database.casval.name}"
 }
@@ -30,6 +38,14 @@ output "DB_INSTANCE_NAME" {
   value = "${google_sql_database_instance.master.connection_name}"
 }
 
+output "GCP_PROJECT_NAME" {
+  value = "${var.project}"
+}
+
+output "GCP_REPORT_STORAGE_NAME" {
+  value = "${google_storage_bucket.report_storage.id}"
+}
+
 output "PASSWORD_SALT" {
   value = "${random_string.password_salt.result}"
 }
@@ -42,9 +58,16 @@ resource "random_string" "password_salt" {
   special     = false
 }
 
+resource "random_pet" "bucker_suffix" {}
+
 provider "google" {
-  project = "frank1"
-  region  = "asia-east2"
+  project = "${var.project}"
+  region  = "${var.region}"
+}
+
+resource "google_storage_bucket" "report_storage" {
+  name     = "casval-report-${random_pet.bucker_suffix.id}"
+  location = "${var.region}"
 }
 
 resource "google_sql_database_instance" "master" {
