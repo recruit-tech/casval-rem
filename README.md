@@ -20,7 +20,7 @@ docker run -e MYSQL_DATABASE=casval -e MYSQL_ROOT_PASSWORD=Passw0rd! -d -p 3306:
 docker run -e PUBLIC_HOSTNAME=localhost -d -p 443:443 -p 9390:9390 mikesplain/openvas:9
 pipenv shell
 pipenv install -d
-pipenv run server
+pipenv run gunicron main:app
 ```
 
 
