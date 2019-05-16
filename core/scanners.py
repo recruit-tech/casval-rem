@@ -8,6 +8,9 @@ from flask import current_app as app
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
 
+from core.manager import KubernetesManager as Manager
+from core.manager import ManagerStatus
+
 
 class ScanStatus(Enum):
     RUNNING = auto()
@@ -22,20 +25,22 @@ class OpenVASScanner:
 
     def __init__(self, session=None):
 
-        self.host = os.getenv("OPENVAS_MANAGER_ENDPOINT", "127.0.0.1")
+        self.host = None
         self.port = int(os.getenv("OPENVAS_MANAGER_PORT", "9390"))
         self.user = os.getenv("OPENVAS_USERNAME", "admin")
         self.password = os.getenv("OPENVAS_PASSWORD", "admin")
         self.profile = os.getenv("OPENVAS_PROFILE", "Full and very deep")
         self.alive_test = os.getenv("OPENVAS_ALIVE_TEST", "Consider Alive")
+        self.manager_id = None
 
         if session != None:
             self.session = session
-            self.host = session["openvas_host"]
-            self.port = session["openvas_port"]
-            self.profile = session["openvas_profile"]
-
-        self.conn = self._connect()
+            self.host = session["blob"].get("openvas_host")
+            self.port = session["blob"].get("openvas_port")
+            # self.profile = session["blob"].get("openvas_profile")
+            self.manager_id = session["blob"].get("openvas_manager_id")
+            if session.get("status") == "CREATED":
+                self.conn = self._connect()
 
         return
 
@@ -46,12 +51,16 @@ class OpenVASScanner:
                 target=target, profile=self.profile, alive_test=self.alive_test
             )
             session = {
-                "target": target,
-                "openvas_host": self.host,
-                "openvas_port": self.port,
-                "openvas_profile": self.profile,
-                "openvas_scan_id": ov_scan_id,
-                "openvas_target_id": ov_target_id,
+                "status": "CREATED",
+                "blob": {
+                    "target": target,
+                    "openvas_host": self.host,
+                    "openvas_port": self.port,
+                    "openvas_profile": self.profile,
+                    "openvas_scan_id": ov_scan_id,
+                    "openvas_target_id": ov_target_id,
+                    "openvas_manager_id": self.manager_id,
+                },
             }
 
             app.logger.info("[Scanner] Launched, session={}".format(session))
@@ -63,7 +72,7 @@ class OpenVASScanner:
 
     def check_status(self):
         try:
-            status = self.conn.get_scan_status(self.session["openvas_scan_id"])
+            status = self.conn.get_scan_status(self.session["blob"]["openvas_scan_id"])
 
             app.logger.info("[Scanner] current status={}, session={}".format(status, self.session))
 
@@ -106,12 +115,56 @@ class OpenVASScanner:
             app.logger.error(error)
             return ScanStatus.RUNNING
 
+    def create(self):
+        if os.getenv("OPENVAS_MANAGER_ENDPOINT") is not None:
+            session = {
+                "status": "CREATED",
+                "blob": {
+                    "openvas_host": os.getenv("OPENVAS_MANAGER_ENDPOINT"),
+                    "openvas_port": int(os.getenv("OPENVAS_MANAGER_PORT", "9390")),
+                    "openvas_manager_id": "nothing",
+                },
+            }
+            return session
+
+        manager = Manager()
+        if self.manager_id is None:
+            manager_status = manager.create(container_image="mikesplain/openvas:9", container_port=9390)
+        else:
+            manager_status = manager.create(
+                    uuid=self.manager_id,
+                    container_image="mikesplain/openvas:9",
+                    container_port=9390
+                    )
+
+        session = {"status": "", "blob": {"openvas_manager_id": manager_status["uuid"]}}
+        if manager_status["status"] == ManagerStatus.RUNNING:
+            session["blob"]["openvas_host"] = manager_status["ip"]
+            session["blob"]["openvas_port"] = manager_status["port"]
+            session["status"] = "CREATED"
+        elif manager_status["status"] == ManagerStatus.WAITING:
+            session["status"] = "WAITING"
+        elif manager_status["status"] == ManagerStatus.FAILED:
+            session["status"] = "FAILED"
+        elif manager_status["status"] == ManagerStatus.NOT_EXSIT:
+            session["status"] = "FAILED"
+
+        return session
+
+    def delete(self):
+        if os.getenv("OPENVAS_MANAGER_ENDPOINT") is None:
+            manager = Manager()
+            manager.delete(self.manager_id)
+
+        self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
+        self.conn.delete_target(self.session["blob"]["openvas_target_id"])
+
     def terminate_scan(self):
         try:
             app.logger.info("[Scanner] Trying to terminate scan session...")
 
-            self.conn.delete_scan(self.session["openvas_scan_id"])
-            self.conn.delete_target(self.session["openvas_target_id"])
+            self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
+            self.conn.delete_target(self.session["blob"]["openvas_target_id"])
 
             app.logger.info("[Scanner] Terminated.")
             return True
@@ -123,7 +176,7 @@ class OpenVASScanner:
         try:
             app.logger.info("[Scanner] Trying to get report...")
 
-            ov_report_id = self.conn.get_report_id(self.session["openvas_scan_id"])
+            ov_report_id = self.conn.get_report_id(self.session["blob"]["openvas_scan_id"])
 
             app.logger.info("[Scanner] Found report_id={}".format(ov_report_id))
 
@@ -131,8 +184,6 @@ class OpenVASScanner:
             report_txt = ElementTree.tostring(report_xml, encoding="unicode", method="xml")
             app.logger.info("[Scanner] Report downloaded, {} characters.".format(len(report_txt)))
             self.conn.delete_report(ov_report_id)
-            self.conn.delete_scan(self.session["openvas_scan_id"])
-            self.conn.delete_target(self.session["openvas_target_id"])
             return report_txt
         except Exception as error:
             app.logger.error(error)
@@ -142,6 +193,7 @@ class OpenVASScanner:
         app.logger.info("[Scanner] Trying to connect to {}:{} ...".format(self.host, self.port))
 
         return VulnscanManager(self.host, self.user, self.password, self.port, self.DEFAULT_TIMEOUT)
+        # return VulnscanManager("35.221.80.249", "admin", "admin", 443, self.DEFAULT_TIMEOUT)
 
     @classmethod
     def get_info(cls):
