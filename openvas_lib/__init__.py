@@ -394,7 +394,6 @@ def report_parser(path_or_file, ignore_log_info=True):
                     l_partial_result.name = l_name
                 except TypeError as e:
                     logging.warning("%s is not a valid vulnerability ID, skipping vulnerability..." % l_name)
-
                     logging.debug(e)
                 continue
 
@@ -588,7 +587,7 @@ class VulnscanManager(object):
 					profile = "empty",
 					callback_end = partial(lambda x: x.release(), sem),
 					callback_progress = my_print_status
-					alive_test = "TCP-ACK Service Ping"
+					alive_test = "Consider Alive"
 				)
 
 				# Wait
