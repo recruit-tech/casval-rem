@@ -1,6 +1,5 @@
 import os
 import uuid
-
 from abc import ABCMeta
 from abc import abstractmethod
 from enum import Enum
@@ -141,15 +140,13 @@ class KubernetesManager(Manager):
 
     def _create_service(self):
         api_instance = k8s.CoreV1Api(self.client)
-        service_port = k8s.V1ServicePort(name=self.uuid.split("-")[0], port=self.port, target_port=self.container_port, protocol="TCP")
+        service_port = k8s.V1ServicePort(
+            name=self.uuid.split("-")[0], port=self.port, target_port=self.container_port, protocol="TCP"
+        )
         service_spec = k8s.V1ServiceSpec(
-            type="LoadBalancer",
-            ports=[service_port],
-            selector={"app.kubernetes.io/name": self.uuid},
+            type="LoadBalancer", ports=[service_port], selector={"app.kubernetes.io/name": self.uuid}
         )
-        service_metadata = k8s.V1ObjectMeta(
-            name=self.uuid, labels={"app.kubernetes.io/name": self.uuid}
-        )
+        service_metadata = k8s.V1ObjectMeta(name=self.uuid, labels={"app.kubernetes.io/name": self.uuid})
         service = k8s.V1Service(spec=service_spec, metadata=service_metadata)
 
         try:
@@ -160,7 +157,9 @@ class KubernetesManager(Manager):
     def _create_deployment(self):
         REPLICAS = 1
         api_instance = k8s.AppsV1Api(self.client)
-        container_port = k8s.V1ContainerPort(name=self.uuid.split("-")[0],container_port=self.container_port, protocol="TCP")
+        container_port = k8s.V1ContainerPort(
+            name=self.uuid.split("-")[0], container_port=self.container_port, protocol="TCP"
+        )
         container = k8s.V1Container(
             image=self.container_image,
             name=self.uuid,
@@ -168,20 +167,14 @@ class KubernetesManager(Manager):
             ports=[container_port],
         )
         pod_spec = k8s.V1PodSpec(containers=[container])
-        pod_metadata = k8s.V1ObjectMeta(
-            name=self.uuid, labels={"app.kubernetes.io/name": self.uuid }
-        )
+        pod_metadata = k8s.V1ObjectMeta(name=self.uuid, labels={"app.kubernetes.io/name": self.uuid})
 
         pod_template = k8s.V1PodTemplateSpec(spec=pod_spec, metadata=pod_metadata)
-        deployment_spec_selector = k8s.V1LabelSelector(
-            match_labels={"app.kubernetes.io/name": self.uuid}
-        )
+        deployment_spec_selector = k8s.V1LabelSelector(match_labels={"app.kubernetes.io/name": self.uuid})
         deployment_spec = k8s.V1DeploymentSpec(
             replicas=REPLICAS, selector=deployment_spec_selector, template=pod_template
         )
-        deployment_metadata = k8s.V1ObjectMeta(
-            name=self.uuid, labels={"app.kubernetes.io/name": self.uuid}
-        )
+        deployment_metadata = k8s.V1ObjectMeta(name=self.uuid, labels={"app.kubernetes.io/name": self.uuid})
         deployment = k8s.V1Deployment(spec=deployment_spec, metadata=deployment_metadata)
 
         try:

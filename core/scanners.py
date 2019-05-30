@@ -5,11 +5,10 @@ from xml.etree import ElementTree
 
 from flask import current_app as app
 
-from openvas_lib import VulnscanManager
-from openvas_lib import report_parser_from_text
-
 from core.manager import KubernetesManager as Manager
 from core.manager import ManagerStatus
+from openvas_lib import VulnscanManager
+from openvas_lib import report_parser_from_text
 
 
 class ScanStatus(Enum):
@@ -37,7 +36,6 @@ class OpenVASScanner:
             self.session = session
             self.host = session["blob"].get("openvas_host")
             self.port = session["blob"].get("openvas_port")
-            # self.profile = session["blob"].get("openvas_profile")
             self.manager_id = session["blob"].get("openvas_manager_id")
             if session.get("status") == "CREATED":
                 self.conn = self._connect()
@@ -132,10 +130,8 @@ class OpenVASScanner:
             manager_status = manager.create(container_image="mikesplain/openvas:9", container_port=9390)
         else:
             manager_status = manager.create(
-                    uuid=self.manager_id,
-                    container_image="mikesplain/openvas:9",
-                    container_port=9390
-                    )
+                uuid=self.manager_id, container_image="mikesplain/openvas:9", container_port=9390
+            )
 
         session = {"status": "", "blob": {"openvas_manager_id": manager_status["uuid"]}}
         if manager_status["status"] == ManagerStatus.RUNNING:
