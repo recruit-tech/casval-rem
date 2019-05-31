@@ -10,9 +10,9 @@ from flask import current_app as app
 from kubernetes.client.rest import ApiException
 
 
-class Manager(metaclass=ABCMeta):
+class Deployer(metaclass=ABCMeta):
     """
-    Abstruct Manager's class
+    Abstruct Deployer's class
 
     Required create public method
     """
@@ -34,7 +34,7 @@ class Manager(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
-class KubernetesManager(Manager):
+class KubernetesDeployer(Deployer):
     def __init__(self, options={}) -> None:
         self.uuid = None
         self.client = None
@@ -65,7 +65,7 @@ class KubernetesManager(Manager):
 
         try:
             self.info = self.get_info()
-            if self.info["status"] != ManagerStatus.NOT_EXIST:
+            if self.info["status"] != DeployerStatus.NOT_EXIST:
                 return self.info
 
             self._create_deployment()
@@ -80,14 +80,14 @@ class KubernetesManager(Manager):
         except Exception as e:
             app.logger.error(e)
 
-        return self._get_info(ManagerStatus.FAILED)
+        return self._get_info(DeployerStatus.FAILED)
 
     def delete(self, uuid: str) -> None:
         self.uuid = uuid
 
         try:
             self.info = self.get_info()
-            if self.info["status"] == ManagerStatus.NOT_EXIST:
+            if self.info["status"] == DeployerStatus.NOT_EXIST:
                 raise ResourceNotFoundException
 
             self._delete_deployment()
@@ -113,20 +113,20 @@ class KubernetesManager(Manager):
                 self.ip = service.status.load_balancer.ingress[0].ip
 
             if available_replicas and self.ip and self.port:
-                return self._get_info(ManagerStatus.RUNNING)
+                return self._get_info(DeployerStatus.RUNNING)
 
-            return self._get_info(ManagerStatus.WAITING)
+            return self._get_info(DeployerStatus.WAITING)
 
         except ApiException as e:
             if e.status == 404:
-                return self._get_info(ManagerStatus.NOT_EXIST)
+                return self._get_info(DeployerStatus.NOT_EXIST)
 
             app.logger.error(e)
 
         except Exception as e:
             app.logger.error(e)
 
-        return self._get_info(ManagerStatus.FAILED)
+        return self._get_info(DeployerStatus.FAILED)
 
     def _uuid(self):
         return "pre" + str(uuid.uuid4())
@@ -264,22 +264,22 @@ class KubernetesManager(Manager):
         self.__namespace = namespace
 
 
-class ManagerStatus(Enum):
+class DeployerStatus(Enum):
     RUNNING = auto()
     WAITING = auto()
     FAILED = auto()
     NOT_EXIST = auto()
 
 
-class ManagerException(Exception):
+class DeployerException(Exception):
     pass
 
 
-class KubernetesException(ManagerException):
+class KubernetesException(DeployerException):
     pass
 
 
-class ResourceNotFoundException(ManagerException):
+class ResourceNotFoundException(DeployerException):
     pass
 
 
