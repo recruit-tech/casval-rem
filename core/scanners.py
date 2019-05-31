@@ -5,10 +5,16 @@ from xml.etree import ElementTree
 
 from flask import current_app as app
 
-from core.deployer import KubernetesDeployer as Deployer
 from core.deployer import DeployerStatus
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
+
+if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
+    # for production environment
+    from core.deployer import KubernetesDeployer as Deployer
+else:
+    # for development environment
+    from core.deployer import LocalDeployer as Deployer
 
 
 class ScanStatus(Enum):
@@ -114,17 +120,6 @@ class OpenVASScanner:
             return ScanStatus.RUNNING
 
     def create(self):
-        if os.getenv("OPENVAS_MANAGER_ENDPOINT") is not None:
-            session = {
-                "status": "CREATED",
-                "blob": {
-                    "openvas_host": os.getenv("OPENVAS_MANAGER_ENDPOINT"),
-                    "openvas_port": int(os.getenv("OPENVAS_MANAGER_PORT", "9390")),
-                    "openvas_deployer_id": "nothing",
-                },
-            }
-            return session
-
         deployer = Deployer()
         if self.deployer_id is None:
             deployer_status = deployer.create(container_image="mikesplain/openvas:9", container_port=9390)
@@ -148,9 +143,8 @@ class OpenVASScanner:
         return session
 
     def delete(self):
-        if os.getenv("OPENVAS_MANAGER_ENDPOINT") is None:
-            deployer = Deployer()
-            deployer.delete(self.deployer_id)
+        deployer = Deployer()
+        deployer.delete(self.deployer_id)
 
         self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
         self.conn.delete_target(self.session["blob"]["openvas_target_id"])

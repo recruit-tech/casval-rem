@@ -34,12 +34,44 @@ class Deployer(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
+class LocalDeployer(Deployer):
+    def __ini__(self, options={}) -> None:
+        return
+
+    def create(self, uuid=None, container_image=None, container_port=None):
+        return {
+            "status": DeployerStatus.RUNNING,
+            "ip": os.getenv("OPENVAS_MANAGER_ENDPOINT", "127.0.0.1"),
+            "port": container_port,
+            "uuid": "Nothing",
+        }
+
+    def delete(self, uuid):
+        return
+
+    @property
+    def ip(self):
+        return self.__ip
+
+    @ip.setter
+    def ip(self, ip):
+        self.__ip = ip
+
+    @property
+    def port(self):
+        return self.__port
+
+    @port.setter
+    def port(self, port):
+        self.__port = port
+
+
 class KubernetesDeployer(Deployer):
     def __init__(self, options={}) -> None:
         self.uuid = None
         self.client = None
         self.ip = None
-        self.port = int(os.getenv("OPENVAS_MANAGER_PORT", "9390"))
+        self.port = 443
         self.container_port = None
         self.container_image = None
         self.info = None
@@ -133,7 +165,7 @@ class KubernetesDeployer(Deployer):
 
     def _client(self, credential: str):
         configuration = k8s.Configuration()
-        configuration.api_key["authorization"] = credential
+        configuration.api_key["authorization"] = "Bearer " + credential
         configuration.host = self.host
         configuration.verify_ssl = False
         return k8s.ApiClient(configuration)
