@@ -28,6 +28,7 @@ class OpenVASScanner:
         self.password = os.getenv("OPENVAS_PASSWORD", "admin")
         self.profile = os.getenv("OPENVAS_PROFILE", "Full and very deep")
         self.alive_test = os.getenv("OPENVAS_ALIVE_TEST", "Consider Alive")
+        self.port_list = os.getenv("OPENVAS_PORT_LIST", "all tcp")
 
         if session != None:
             self.session = session
@@ -43,7 +44,7 @@ class OpenVASScanner:
         try:
             app.logger.info("[Scanner] Trying to launch new scan session...")
             ov_scan_id, ov_target_id = self.conn.launch_scan(
-                target=target, profile=self.profile, alive_test=self.alive_test
+                target=target, profile=self.profile, port_list=self.port_list, alive_test=self.alive_test
             )
             session = {
                 "target": target,
