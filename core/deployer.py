@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 from abc import ABCMeta
@@ -6,6 +7,7 @@ from enum import Enum
 from enum import auto
 
 import kubernetes.client as k8s
+import requests
 from flask import current_app as app
 from kubernetes.client.rest import ApiException
 
@@ -84,7 +86,7 @@ class KubernetesDeployer(Deployer):
         if options.get("namespace") is not None:
             self.namespace = options["namespace"]
 
-        self.client = self._client(os.getenv("KUBERNETES_CREDENTIAL", ""))
+        self.client = self._client()
 
     def create(self, uuid=None, container_image=None, container_port=None):
         if uuid == None:
@@ -163,12 +165,31 @@ class KubernetesDeployer(Deployer):
     def _uuid(self):
         return "pre" + str(uuid.uuid4())
 
-    def _client(self, credential: str):
+    def _client(self):
         configuration = k8s.Configuration()
-        configuration.api_key["authorization"] = "Bearer " + credential
+        configuration.api_key["authorization"] = "Bearer " + self._get_credential()
         configuration.host = self.host
         configuration.verify_ssl = False
         return k8s.ApiClient(configuration)
+
+    def _get_credential(self):
+        GOOGLE_METADATA_API = (
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+        )
+
+        credential = os.getenv("KUBERNETES_CREDENTIAL")
+        if credential is None:
+            try:
+                headers = {"Metadata-Flavor": "Google"}
+                res = requests.get(GOOGLE_METADATA_API, headers=headers)
+                credential = json.loads(res.text).get("access_token", "")
+            except requests.exceptions.ConnectionError:
+                credential = ""
+            except Exception as e:
+                credential = ""
+                app.logger.error(e)
+
+        return credential
 
     def _create_service(self):
         api_instance = k8s.CoreV1Api(self.client)
