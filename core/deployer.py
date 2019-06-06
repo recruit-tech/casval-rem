@@ -43,7 +43,7 @@ class LocalDeployer(Deployer):
     def create(self, uuid=None, container_image=None, container_port=None):
         return {
             "status": DeployerStatus.RUNNING,
-            "ip": os.getenv("OPENVAS_MANAGER_ENDPOINT", "127.0.0.1"),
+            "ip": "127.0.0.1",
             "port": container_port,
             "uuid": "Nothing",
         }
@@ -208,6 +208,10 @@ class KubernetesDeployer(Deployer):
             raise CreateServiceException(e)
 
     def _create_deployment(self):
+        """
+        Deployments must toleration "Scanners" key.
+        """
+
         REPLICAS = 1
         api_instance = k8s.AppsV1Api(self.client)
         container_port = k8s.V1ContainerPort(
@@ -219,7 +223,9 @@ class KubernetesDeployer(Deployer):
             image_pull_policy="IfNotPresent",
             ports=[container_port],
         )
-        pod_spec = k8s.V1PodSpec(containers=[container])
+        toleration = k8s.V1Toleration(effect="NoSchedule", key="Scanners", operator="Exists")
+
+        pod_spec = k8s.V1PodSpec(containers=[container], tolerations=[toleration])
         pod_metadata = k8s.V1ObjectMeta(name=self.uuid, labels={"app.kubernetes.io/name": self.uuid})
 
         pod_template = k8s.V1PodTemplateSpec(spec=pod_spec, metadata=pod_metadata)

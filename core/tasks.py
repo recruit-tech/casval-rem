@@ -26,7 +26,7 @@ else:
     # for development environment
     from .storages import LocalFileStorage as Storage
 
-SCAN_MAX_PARALLEL_SESSION = 1
+SCAN_MAX_PARALLEL_SESSION = os.getenv("SCAN_MAX_PARALLEL_SESSION", 1)
 SCAN_REPORT_KEY_NAME = "{audit_id:08}-{scan_id:08}-{task_uuid:.8}.xml"
 
 
