@@ -1,4 +1,5 @@
 import csv
+import re
 import secrets
 import tempfile
 import uuid
@@ -390,6 +391,10 @@ class AuditDownload(AuditResource):
             writer = csv.DictWriter(f, AuditDownload.AUDIT_CSV_COLUMNS, extrasaction="ignore")
             writer.writeheader()
             for result in results.dicts():
+                description = re.sub("\n{2,}", "\n", result["description"])
+                description = re.sub(r"^(\w+)=", r"\1\n", description)
+                description = re.sub(r"\|(\w+)=", r"\n\n\1\n", description)
+                result["description"] = description
                 writer.writerow(result)
             f.flush()
             f.seek(0)
