@@ -46,6 +46,7 @@ AuditOutputModel = api.model(
         "id": fields.Integer(required=True),
         "uuid": fields.String(required=True, attribute=lambda audit: audit["uuid"].hex),
         "name": fields.String(required=True),
+        "description": fields.String(required=True),
         "submitted": fields.Boolean(required=True),
         "approved": fields.Boolean(required=True),
         "rejected_reason": fields.String(required=True),
@@ -76,6 +77,7 @@ class AuditList(AuditResource):
         "AuditListPostInput",
         {
             "name": fields.String(required=True),
+            "description": fields.String(required=True),
             "contacts": fields.List(fields.Nested(ContactModel), required=True),
         },
     )
@@ -186,6 +188,7 @@ class AuditItem(AuditResource):
         "AuditPatchInput",
         {
             "name": fields.String(),
+            "description": fields.String(),
             "contacts": fields.List(fields.Nested(ContactModel)),
             "ip_restriction": fields.Boolean(),
             "password_protection": fields.Boolean(),
@@ -208,7 +211,7 @@ class AuditItem(AuditResource):
         audit = AuditResource.get_by_uuid(audit_uuid, withContacts=False, withScans=False)
 
         schema = AuditUpdateSchema(
-            only=["name", "contacts", "password", "ip_restriction", "password_protection"]
+            only=["name", "description", "contacts", "password", "ip_restriction", "password_protection"]
         )
         params, errors = schema.load(request.json)
         if errors:
