@@ -52,8 +52,9 @@ class AuthInputSchema(marshmallow.Schema):
 
 
 class AuditListInputSchema(PagenationInputSchema):
-    submitted = marshmallow.Boolean(required=False, missing=False)
-    approved = marshmallow.Boolean(required=False, missing=False)
+    submitted = marshmallow.Boolean(required=False)
+    approved = marshmallow.Boolean(required=False)
+    keyword = marshmallow.String(required=False)
 
 
 class AuditTokenInputSchema(marshmallow.Schema):
