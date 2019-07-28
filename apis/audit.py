@@ -70,6 +70,7 @@ class AuditList(AuditResource):
     AuditListGetParser = reqparse.RequestParser()
     AuditListGetParser.add_argument("submitted", type=inputs.boolean, default=False, location="args")
     AuditListGetParser.add_argument("approved", type=inputs.boolean, default=False, location="args")
+    AuditListGetParser.add_argument("keyword", type=str, location="args")
     AuditListGetParser.add_argument("page", type=int, default=1, location="args")
     AuditListGetParser.add_argument("count", type=int, default=10, location="args")
 
@@ -92,29 +93,32 @@ class AuditList(AuditResource):
         if errors:
             abort(400, errors)
 
-        audit_query = (
-            AuditTable.select(
-                AuditTable,
-                fn.GROUP_CONCAT(
-                    ContactTable.name,
-                    ContactSchema.SEPARATER_NAME_EMAIL,
-                    ContactTable.email,
-                    python_value=(
-                        lambda contacts: [
-                            dict(zip(["name", "email"], contact.rsplit(ContactSchema.SEPARATER_NAME_EMAIL)))
-                            for contact in contacts.split(ContactSchema.SEPARATER_CONTACTS)
-                        ]
-                    ),
-                ).alias("contacts"),
+        audit_query = AuditTable.select(
+            AuditTable,
+            fn.GROUP_CONCAT(
+                ContactTable.name,
+                ContactSchema.SEPARATER_NAME_EMAIL,
+                ContactTable.email,
+                python_value=(
+                    lambda contacts: [
+                        dict(zip(["name", "email"], contact.rsplit(ContactSchema.SEPARATER_NAME_EMAIL)))
+                        for contact in contacts.split(ContactSchema.SEPARATER_CONTACTS)
+                    ]
+                ),
+            ).alias("contacts"),
+        ).join(ContactTable, on=(AuditTable.id == ContactTable.audit_id))
+        if "keyword" in params and len(params["keyword"]) > 0:
+            audit_query = audit_query.where(
+                (AuditTable.name ** "%{}%".format(params["keyword"]))
+                | (AuditTable.description ** "%{}%".format(params["keyword"]))
             )
-            .where(
-                (AuditTable.submitted == params["submitted"]) & (AuditTable.approved == params["approved"])
-            )
-            .join(ContactTable, on=(AuditTable.id == ContactTable.audit_id))
-            .group_by(AuditTable.id)
-            .order_by(AuditTable.updated_at.desc())
-            .paginate(params["page"], params["count"])
-        )
+        if "submitted" in params:
+            audit_query = audit_query.where(AuditTable.submitted == params["submitted"])
+        if "approved" in params:
+            audit_query = audit_query.where(AuditTable.approved == params["approved"])
+        audit_query = audit_query.group_by(AuditTable.id)
+        audit_query = audit_query.order_by(AuditTable.updated_at.desc())
+        audit_query = audit_query.paginate(params["page"], params["count"])
 
         return list(audit_query.dicts())
 
