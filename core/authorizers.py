@@ -25,6 +25,8 @@ class Authorizer:
                     abort(401, "Expiration time (exp) must be set if token type is NOT restricted")
 
             if "audit_uuid" in kwargs:
+                if identity["restricted"] == True:
+                    abort(401, "Token is restricted to access of the audit")
                 if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
                     abort(401, "Token is invalid for the audit")
 
