@@ -177,7 +177,24 @@ class AuditToken(AuditResource):
             if Utils.get_password_hash(params["password"]) != audit["password"]:
                 abort(401, "Invalid password")
 
-        token = create_access_token(identity={"scope": audit_uuid})
+        token = create_access_token(identity={"scope": audit_uuid, "restricted": False})
+        return {"token": token}, 200
+
+
+@api.route("/<string:audit_uuid>/tokens/restricted")
+@api.doc(security="API Token")
+@api.response(200, "Success")
+class AuditRestrictedToken(AuditResource):
+
+    AuditTokenModel = api.model("AuditToken", {"token": fields.String(required=True)})
+
+    @api.marshal_with(AuditTokenModel)
+    @api.response(404, "Not Found")
+    @Authorizer.token_required
+    def post(self, audit_uuid):
+        """Publish a restricted API token for the specified audit"""
+
+        token = create_access_token(identity={"scope": audit_uuid, "restricted": True}, expires_delta=False)
         return {"token": token}, 200
 
 

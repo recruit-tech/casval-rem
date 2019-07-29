@@ -3,6 +3,7 @@ from functools import wraps
 from flask import abort
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_raw_jwt
 from flask_jwt_extended import verify_jwt_in_request
 
 jwt = JWTManager()
@@ -17,6 +18,11 @@ class Authorizer:
                 identity = get_jwt_identity()
             except:
                 abort(401, "Token is invalid")
+
+            if identity["restricted"] == False:
+                jwt = get_raw_jwt()
+                if "exp" not in jwt:
+                    abort(401, "Expiration time (exp) must be set if token type is NOT restricted")
 
             if "audit_uuid" in kwargs:
                 if identity["scope"] not in [kwargs["audit_uuid"], "*"]:
