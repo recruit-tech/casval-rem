@@ -388,7 +388,8 @@ class AuditDownload(AuditResource):
         "fix_required",
         "description",
         "oid",
-        "created_at",
+        "started_at",
+        "ended_at",
         "comment",
         "advice",
     ]
