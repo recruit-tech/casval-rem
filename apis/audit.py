@@ -70,6 +70,7 @@ class AuditList(AuditResource):
     AuditListGetParser = reqparse.RequestParser()
     AuditListGetParser.add_argument("submitted", type=inputs.boolean, default=False, location="args")
     AuditListGetParser.add_argument("approved", type=inputs.boolean, default=False, location="args")
+    AuditListGetParser.add_argument("unsafe_only", type=inputs.boolean, default=False, location="args")
     AuditListGetParser.add_argument("keyword", type=str, location="args")
     AuditListGetParser.add_argument("page", type=int, default=1, location="args")
     AuditListGetParser.add_argument("count", type=int, default=10, location="args")
@@ -107,6 +108,16 @@ class AuditList(AuditResource):
                 ),
             ).alias("contacts"),
         ).join(ContactTable, on=(AuditTable.id == ContactTable.audit_id))
+
+        if "unsafe_only" in params and params["unsafe_only"] == True:
+            audit_query = (
+                audit_query.join(ScanTable, on=(AuditTable.id == ScanTable.audit_id))
+                .join(ResultTable, on=(ScanTable.id == ResultTable.scan_id))
+                .join(VulnTable, on=(ResultTable.oid == VulnTable.oid))
+                .where(VulnTable.fix_required == "REQUIRED")
+                .where(ScanTable.comment == "")
+            )
+
         if "keyword" in params and len(params["keyword"]) > 0:
             audit_query = audit_query.where(
                 (AuditTable.name ** "%{}%".format(params["keyword"]))
