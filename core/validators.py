@@ -64,6 +64,7 @@ class AuthInputSchema(marshmallow.Schema):
 
 
 class AuditListInputSchema(PagenationInputSchema):
+    unsafe_only = marshmallow.Boolean(required=False)
     submitted = marshmallow.Boolean(required=False)
     approved = marshmallow.Boolean(required=False)
     keyword = marshmallow.String(required=False)
