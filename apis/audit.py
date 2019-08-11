@@ -410,6 +410,9 @@ class AuditDownload(AuditResource):
         """Download the specified audit result"""
         audit_query = AuditTable.select().where(AuditTable.uuid == audit_uuid)
 
+        audit = audit_query.dicts()[0]
+        output = audit["name"] + "\n" + audit["description"] + "\n\n"
+
         scan_ids = []
         for scan in audit_query[0].scans.dicts():
             if scan["processed"] is True:
@@ -434,7 +437,7 @@ class AuditDownload(AuditResource):
                 writer.writerow(result)
             f.flush()
             f.seek(0)
-            output = f.read()
+            output += f.read()
 
         headers = {"Content-Type": "text/csv", "Content-Disposition": "attachment"}
         return Response(response=output, status=200, headers=headers)
