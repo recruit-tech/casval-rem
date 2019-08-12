@@ -81,6 +81,13 @@ class Utils:
     def get_default_datetime():
         return datetime(1, 1, 1)
 
+    @staticmethod
+    def format_openvas_description(value):
+        desc = re.sub("\n{2,}", "\n", value)
+        desc = re.sub(r"^(\w+)=", r"\1\n", desc)
+        desc = re.sub(r"\|(\w+)=", r"\n\n\1\n", desc)
+        return desc
+
 
 def timing(f):
     @wraps(f)
