@@ -35,7 +35,7 @@ jobs:
           command: pipenv run gunicorn -b 127.0.0.1:5000 -D main:app
       - run:
           name: Wait for Flask to run
-          command: dockerize -wait tcp://127.0.0.1:5000 -timeout 120s
+          command: dockerize -wait http://127.0.0.1:5000 -timeout 120s
       - run:
           name: Wait for database to setup
           command: dockerize -wait tcp://127.0.0.1:3306 -timeout 120s
