@@ -7,6 +7,7 @@ import socket
 from datetime import datetime
 from functools import wraps
 from time import time
+from urllib.parse import urlparse
 
 import validators
 from flask import current_app as app
@@ -14,6 +15,7 @@ from flask import current_app as app
 PASSWORD_SALT = os.getenv("PASSWORD_SALT", "password-salt")
 PASSWORD_HASH_ALG = "sha256"
 PASSWORD_ITERATION = 1000
+SLACK_DOMAIN = "slack.com"
 
 
 class Utils:
@@ -74,6 +76,14 @@ class Utils:
     def is_host_resolvable(value):
         try:
             return len(socket.gethostbyname(value)) > 0
+        except Exception:
+            return False
+
+    @staticmethod
+    def is_slack_url(value):
+        try:
+            url = urlparse(value)
+            return url.hostname.endswith(SLACK_DOMAIN)
         except Exception:
             return False
 
