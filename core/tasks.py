@@ -16,6 +16,7 @@ from .models import VulnTable
 from .models import db
 from .scanners import OpenVASScanner as Scanner
 from .scanners import ScanStatus
+from .slack import SlackIntegrator
 from .utils import Utils
 from .utils import timing
 
@@ -77,6 +78,22 @@ class BaseTask:
         return scan_query.dicts().get()["count"] == 0
 
     def _update(self, task, next_progress):
+
+        if task["slack_webhook_url"]:
+            try:
+                slack = SlackIntegrator(task)
+                if next_progress == TaskProgress.RUNNING.name:
+                    slack.send(SlackIntegrator.MessageMode.STARTED)
+                elif next_progress == TaskProgress.FAILED.name:
+                    slack.send(SlackIntegrator.MessageMode.FAILED)
+                elif (
+                    task["progress"] == TaskProgress.STOPPED.name
+                    and next_progress == TaskProgress.DELETED.name
+                ):
+                    slack.send(SlackIntegrator.MessageMode.COMPLETED)
+            except Exception as error:
+                app.logger.warn("[Slack Integrator] Failed to send a webhook. error={}".format(error))
+
         task["progress"] = next_progress
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
@@ -250,9 +267,23 @@ class StoppedTask(BaseTask):
                     result_query = ResultTable.insert(result)
                     result_query.execute()
 
-            task["error_reason"] = "None!"
-            app.logger.info("[Stopped Task] Deleted, task={}".format(task))
-            self._update(task, next_progress=TaskProgress.DELETED.name)
+        show_result_query = (
+            ResultTable.select(
+                ResultTable.oid, ResultTable.name, ResultTable.host, ResultTable.port, VulnTable.fix_required
+            )
+            .join(VulnTable, on=(VulnTable.oid == ResultTable.oid))
+            .where(ResultTable.scan_id == task["scan_id"])
+            .order_by(ResultTable.oid.desc())
+        )
+
+        results = []
+        for result in show_result_query.dicts():
+            results.append(result)
+
+        task["results"] = results
+        task["error_reason"] = "None!"
+        app.logger.info("[Stopped Task] Deleted, task={}".format(task))
+        self._update(task, next_progress=TaskProgress.DELETED.name)
 
         return True
 
