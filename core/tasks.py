@@ -14,6 +14,7 @@ from .models import ScanTable
 from .models import TaskTable
 from .models import VulnTable
 from .models import db
+from .resources import AuditResource
 from .scanners import OpenVASScanner as Scanner
 from .scanners import ScanStatus
 from .slack import SlackIntegrator
@@ -77,23 +78,30 @@ class BaseTask:
         )
         return scan_query.dicts().get()["count"] == 0
 
+    def _notify_to_slack(self, task, next_progress):
+        message_mode = ""
+
+        if next_progress == TaskProgress.RUNNING.name:
+            message_mode = SlackIntegrator.MessageMode.STARTED
+        elif next_progress == TaskProgress.FAILED.name:
+            message_mode = SlackIntegrator.MessageMode.FAILED
+        elif task["progress"] == TaskProgress.STOPPED.name and next_progress == TaskProgress.DELETED.name:
+            message_mode = SlackIntegrator.MessageMode.COMPLETED
+
+        if message_mode:
+            webhook_url = task["slack_webhook_url"]
+
+            if not webhook_url:
+                audit = AuditResource.get_by_id(task["audit_id"])
+                webhook_url = audit["slack_default_webhook_url"]
+            if webhook_url:
+                try:
+                    SlackIntegrator(webhook_url).send(message_mode, task)
+                except Exception as error:
+                    app.logger.warn("[Slack Integrator] Failed to send a webhook. error={}".format(error))
+
     def _update(self, task, next_progress):
-
-        if task["slack_webhook_url"]:
-            try:
-                slack = SlackIntegrator(task)
-                if next_progress == TaskProgress.RUNNING.name:
-                    slack.send(SlackIntegrator.MessageMode.STARTED)
-                elif next_progress == TaskProgress.FAILED.name:
-                    slack.send(SlackIntegrator.MessageMode.FAILED)
-                elif (
-                    task["progress"] == TaskProgress.STOPPED.name
-                    and next_progress == TaskProgress.DELETED.name
-                ):
-                    slack.send(SlackIntegrator.MessageMode.COMPLETED)
-            except Exception as error:
-                app.logger.warn("[Slack Integrator] Failed to send a webhook. error={}".format(error))
-
+        self._notify_to_slack(task, next_progress)
         task["progress"] = next_progress
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
@@ -317,5 +325,4 @@ class DeletedTask:
     @staticmethod
     def handle():
         # TODO
-        print("handle!")
         return {}

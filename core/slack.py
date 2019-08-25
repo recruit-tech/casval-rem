@@ -18,23 +18,23 @@ class SlackIntegrator:
         FAILED = auto()
         COMPLETED = auto()
 
-    def __init__(self, task):
-        self.task = task
+    def __init__(self, webhook_url):
+        self.webhook_url = webhook_url
 
-    def send(self, mode):
+    def send(self, message_mode, task):
         payload = {"username": USERNAME, "icon_emoji": ICON_EMOJI}
 
-        if mode == SlackIntegrator.MessageMode.STARTED:
-            payload["text"] = "Now scanning *{target}*.".format(target=self.task["target"])
-        elif mode == SlackIntegrator.MessageMode.FAILED:
-            payload["text"] = ":rotating_light: *Scan error at {target}*.".format(target=self.task["target"])
-        elif mode == SlackIntegrator.MessageMode.COMPLETED:
+        if message_mode == SlackIntegrator.MessageMode.STARTED:
+            payload["text"] = "Now scanning *{target}*.".format(target=task["target"])
+        elif message_mode == SlackIntegrator.MessageMode.FAILED:
+            payload["text"] = ":rotating_light: *Scan error at {target}*.".format(target=task["target"])
+        elif message_mode == SlackIntegrator.MessageMode.COMPLETED:
             fix_required = {"REQUIRED": 0, "RECOMMENDED": 0, "OPTIONAL": 0, "UNDEFINED": 0}
 
-            for result in self.task["results"]:
+            for result in task["results"]:
                 fix_required[result["fix_required"]] += 1
 
-            payload["text"] = "Scan for *{target}* completed.".format(target=self.task["target"])
+            payload["text"] = "Scan for *{target}* completed.".format(target=task["target"])
 
             attachments = []
             if fix_required["REQUIRED"] > 0:
@@ -55,4 +55,4 @@ class SlackIntegrator:
                 attachments.append(item)
             payload["attachments"] = attachments
 
-        requests.post(self.task["slack_webhook_url"], data=json.dumps(payload))
+        requests.post(self.webhook_url, data=json.dumps(payload))
