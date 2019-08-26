@@ -19,6 +19,7 @@ pytz = "*"
 requests = "*"
 google-cloud-storage = "*"
 kubernetes = "*"
+google-cloud-logging = "*"
 
 [dev-packages]
 isort = "*"

@@ -1,8 +1,11 @@
 import logging
 import os
 
+import google.cloud.logging
 from flask import Flask
 from flask_cors import CORS
+from google.cloud.logging.handlers import CloudLoggingHandler
+from google.cloud.logging.handlers import setup_logging
 from peewee import MySQLDatabase
 
 from apis import api
@@ -19,12 +22,13 @@ from core import marshmallow
 
 app = Flask(__name__)
 
-logger = logging.getLogger("peewee")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.WARNING)
-
 if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
     # For production environment
+    log_client = google.cloud.logging.Client()
+    log_handler = CloudLoggingHandler(log_client)
+    logging.getLogger().setLevel(logging.INFO)
+    setup_logging(log_handler)
+
     Utils.load_env_from_config_file(os.environ["CONFIG_ENV_FILE_PATH"])
     app.config["DATABASE"] = MySQLDatabase(
         os.environ["DB_NAME"],
