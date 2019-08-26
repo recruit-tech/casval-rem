@@ -20,6 +20,7 @@ requests = "*"
 google-cloud-storage = "*"
 kubernetes = "*"
 google-cloud-logging = "*"
+marshmallow = "==2.20.2"
 
 [dev-packages]
 isort = "*"
