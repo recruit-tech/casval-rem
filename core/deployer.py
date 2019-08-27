@@ -217,11 +217,13 @@ class KubernetesDeployer(Deployer):
         container_port = k8s.V1ContainerPort(
             name=self.uuid.split("-")[0], container_port=self.container_port, protocol="TCP"
         )
+        resources = k8s.V1ResourceRequirements(limits={"cpu": "400m", "memory": "800Mi"})
         container = k8s.V1Container(
             image=self.container_image,
             name=self.uuid,
             image_pull_policy="IfNotPresent",
             ports=[container_port],
+            resources=resources,
         )
         toleration = k8s.V1Toleration(effect="NoSchedule", key="Scanners", operator="Exists")
 
