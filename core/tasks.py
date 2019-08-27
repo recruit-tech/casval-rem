@@ -19,7 +19,6 @@ from .scanners import OpenVASScanner as Scanner
 from .scanners import ScanStatus
 from .slack import SlackIntegrator
 from .utils import Utils
-from .utils import timing
 
 if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
     # for production environment
@@ -45,7 +44,6 @@ class BaseTask:
     def __init__(self, progress):
         self.progress = progress
 
-    @timing
     def handle(self):
         for task in self._get_tasks():
             try:
@@ -54,7 +52,7 @@ class BaseTask:
                     # Skip subsequent tasks and return
                     return False
             except Exception as error:
-                app.logger.error("[Task] Exception, task={}, error={}".format(task, error))
+                app.logger.error("Exception, task={}, error={}".format(task, error))
 
         return True
 
@@ -98,7 +96,7 @@ class BaseTask:
                 try:
                     SlackIntegrator(webhook_url).send(message_mode, task)
                 except Exception as error:
-                    app.logger.warn("[Slack Integrator] Failed to send a webhook. error={}".format(error))
+                    app.logger.warn("Failed to send to Slack. error={}".format(error))
 
     def _update(self, task, next_progress):
         self._notify_to_slack(task, next_progress)
@@ -106,7 +104,7 @@ class BaseTask:
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
     def _process(self, task):
-        app.logger.error("[Task] Error, needs to override `process` method")
+        app.logger.error("Error, needs to override `process` method")
 
 
 class PendingTask(BaseTask):
@@ -126,7 +124,7 @@ class PendingTask(BaseTask):
     def _process(self, task):
         running_task_num = self._get_running_task_count()
         if running_task_num >= SCAN_MAX_PARALLEL_SESSION:
-            app.logger.info("[Pending Task] Abandoned, already running {} task(s).".format(running_task_num))
+            app.logger.info("Abandoned to launch scan, already running {} task(s).".format(running_task_num))
             return False
 
         start_at = task["start_at"].replace(tzinfo=pytz.utc)
@@ -139,13 +137,13 @@ class PendingTask(BaseTask):
 
         if end_at < (now + timedelta(hours=1)):
             task["error_reason"] = "The scan has been abandoned since the `end_at` is soon or over."
-            app.logger.info("[Pending Task] Abandoned, task={task}".format(task=task))
+            app.logger.warn("Abandoned to launch scan, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
         if self._is_task_expired(task):
             task["error_reason"] = "The scan has been cancelled by user."
-            app.logger.info("[Pending Task] Removed silently, task={task}".format(task=task))
+            app.logger.info("Task deleted silently, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
             return True
 
@@ -166,7 +164,7 @@ class PendingTask(BaseTask):
         session = Scanner(json.loads(task["session"])).launch_scan(task["target"])
         task["session"] = json.dumps(session)
         task["started_at"] = now
-        app.logger.info("[Pending task] Launched successfully, task={task}".format(task=task))
+        app.logger.info("Scan launched successfully, task={task}".format(task=task))
         self._update(task, next_progress=TaskProgress.RUNNING.name)
         return True
 
@@ -193,37 +191,35 @@ class RunningTask(BaseTask):
             ] = "The scan has been terminated since the scan took more than {} hours.".format(
                 SCAN_MAX_DURATION_IN_HOUR
             )
-            app.logger.info("[Running Task] Scan deleted by timeout, task_uuid={task}".format(task=task))
+            app.logger.warn("Scan deleted by timeout, task_uuid={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
         if end_at <= now:
             Scanner(json.loads(task["session"])).delete_scan()
             task["error_reason"] = "The scan has been terminated since the `end_at` is over."
-            app.logger.info(
-                "[Running Task] Scan deleted since it exceeded end_at, task_uuid={task}".format(task=task)
-            )
+            app.logger.warn("Scan deleted since it exceeded end_at, task_uuid={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
         if self._is_task_expired(task):
             Scanner(json.loads(task["session"])).delete_scan()
             task["error_reason"] = "The scan has been cancelled by user."
-            app.logger.info("[Running Task] Scan deleted forcibly, task={task}".format(task=task))
+            app.logger.warn("Scan deleted forcibly, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
             return True
 
         status = Scanner(json.loads(task["session"])).check_status()
 
         if status == ScanStatus.STOPPED:
-            app.logger.info("[Running Task] Scan stopped successfully, task={task}".format(task=task))
+            app.logger.info("Scan stopped successfully, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.STOPPED.name)
         elif status == ScanStatus.FAILED:
             task["error_reason"] = "The scan has failed."
-            app.logger.info("[Running Task] Scan failed, task={task}".format(task=task))
+            app.logger.error("Scan failed, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
         else:
-            app.logger.info("[Running Task] Scan ongoing, status={}, task={}".format(status, task))
+            app.logger.info("Scan ongoing, status={}, task={}".format(status, task))
 
         return True
 
@@ -290,7 +286,7 @@ class StoppedTask(BaseTask):
 
         task["results"] = results
         task["error_reason"] = "None!"
-        app.logger.info("[Stopped Task] Deleted, task={}".format(task))
+        app.logger.info("Scan deleted successfully, task={}".format(task))
         self._update(task, next_progress=TaskProgress.DELETED.name)
 
         return True
@@ -313,10 +309,10 @@ class FailedTask(BaseTask):
             scan_query = ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"])
             scan_query.execute()
         except Exception as error:
-            app.logger.error("[Failed Task] Exception, task={}, error={}".format(task, error))
+            app.logger.error("Exception, task={}, error={}".format(task, error))
 
         task["error_reason"] += " (from Failed Task)"
-        app.logger.info("[Failed Task] Deleted, task={task}".format(task=task))
+        app.logger.info("Scan delete, task={task}".format(task=task))
         self._update(task, next_progress=TaskProgress.DELETED.name)
         return
 

@@ -1,3 +1,5 @@
+import urllib3
+
 from .authorizers import Authorizer  # noqa
 from .authorizers import jwt  # noqa
 from .models import AuditTable  # noqa
@@ -27,3 +29,5 @@ from .validators import ScanUpdateSchema  # noqa
 from .validators import VulnListInputSchema  # noqa
 from .validators import VulnUpdateSchema  # noqa
 from .validators import marshmallow  # noqa
+
+urllib3.disable_warnings()

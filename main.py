@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+import traceback
 
 from flask import Flask
 from flask_cors import CORS
@@ -17,11 +19,37 @@ from core import db
 from core import jwt
 from core import marshmallow
 
-app = Flask(__name__)
 
-logger = logging.getLogger("peewee")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.WARNING)
+class FormatterJSON(logging.Formatter):
+    def format(self, record):
+        record.message = record.getMessage()
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+        log = {
+            "severity": record.levelname,
+            "message": record.message,
+            "module": record.module,
+            "filename": record.filename,
+            "funcName": record.funcName,
+            "levelno": record.levelno,
+            "lineno": record.lineno,
+            "traceback": {},
+        }
+        if record.exc_info:
+            exception_data = traceback.format_exc().splitlines()
+            j["traceback"] = exception_data
+
+        return json.dumps(log, ensure_ascii=False)
+
+
+formatter = FormatterJSON(
+    "[%(levelname)s]\t%(asctime)s.%(msecs)dZ\t%(levelno)s\t%(message)s\n", "%Y-%m-%dT%H:%M:%S"
+)
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger().handlers[0].setFormatter(formatter)
+
+app = Flask(__name__)
 
 if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
     # For production environment
