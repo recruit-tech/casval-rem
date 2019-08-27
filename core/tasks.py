@@ -52,7 +52,7 @@ class BaseTask:
                     # Skip subsequent tasks and return
                     return False
             except Exception as error:
-                app.logger.error("Exception, task={}, error={}".format(task, error))
+                app.logger.exception("Exception, task={}, error={}".format(task, error))
 
         return True
 
@@ -104,7 +104,7 @@ class BaseTask:
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
     def _process(self, task):
-        app.logger.error("Error, needs to override `process` method")
+        app.logger.exception("Error, needs to override `process` method")
 
 
 class PendingTask(BaseTask):
@@ -216,7 +216,7 @@ class RunningTask(BaseTask):
             self._update(task, next_progress=TaskProgress.STOPPED.name)
         elif status == ScanStatus.FAILED:
             task["error_reason"] = "The scan has failed."
-            app.logger.error("Scan failed, task={task}".format(task=task))
+            app.logger.exception("Scan failed, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
         else:
             app.logger.info("Scan ongoing, status={}, task={}".format(status, task))
@@ -309,7 +309,7 @@ class FailedTask(BaseTask):
             scan_query = ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"])
             scan_query.execute()
         except Exception as error:
-            app.logger.error("Exception, task={}, error={}".format(task, error))
+            app.logger.exception("Exception, task={}, error={}".format(task, error))
 
         task["error_reason"] += " (from Failed Task)"
         app.logger.info("Scan delete, task={task}".format(task=task))

@@ -72,7 +72,7 @@ class OpenVASScanner:
             return session
 
         except Exception as error:
-            app.logger.error("Exception, error={}".format(error))
+            app.logger.exception("Exception, error={}".format(error))
             return None
 
     def check_status(self):
@@ -117,7 +117,7 @@ class OpenVASScanner:
             else:
                 return ScanStatus.FAILED
         except Exception as error:
-            app.logger.error("Exception, error={}".format(error))
+            app.logger.exception("Exception, error={}".format(error))
             return ScanStatus.RUNNING
 
     def create(self):
@@ -160,7 +160,7 @@ class OpenVASScanner:
             app.logger.info("Scanner deleted.")
             return True
         except Exception as error:
-            app.logger.error("Exception, error={}".format(error))
+            app.logger.exception("Exception, error={}".format(error))
             return False
 
     def get_report(self):
@@ -177,7 +177,7 @@ class OpenVASScanner:
             self.conn.delete_report(ov_report_id)
             return report_txt
         except Exception as error:
-            app.logger.error("Exception, error={}".format(error))
+            app.logger.exception("Exception, error={}".format(error))
             return None
 
     def _connect(self):
@@ -219,5 +219,5 @@ class OpenVASScanner:
 
             return {"results": results, "vulns": vulns}
         except Exception as error:
-            app.logger.error("Exception, error={}".format(error))
+            app.logger.exception("Exception, error={}".format(error))
             return None
