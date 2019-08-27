@@ -37,7 +37,7 @@ class FormatterJSON(logging.Formatter):
         }
         if record.exc_info:
             exception_data = traceback.format_exc().splitlines()
-            j["traceback"] = exception_data
+            log["traceback"] = exception_data
 
         return json.dumps(log, ensure_ascii=False)
 

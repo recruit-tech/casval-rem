@@ -109,10 +109,10 @@ class KubernetesDeployer(Deployer):
 
         except CreateServiceException as e:
             self._delete_deployment()
-            app.logger.error(e)
+            app.logger.exception(e)
 
         except Exception as e:
-            app.logger.error(e)
+            app.logger.exception(e)
 
         return self._get_info(DeployerStatus.FAILED)
 
@@ -128,7 +128,7 @@ class KubernetesDeployer(Deployer):
             self._delete_service()
 
         except Exception as e:
-            app.logger.error(e)
+            app.logger.exception(e)
 
         return
 
@@ -155,10 +155,10 @@ class KubernetesDeployer(Deployer):
             if e.status == 404:
                 return self._get_info(DeployerStatus.NOT_EXIST)
 
-            app.logger.error(e)
+            app.logger.exception(e)
 
         except Exception as e:
-            app.logger.error(e)
+            app.logger.exception(e)
 
         return self._get_info(DeployerStatus.FAILED)
 
@@ -187,7 +187,7 @@ class KubernetesDeployer(Deployer):
                 credential = ""
             except Exception as e:
                 credential = ""
-                app.logger.error(e)
+                app.logger.exception(e)
 
         return credential
 
