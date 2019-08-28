@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 from flask import current_app as app
 
 from core.deployer import DeployerStatus
+from openvas_lib import ServerError
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
 
@@ -116,6 +117,8 @@ class OpenVASScanner:
                 return ScanStatus.STOPPED
             else:
                 return ScanStatus.FAILED
+        except ServerError:
+            raise ScannerException("Scanner server error")
         except Exception as error:
             app.logger.exception("Exception, error={}".format(error))
             return ScanStatus.RUNNING
@@ -145,10 +148,9 @@ class OpenVASScanner:
 
     def delete(self):
         deployer = Deployer()
-        deployer.delete(self.deployer_id)
-
-        self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
-        self.conn.delete_target(self.session["blob"]["openvas_target_id"])
+        if deployer.delete(self.deployer_id):
+            self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
+            self.conn.delete_target(self.session["blob"]["openvas_target_id"])
 
     def delete_scan(self):
         try:
@@ -221,3 +223,7 @@ class OpenVASScanner:
         except Exception as error:
             app.logger.exception("Exception, error={}".format(error))
             return None
+
+
+class ScannerException(Exception):
+    pass

@@ -16,6 +16,7 @@ from .models import VulnTable
 from .models import db
 from .resources import AuditResource
 from .scanners import OpenVASScanner as Scanner
+from .scanners import ScannerException
 from .scanners import ScanStatus
 from .slack import SlackIntegrator
 from .utils import Utils
@@ -101,6 +102,12 @@ class BaseTask:
     def _update(self, task, next_progress):
         self._notify_to_slack(task, next_progress)
         task["progress"] = next_progress
+        if next_progress == TaskProgress.DELETED.name:
+            if task.get("session") is not None:
+                try:
+                    Scanner(json.loads(task["session"])).delete()
+                except Exception as error:
+                    app.logger.exception("Exception, task={}, error={}".format(task, error))
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
     def _process(self, task):
@@ -156,6 +163,10 @@ class PendingTask(BaseTask):
         session = scanner.create()
         task["session"] = json.dumps(session)
 
+        if session is None:
+            self._update(task, next_progress=TaskProgress.PENDING.name)
+            return True
+
         if session["status"] != "CREATED":
             self._update(task, next_progress=TaskProgress.PENDING.name)
             return True
@@ -185,7 +196,6 @@ class RunningTask(BaseTask):
         now = datetime.now(tz=pytz.utc)
 
         if now > (started_at + timedelta(hours=SCAN_MAX_DURATION_IN_HOUR)):
-            Scanner(json.loads(task["session"])).delete_scan()
             task[
                 "error_reason"
             ] = "The scan has been terminated since the scan took more than {} hours.".format(
@@ -196,20 +206,24 @@ class RunningTask(BaseTask):
             return True
 
         if end_at <= now:
-            Scanner(json.loads(task["session"])).delete_scan()
             task["error_reason"] = "The scan has been terminated since the `end_at` is over."
             app.logger.warn("Scan deleted since it exceeded end_at, task_uuid={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
         if self._is_task_expired(task):
-            Scanner(json.loads(task["session"])).delete_scan()
             task["error_reason"] = "The scan has been cancelled by user."
             app.logger.warn("Scan deleted forcibly, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
             return True
 
-        status = Scanner(json.loads(task["session"])).check_status()
+        try:
+            status = Scanner(json.loads(task["session"])).check_status()
+        except ScannerException as error:
+            task["error_reason"] = "The scanner return error"
+            app.logger.exception("[Running Task] Scan Exception, task={}, error={}".format(task, error))
+            self._update(task, next_progress=TaskProgress.FAILED.name)
+            return True
 
         if status == ScanStatus.STOPPED:
             app.logger.info("Scan stopped successfully, task={task}".format(task=task))
@@ -240,9 +254,6 @@ class StoppedTask(BaseTask):
             storage.store(key, report)
 
         report = Scanner.parse_report(report)
-
-        scanner = Scanner(json.loads(task["session"]))
-        scanner.delete()
 
         with db.database.atomic():
 
