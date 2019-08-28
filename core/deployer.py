@@ -49,7 +49,7 @@ class LocalDeployer(Deployer):
         }
 
     def delete(self, uuid):
-        return
+        return True
 
     @property
     def ip(self):
@@ -356,5 +356,5 @@ class DeleteServiceException(KubernetesException):
     pass
 
 
-class DeploymentException(KubernetesException):
+class DeleteDeploymentException(KubernetesException):
     pass
