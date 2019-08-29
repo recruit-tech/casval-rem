@@ -255,9 +255,6 @@ class StoppedTask(BaseTask):
 
         report = Scanner.parse_report(report)
 
-        scanner = Scanner(json.loads(task["session"]))
-        scanner.delete()
-
         with db.database.atomic():
 
             if self._is_task_expired(task) == False:
