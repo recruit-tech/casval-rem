@@ -49,7 +49,7 @@ class LocalDeployer(Deployer):
         }
 
     def delete(self, uuid):
-        return True
+        return
 
     @property
     def ip(self):
