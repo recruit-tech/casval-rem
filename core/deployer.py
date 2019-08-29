@@ -356,5 +356,5 @@ class DeleteServiceException(KubernetesException):
     pass
 
 
-class DeploymentException(KubernetesException):
+class DeleteDeploymentException(KubernetesException):
     pass

@@ -46,6 +46,8 @@ class CloudFileStorage:
     def load(self, key):
         try:
             blob = self.bucket.get_blob(self.RESULT_DIR_NAME + key)
+            if blob is None:
+                return None
             return blob.download_as_string().decode("utf-8")
         except Exception as e:
             app.logger.warn(e)

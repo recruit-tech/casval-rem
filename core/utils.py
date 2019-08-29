@@ -95,3 +95,7 @@ class Utils:
         desc = re.sub(r"^(\w+)=", r"\1\n", desc)
         desc = re.sub(r"\|(\w+)=", r"\n\n\1\n", desc)
         return desc
+
+    @staticmethod
+    def is_local():
+        return not bool(os.getenv("CONFIG_ENV_FILE_PATH", ""))
