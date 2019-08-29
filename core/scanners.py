@@ -10,12 +10,14 @@ from openvas_lib import ServerError
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
 
-if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
-    # for production environment
-    from core.deployer import KubernetesDeployer as Deployer
-else:
-    # for development environment
+from .utils import Utils
+
+if Utils.is_local():
+    # For local environment
     from core.deployer import LocalDeployer as Deployer
+else:
+    # For google cloud platform environment
+    from core.deployer import KubernetesDeployer as Deployer
 
 
 class ScanStatus(Enum):
@@ -147,10 +149,11 @@ class OpenVASScanner:
         return session
 
     def delete(self):
-        deployer = Deployer()
-        if deployer.delete(self.deployer_id):
+        if Utils.is_local():
             self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
             self.conn.delete_target(self.session["blob"]["openvas_target_id"])
+        else:
+            Deployer().delete(self.deployer_id)
 
     def delete_scan(self):
         try:
