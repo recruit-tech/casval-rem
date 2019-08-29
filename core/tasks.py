@@ -220,8 +220,8 @@ class RunningTask(BaseTask):
         try:
             status = Scanner(json.loads(task["session"])).check_status()
         except ScannerException as error:
-            task["error_reason"] = "The scanner return error"
-            app.logger.exception("[Running Task] Scan Exception, task={}, error={}".format(task, error))
+            task["error_reason"] = "Scan server error"
+            app.logger.exception("Exception, task={}, error={}".format(task, error))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 

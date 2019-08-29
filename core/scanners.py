@@ -120,7 +120,7 @@ class OpenVASScanner:
             else:
                 return ScanStatus.FAILED
         except ServerError:
-            raise ScannerException("Scanner server error")
+            raise ScannerException("Scan server error")
         except Exception as error:
             app.logger.exception("Exception, error={}".format(error))
             return ScanStatus.RUNNING

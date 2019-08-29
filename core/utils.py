@@ -98,6 +98,4 @@ class Utils:
 
     @staticmethod
     def is_local():
-        if len(os.getenv("CONFIG_ENV_FILE_PATH", "")) > 0:
-            return False
-        return True
+        return not bool(os.getenv("CONFIG_ENV_FILE_PATH", ""))
