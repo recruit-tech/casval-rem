@@ -18,6 +18,7 @@ from .tasks import PendingTask  # noqa
 from .tasks import RunningTask  # noqa
 from .tasks import StoppedTask  # noqa
 from .utils import Utils  # noqa
+from .validators import AuditDownloadInputSchema  # noqa
 from .validators import AuditInputSchema  # noqa
 from .validators import AuditListInputSchema  # noqa
 from .validators import AuditTokenInputSchema  # noqa
