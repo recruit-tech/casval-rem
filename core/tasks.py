@@ -46,13 +46,11 @@ class BaseTask:
     def handle(self):
         for task in self._get_tasks():
             try:
-                result = self._process(task)
-                if result == False:
-                    # Skip subsequent tasks and return
-                    return False
+                is_continuable = self._process(task)
+                if not is_continuable:
+                    break
             except Exception as error:
                 app.logger.exception("Exception, task={}, error={}".format(task, error))
-
         return True
 
     def _get_tasks(self):
