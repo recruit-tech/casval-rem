@@ -12,12 +12,10 @@ from openvas_lib import report_parser_from_text
 
 from .utils import Utils
 
-if Utils.is_local():
-    # For local environment
-    from core.deployer import LocalDeployer as Deployer
-else:
-    # For google cloud platform environment
+if Utils.is_gcp():
     from core.deployer import KubernetesDeployer as Deployer
+else:
+    from core.deployer import LocalDeployer as Deployer
 
 
 class ScanStatus(Enum):
@@ -149,11 +147,11 @@ class OpenVASScanner:
         return session
 
     def delete(self):
-        if Utils.is_local():
+        if Utils.is_gcp():
+            Deployer().delete(self.deployer_id)
+        else:
             self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
             self.conn.delete_target(self.session["blob"]["openvas_target_id"])
-        else:
-            Deployer().delete(self.deployer_id)
 
     def delete_scan(self):
         try:

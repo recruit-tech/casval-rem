@@ -21,12 +21,10 @@ from .scanners import ScanStatus
 from .slack import SlackIntegrator
 from .utils import Utils
 
-if Utils.is_local():
-    # For local environment
-    from .storages import LocalFileStorage as Storage
-else:
-    # For google cloud platform environment
+if Utils.is_gcp():
     from .storages import CloudFileStorage as Storage
+else:
+    from .storages import LocalFileStorage as Storage
 
 SCAN_MAX_PARALLEL_SESSION = os.getenv("SCAN_MAX_PARALLEL_SESSION", 1)
 SCAN_REPORT_KEY_NAME = "{audit_id:08}-{scan_id:08}-{task_uuid:.8}.xml"
