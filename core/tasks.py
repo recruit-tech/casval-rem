@@ -137,13 +137,13 @@ class PendingTask(BaseTask):
             return True
 
         if end_at < (now + timedelta(hours=1)):
-            task["error_reason"] = "The scan has been abandoned since the `end_at` is soon or over."
+            task["error_reason"] = "Scan was abandoned since `end_at` is soon or over."
             app.logger.warn("Abandoned to launch scan, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
         if self._is_task_expired(task):
-            task["error_reason"] = "The scan has been cancelled by user."
+            task["error_reason"] = "Scan was cancelled by user."
             app.logger.info("Task deleted silently, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
             return True
@@ -186,9 +186,7 @@ class RunningTask(BaseTask):
         now = datetime.now(tz=pytz.utc)
 
         if now > (started_at + timedelta(hours=SCAN_MAX_DURATION_IN_HOUR)):
-            task[
-                "error_reason"
-            ] = "The scan has been terminated since the scan took more than {} hours.".format(
+            task["error_reason"] = "Scan was terminated since it took more than {} hours.".format(
                 SCAN_MAX_DURATION_IN_HOUR
             )
             app.logger.warn("Scan deleted by timeout, task_uuid={task}".format(task=task))
@@ -196,22 +194,22 @@ class RunningTask(BaseTask):
             return True
 
         if end_at <= now:
-            task["error_reason"] = "The scan has been terminated since the `end_at` is over."
-            app.logger.warn("Scan deleted since it exceeded end_at, task_uuid={task}".format(task=task))
+            task["error_reason"] = "Scan was terminated since `end_at` is over."
+            app.logger.warn("Scan was deleted since it exceeded end_at, task_uuid={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
         if self._is_task_expired(task):
-            task["error_reason"] = "The scan has been cancelled by user."
-            app.logger.warn("Scan deleted forcibly, task={task}".format(task=task))
+            task["error_reason"] = "Scan was cancelled by user."
+            app.logger.warn("Scan was deleted forcibly, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.DELETED.name)
             return True
 
         try:
             status = Scanner(json.loads(task["session"])).check_status()
         except ScanServerException as error:
-            task["error_reason"] = "Scan server error"
             app.logger.exception("Exception, task={}, error={}".format(task, error))
+            task["error_reason"] = "Scan was terminated due to server down."
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
@@ -219,8 +217,8 @@ class RunningTask(BaseTask):
             app.logger.info("Scan stopped successfully, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.STOPPED.name)
         elif status == ScanStatus.FAILED:
-            task["error_reason"] = "The scan has failed."
             app.logger.exception("Scan failed, task={task}".format(task=task))
+            task["error_reason"] = "Scan was terminated due to scanner error."
             self._update(task, next_progress=TaskProgress.FAILED.name)
         else:
             app.logger.info("Scan ongoing, status={}, task={}".format(status, task))
