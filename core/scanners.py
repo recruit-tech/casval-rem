@@ -53,13 +53,14 @@ class OpenVASScanner:
         deployer = Deployer()
         if self.deployer_id is None:
             deployer_status = deployer.create(
-                container_image=OPENVAS_CONTAINER_IMAGE, container_port=OPENVAS_CONTAINER_PORT
+                container_image=OpenVASScanner.OPENVAS_CONTAINER_IMAGE,
+                container_port=OpenVASScanner.OPENVAS_CONTAINER_PORT,
             )
         else:
             deployer_status = deployer.create(
                 uuid=self.deployer_id,
-                container_image=OPENVAS_CONTAINER_IMAGE,
-                container_port=OPENVAS_CONTAINER_PORT,
+                container_image=OpenVASScanner.OPENVAS_CONTAINER_IMAGE,
+                container_port=OpenVASScanner.OPENVAS_CONTAINER_PORT,
             )
 
         session = {"status": "", "blob": {"openvas_deployer_id": deployer_status["uuid"]}}
