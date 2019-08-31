@@ -138,7 +138,7 @@ class OpenVASScanner:
             app.logger.info("Trying to connect to scanner {}:{} ...".format(self.host, self.port))
             return VulnscanManager(self.host, self.user, self.password, self.port, self.DEFAULT_TIMEOUT)
         except ServerError:
-            raise ScannerException("Scan server connection error.")
+            raise ScanServerException("Scan server connection error.")
 
     @classmethod
     def get_info(cls):
@@ -174,5 +174,5 @@ class OpenVASScanner:
         return {"results": results, "vulns": vulns}
 
 
-class ScannerException(Exception):
+class ScanServerException(Exception):
     pass

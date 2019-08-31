@@ -16,7 +16,7 @@ from .models import VulnTable
 from .models import db
 from .resources import AuditResource
 from .scanners import OpenVASScanner as Scanner
-from .scanners import ScannerException
+from .scanners import ScanServerException
 from .scanners import ScanStatus
 from .slack import SlackIntegrator
 from .utils import Utils
@@ -209,7 +209,7 @@ class RunningTask(BaseTask):
 
         try:
             status = Scanner(json.loads(task["session"])).check_status()
-        except ScannerException as error:
+        except ScanServerException as error:
             task["error_reason"] = "Scan server error"
             app.logger.exception("Exception, task={}, error={}".format(task, error))
             self._update(task, next_progress=TaskProgress.FAILED.name)
