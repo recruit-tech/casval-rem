@@ -94,6 +94,17 @@ class BaseTask:
                 except Exception as error:
                     app.logger.warn("Failed to send to Slack. error={}".format(error))
 
+    def _reset_scan_schedule(error_reason=""):
+        scan = {
+            "error_reason": error_reason,
+            "task_uuid": None,
+            "scheduled": False,
+            "processed": True,
+            "start_at": Utils.get_default_datetime(),
+            "end_at": Utils.get_default_datetime(),
+        }
+        ScanTable.update(scan).where(ScanTable.task_uuid == task["uuid"]).execute()
+
     def _update(self, task, next_progress):
         self._notify_to_slack(task, next_progress)
         task["progress"] = next_progress
@@ -247,15 +258,7 @@ class StoppedTask(BaseTask):
             return True
 
         with db.database.atomic():
-            data = {
-                "error_reason": "",
-                "task_uuid": None,
-                "scheduled": False,
-                "processed": True,
-                "start_at": Utils.get_default_datetime(),
-                "end_at": Utils.get_default_datetime(),
-            }
-            ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"]).execute()
+            self._reset_scan_schedule()
             for vuln in report["vulns"]:
                 VulnTable.insert(vuln).on_conflict_ignore().execute()
             ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
@@ -288,15 +291,7 @@ class FailedTask(BaseTask):
         super().__init__(TaskProgress.FAILED.name)
 
     def _process(self, task):
-        result = {
-            "error_reason": task["error_reason"],
-            "task_uuid": None,
-            "scheduled": False,
-            "processed": True,
-            "start_at": Utils.get_default_datetime(),
-            "end_at": Utils.get_default_datetime(),
-        }
-        ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"]).execute()
+        self._reset_scan_schedule(task["error_reason"])
         self._update(task, next_progress=TaskProgress.DELETED.name)
         return True
 
