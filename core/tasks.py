@@ -59,12 +59,6 @@ class BaseTask:
         )
         return list(task_query.dicts())
 
-    def _get_running_task_count(self):
-        task_query = TaskTable.select(fn.Count(TaskTable.id).alias("count")).where(
-            TaskTable.progress == TaskProgress.RUNNING.name
-        )
-        return task_query.dicts().get()["count"]
-
     def _is_task_expired(self, task):
         scan_query = (
             ScanTable()
@@ -119,6 +113,12 @@ class PendingTask(BaseTask):
         task = TaskTable(**entry)
         task.save()
         return task
+
+    def _get_running_task_count(self):
+        task_query = TaskTable.select(fn.Count(TaskTable.id).alias("count")).where(
+            TaskTable.progress == TaskProgress.RUNNING.name
+        )
+        return task_query.dicts().get()["count"]
 
     def _set_scan_started_time(self, task):
         now = datetime.now(tz=pytz.utc)
