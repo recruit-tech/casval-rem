@@ -266,19 +266,16 @@ class StoppedTask(BaseTask):
                     "end_at": Utils.get_default_datetime(),
                 }
 
-                scan_query = ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"])
-                scan_query.execute()
+                ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"]).execute()
 
                 for vuln in report["vulns"]:
-                    vuln_query = VulnTable.insert(vuln).on_conflict_ignore()
-                    vuln_query.execute()
+                    VulnTable.insert(vuln).on_conflict_ignore().execute()
 
                 ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
-
-                for result in report["results"]:
+                results = report["results"]
+                for result in results:
                     result["scan_id"] = task["scan_id"]
-                    result_query = ResultTable.insert(result)
-                    result_query.execute()
+                ResultTable.insert_many(results).execute()
 
         show_result_query = (
             ResultTable.select(
@@ -312,8 +309,7 @@ class FailedTask(BaseTask):
             "start_at": Utils.get_default_datetime(),
             "end_at": Utils.get_default_datetime(),
         }
-        scan_query = ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"])
-        scan_query.execute()
+        ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"]).execute()
         self._update(task, next_progress=TaskProgress.DELETED.name)
         return True
 
