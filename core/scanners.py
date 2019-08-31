@@ -46,7 +46,7 @@ class OpenVASScanner:
             self.host = session.get("openvas_host")
             self.port = session.get("openvas_port")
             self.deployer_id = session.get("openvas_deployer_id")
-            if session.get("status") == "CREATED":
+            if session.get("status") == DeploymentStatus.RUNNING.name:
                 self.conn = self._connect()
 
     def create(self):
@@ -67,13 +67,8 @@ class OpenVASScanner:
         if deployer_status["status"] == DeploymentStatus.RUNNING:
             self.session["openvas_host"] = deployer_status["ip"]
             self.session["openvas_port"] = deployer_status["port"]
-            self.session["status"] = "CREATED"
-        elif deployer_status["status"] == DeploymentStatus.WAITING:
-            self.session["status"] = "WAITING"
-        elif deployer_status["status"] == DeploymentStatus.FAILED:
-            self.session["status"] = "FAILED"
-        elif deployer_status["status"] == DeploymentStatus.NOT_EXIST:
-            self.session["status"] = "FAILED"
+            self.session["status"] = DeploymentStatus.RUNNING.name
+
         return self.session
 
     def delete(self):
@@ -86,7 +81,7 @@ class OpenVASScanner:
         app.logger.info("Completed to delete scanner.")
 
     def is_ready(self):
-        return bool(self.session["status"] == "CREATED")
+        return bool(self.session["status"] == DeploymentStatus.RUNNING.name)
 
     def launch_scan(self, target):
         app.logger.info("Trying to launch new scan...")
@@ -94,7 +89,7 @@ class OpenVASScanner:
             target=target, profile=self.profile, alive_test=self.alive_test
         )
         session = {
-            "status": "CREATED",
+            "status": DeploymentStatus.RUNNING.name,
             "target": target,
             "openvas_host": self.host,
             "openvas_port": self.port,

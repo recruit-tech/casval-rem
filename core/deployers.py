@@ -41,12 +41,7 @@ class LocalDeployer(Deployer):
         return
 
     def create(self, uuid=None, container_image=None, container_port=None):
-        return {
-            "status": DeploymentStatus.RUNNING,
-            "ip": "127.0.0.1",
-            "port": container_port,
-            "uuid": "Nothing",
-        }
+        return {"status": DeploymentStatus.RUNNING, "ip": "127.0.0.1", "port": container_port, "uuid": None}
 
     def delete(self, uuid):
         return
