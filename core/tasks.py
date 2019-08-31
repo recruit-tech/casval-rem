@@ -46,6 +46,11 @@ class BaseTask:
     def handle(self):
         for task in self._get_tasks():
             try:
+                if self._is_task_expired(task) and self.progress != TaskProgress.DELETED.name:
+                    task["error_reason"] = "Scan was cancelled by user."
+                    app.logger.info("Delete task due to cancellation, task={task}".format(task=task))
+                    self._update(task, next_progress=TaskProgress.DELETED.name)
+                    continue
                 is_continuable = self._process(task)
                 if not is_continuable:
                     break
@@ -138,12 +143,6 @@ class PendingTask(BaseTask):
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
-        if self._is_task_expired(task):
-            task["error_reason"] = "Scan was cancelled by user."
-            app.logger.info("Task deleted silently, task={task}".format(task=task))
-            self._update(task, next_progress=TaskProgress.DELETED.name)
-            return True
-
         scanner = None
         if task.get("session"):
             scanner = Scanner(json.loads(task["session"]))
@@ -206,12 +205,6 @@ class RunningTask(BaseTask):
             self._update(task, next_progress=TaskProgress.FAILED.name)
             return True
 
-        if self._is_task_expired(task):
-            task["error_reason"] = "Scan was cancelled by user."
-            app.logger.warn("Scan was deleted forcibly, task={task}".format(task=task))
-            self._update(task, next_progress=TaskProgress.DELETED.name)
-            return True
-
         try:
             status = Scanner(json.loads(task["session"])).check_status()
         except ScanServerException as error:
@@ -254,28 +247,22 @@ class StoppedTask(BaseTask):
             return True
 
         with db.database.atomic():
-
-            if self._is_task_expired(task) == False:
-
-                data = {
-                    "error_reason": "",
-                    "task_uuid": None,
-                    "scheduled": False,
-                    "processed": True,
-                    "start_at": Utils.get_default_datetime(),
-                    "end_at": Utils.get_default_datetime(),
-                }
-
-                ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"]).execute()
-
-                for vuln in report["vulns"]:
-                    VulnTable.insert(vuln).on_conflict_ignore().execute()
-
-                ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
-                results = report["results"]
-                for result in results:
-                    result["scan_id"] = task["scan_id"]
-                ResultTable.insert_many(results).execute()
+            data = {
+                "error_reason": "",
+                "task_uuid": None,
+                "scheduled": False,
+                "processed": True,
+                "start_at": Utils.get_default_datetime(),
+                "end_at": Utils.get_default_datetime(),
+            }
+            ScanTable.update(data).where(ScanTable.task_uuid == task["uuid"]).execute()
+            for vuln in report["vulns"]:
+                VulnTable.insert(vuln).on_conflict_ignore().execute()
+            ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
+            results = report["results"]
+            for result in results:
+                result["scan_id"] = task["scan_id"]
+            ResultTable.insert_many(results).execute()
 
         show_result_query = (
             ResultTable.select(
