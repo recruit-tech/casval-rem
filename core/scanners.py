@@ -5,9 +5,9 @@ from xml.etree import ElementTree
 
 from flask import current_app as app
 
-from core.deployers import DeployerStatus
-from openvas_lib import VulnscanServerError
+from core.deployers import DeploymentStatus
 from openvas_lib import VulnscanManager
+from openvas_lib import VulnscanServerError
 from openvas_lib import report_parser_from_text
 
 from .utils import Utils
@@ -43,9 +43,9 @@ class OpenVASScanner:
 
         if session:
             # Restore previous scanner session
-            self.host = session["blob"].get("openvas_host")
-            self.port = session["blob"].get("openvas_port")
-            self.deployer_id = session["blob"].get("openvas_deployer_id")
+            self.host = session.get("openvas_host")
+            self.port = session.get("openvas_port")
+            self.deployer_id = session.get("openvas_deployer_id")
             if session.get("status") == "CREATED":
                 self.conn = self._connect()
 
@@ -63,16 +63,16 @@ class OpenVASScanner:
                 container_port=OpenVASScanner.OPENVAS_CONTAINER_PORT,
             )
 
-        self.session = {"status": "", "blob": {"openvas_deployer_id": deployer_status["uuid"]}}
-        if deployer_status["status"] == DeployerStatus.RUNNING:
-            self.session["blob"]["openvas_host"] = deployer_status["ip"]
-            self.session["blob"]["openvas_port"] = deployer_status["port"]
+        self.session = {"status": "", "openvas_deployer_id": deployer_status["uuid"]}
+        if deployer_status["status"] == DeploymentStatus.RUNNING:
+            self.session["openvas_host"] = deployer_status["ip"]
+            self.session["openvas_port"] = deployer_status["port"]
             self.session["status"] = "CREATED"
-        elif deployer_status["status"] == DeployerStatus.WAITING:
+        elif deployer_status["status"] == DeploymentStatus.WAITING:
             self.session["status"] = "WAITING"
-        elif deployer_status["status"] == DeployerStatus.FAILED:
+        elif deployer_status["status"] == DeploymentStatus.FAILED:
             self.session["status"] = "FAILED"
-        elif deployer_status["status"] == DeployerStatus.NOT_EXSIT:
+        elif deployer_status["status"] == DeploymentStatus.NOT_EXIST:
             self.session["status"] = "FAILED"
         return self.session
 
@@ -81,8 +81,8 @@ class OpenVASScanner:
         if Utils.is_gcp():
             Deployer().delete(self.deployer_id)
         else:
-            self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
-            self.conn.delete_target(self.session["blob"]["openvas_target_id"])
+            self.conn.delete_scan(self.session["openvas_scan_id"])
+            self.conn.delete_target(self.session["openvas_target_id"])
         app.logger.info("Completed to delete scanner.")
 
     def is_ready(self):
@@ -95,15 +95,13 @@ class OpenVASScanner:
         )
         session = {
             "status": "CREATED",
-            "blob": {
-                "target": target,
-                "openvas_host": self.host,
-                "openvas_port": self.port,
-                "openvas_profile": self.profile,
-                "openvas_scan_id": ov_scan_id,
-                "openvas_target_id": ov_target_id,
-                "openvas_deployer_id": self.deployer_id,
-            },
+            "target": target,
+            "openvas_host": self.host,
+            "openvas_port": self.port,
+            "openvas_profile": self.profile,
+            "openvas_scan_id": ov_scan_id,
+            "openvas_target_id": ov_target_id,
+            "openvas_deployer_id": self.deployer_id,
         }
 
         app.logger.info("Completed to launch scan, session={}".format(session))
@@ -111,7 +109,7 @@ class OpenVASScanner:
 
     def check_status(self):
         try:
-            status = self.conn.get_scan_status(self.session["blob"]["openvas_scan_id"])
+            status = self.conn.get_scan_status(self.session["openvas_scan_id"])
             app.logger.info("Current scan progress={}, session={}".format(status, self.session))
             # See https://github.com/greenbone/gvmd/blob/577f1b463f5861794bb97066dd0c9c4ab6c223df/src/manage.c#L1482
             if status in ["New", "Running", "Requested"]:
@@ -127,7 +125,7 @@ class OpenVASScanner:
     def get_report(self):
         app.logger.info("Trying to get scan report...")
 
-        ov_report_id = self.conn.get_report_id(self.session["blob"]["openvas_scan_id"])
+        ov_report_id = self.conn.get_report_id(self.session["openvas_scan_id"])
 
         app.logger.info("Found report_id={}".format(ov_report_id))
 
