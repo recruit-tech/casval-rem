@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 
 from flask import current_app as app
 
-from core.deployer import DeployerStatus
+from core.deployers import DeployerStatus
 from openvas_lib import ServerError
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
@@ -13,9 +13,9 @@ from openvas_lib import report_parser_from_text
 from .utils import Utils
 
 if Utils.is_gcp():
-    from core.deployer import KubernetesDeployer as Deployer
+    from core.deployers import KubernetesDeployer as Deployer
 else:
-    from core.deployer import LocalDeployer as Deployer
+    from core.deployers import LocalDeployer as Deployer
 
 
 class ScanStatus(Enum):
