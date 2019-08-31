@@ -99,7 +99,7 @@ class BaseTask:
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
     def _process(self, task):
-        app.logger.exception("Error, needs to override `process` method")
+        app.logger.exception("Error, needs to override `_process` method")
 
 
 class PendingTask(BaseTask):
@@ -182,10 +182,13 @@ class RunningTask(BaseTask):
     def __init__(self):
         super().__init__(TaskProgress.RUNNING.name)
 
-    def _update(self, task, next_progress):
+    def _set_scan_ended_time(self, task):
         now = datetime.now(tz=pytz.utc)
         ScanTable.update({"ended_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
+
+    def _update(self, task, next_progress):
         task["ended_at"] = now
+        self._set_scan_ended_time(task)
         super()._update(task, next_progress)
 
     def _process(self, task):
