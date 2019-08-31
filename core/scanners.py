@@ -49,6 +49,41 @@ class OpenVASScanner:
             if session.get("status") == "CREATED":
                 self.conn = self._connect()
 
+    def create(self):
+        deployer = Deployer()
+        if self.deployer_id is None:
+            deployer_status = deployer.create(
+                container_image=OPENVAS_CONTAINER_IMAGE, container_port=OPENVAS_CONTAINER_PORT
+            )
+        else:
+            deployer_status = deployer.create(
+                uuid=self.deployer_id,
+                container_image=OPENVAS_CONTAINER_IMAGE,
+                container_port=OPENVAS_CONTAINER_PORT,
+            )
+
+        session = {"status": "", "blob": {"openvas_deployer_id": deployer_status["uuid"]}}
+        if deployer_status["status"] == DeployerStatus.RUNNING:
+            session["blob"]["openvas_host"] = deployer_status["ip"]
+            session["blob"]["openvas_port"] = deployer_status["port"]
+            session["status"] = "CREATED"
+        elif deployer_status["status"] == DeployerStatus.WAITING:
+            session["status"] = "WAITING"
+        elif deployer_status["status"] == DeployerStatus.FAILED:
+            session["status"] = "FAILED"
+        elif deployer_status["status"] == DeployerStatus.NOT_EXSIT:
+            session["status"] = "FAILED"
+        return session
+
+    def delete(self):
+        app.logger.info("Trying to delete scanner...")
+        if Utils.is_gcp():
+            Deployer().delete(self.deployer_id)
+        else:
+            self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
+            self.conn.delete_target(self.session["blob"]["openvas_target_id"])
+        app.logger.info("Completed to delete scanner.")
+
     def launch_scan(self, target):
         app.logger.info("Trying to launch new scan...")
         ov_scan_id, ov_target_id = self.conn.launch_scan(
@@ -84,41 +119,6 @@ class OpenVASScanner:
         except Exception as error:
             app.logger.exception("Scan exception, error={}".format(error))
             return ScanStatus.RUNNING
-
-    def create(self):
-        deployer = Deployer()
-        if self.deployer_id is None:
-            deployer_status = deployer.create(
-                container_image=OPENVAS_CONTAINER_IMAGE, container_port=OPENVAS_CONTAINER_PORT
-            )
-        else:
-            deployer_status = deployer.create(
-                uuid=self.deployer_id,
-                container_image=OPENVAS_CONTAINER_IMAGE,
-                container_port=OPENVAS_CONTAINER_PORT,
-            )
-
-        session = {"status": "", "blob": {"openvas_deployer_id": deployer_status["uuid"]}}
-        if deployer_status["status"] == DeployerStatus.RUNNING:
-            session["blob"]["openvas_host"] = deployer_status["ip"]
-            session["blob"]["openvas_port"] = deployer_status["port"]
-            session["status"] = "CREATED"
-        elif deployer_status["status"] == DeployerStatus.WAITING:
-            session["status"] = "WAITING"
-        elif deployer_status["status"] == DeployerStatus.FAILED:
-            session["status"] = "FAILED"
-        elif deployer_status["status"] == DeployerStatus.NOT_EXSIT:
-            session["status"] = "FAILED"
-        return session
-
-    def delete(self):
-        app.logger.info("Trying to delete scanner...")
-        if Utils.is_gcp():
-            Deployer().delete(self.deployer_id)
-        else:
-            self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
-            self.conn.delete_target(self.session["blob"]["openvas_target_id"])
-        app.logger.info("Completed to delete scanner.")
 
     def get_report(self):
         app.logger.info("Trying to get scan report...")
