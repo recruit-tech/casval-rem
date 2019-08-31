@@ -236,9 +236,15 @@ class StoppedTask(BaseTask):
             audit_id=task["audit_id"], scan_id=task["scan_id"], task_uuid=task["uuid"].hex
         )
 
-        raw_report = Scanner(json.loads(task["session"])).get_report()
-        storage.store(key, raw_report)
-        report = Scanner.parse_report(raw_report)
+        try:
+            raw_report = Scanner(json.loads(task["session"])).get_report()
+            storage.store(key, raw_report)
+            report = Scanner.parse_report(raw_report)
+        except ScanServerException as error:
+            app.logger.exception("Exception, task={}, error={}".format(task, error))
+            task["error_reason"] = "Report download failed due to server down."
+            self._update(task, next_progress=TaskProgress.FAILED.name)
+            return True
 
         with db.database.atomic():
 
