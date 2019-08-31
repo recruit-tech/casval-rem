@@ -179,10 +179,12 @@ class RunningTask(BaseTask):
         super().__init__(TaskProgress.RUNNING.name)
 
     def _update(self, task, next_progress):
-        now = datetime.now(tz=pytz.utc)
-        task["ended_at"] = now
-        ScanTable.update({"ended_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
-        self._set_scan_ended_time(task)
+
+        if next_progress in [TaskProgress.STOPPED.name, TaskProgress.FAILED.name]:
+            now = datetime.now(tz=pytz.utc)
+            task["ended_at"] = now
+            ScanTable.update({"ended_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
+
         super()._update(task, next_progress)
 
     def _process(self, task):

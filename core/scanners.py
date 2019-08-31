@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 from flask import current_app as app
 
 from core.deployers import DeployerStatus
-from openvas_lib import ServerError
+from openvas_lib import VulnscanServerError
 from openvas_lib import VulnscanManager
 from openvas_lib import report_parser_from_text
 
@@ -141,7 +141,7 @@ class OpenVASScanner:
         try:
             app.logger.info("Trying to connect to scanner {}:{} ...".format(self.host, self.port))
             return VulnscanManager(self.host, self.user, self.password, self.port, self.DEFAULT_TIMEOUT)
-        except ServerError:
+        except VulnscanServerError:
             raise ScanServerException("Scan server connection error.")
 
     @classmethod
