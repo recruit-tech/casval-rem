@@ -118,10 +118,6 @@ class PendingTask(BaseTask):
         )
         return task_query.dicts().get()["count"]
 
-    def _set_scan_started_time(self, task):
-        now = datetime.now(tz=pytz.utc)
-        ScanTable.update({"started_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
-
     def _process(self, task):
         running_task_num = self._get_running_task_count()
         if running_task_num >= SCAN_MAX_PARALLEL_SESSION:
@@ -166,7 +162,7 @@ class PendingTask(BaseTask):
             session = Scanner(session).launch_scan(task["target"])
             task["session"] = json.dumps(session)
             task["started_at"] = now
-            self._set_scan_started_time(task)
+            ScanTable.update({"started_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
             app.logger.info("Scan launched successfully, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.RUNNING.name)
         except ScanServerException:
@@ -182,12 +178,10 @@ class RunningTask(BaseTask):
     def __init__(self):
         super().__init__(TaskProgress.RUNNING.name)
 
-    def _set_scan_ended_time(self, task):
-        now = datetime.now(tz=pytz.utc)
-        ScanTable.update({"ended_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
-
     def _update(self, task, next_progress):
+        now = datetime.now(tz=pytz.utc)
         task["ended_at"] = now
+        ScanTable.update({"ended_at": now}).where(ScanTable.task_uuid == task["uuid"]).execute()
         self._set_scan_ended_time(task)
         super()._update(task, next_progress)
 
