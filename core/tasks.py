@@ -162,12 +162,19 @@ class PendingTask(BaseTask):
             self._update(task, next_progress=TaskProgress.PENDING.name)
             return True
 
-        session = Scanner(session).launch_scan(task["target"])
-        task["session"] = json.dumps(session)
-        task["started_at"] = now
-        self._set_scan_started_time(task)
-        app.logger.info("Scan launched successfully, task={task}".format(task=task))
-        self._update(task, next_progress=TaskProgress.RUNNING.name)
+        try:
+            session = Scanner(session).launch_scan(task["target"])
+            task["session"] = json.dumps(session)
+            task["started_at"] = now
+            self._set_scan_started_time(task)
+            app.logger.info("Scan launched successfully, task={task}".format(task=task))
+            self._update(task, next_progress=TaskProgress.RUNNING.name)
+        except ScanServerException:
+            # FIXME: Need to handle persistent server exception here
+            app.logger.warn(
+                "Scan server error during launch. We consider the error is due to OpenVAS server update for the time being."
+            )
+
         return True
 
 
