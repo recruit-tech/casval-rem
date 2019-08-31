@@ -94,10 +94,8 @@ class BaseTask:
         task["progress"] = next_progress
         if next_progress == TaskProgress.DELETED.name:
             if task.get("session") is not None:
-                try:
-                    Scanner(json.loads(task["session"])).delete()
-                except Exception as error:
-                    app.logger.exception("Exception, task={}, error={}".format(task, error))
+                Scanner(json.loads(task["session"])).delete()
+                app.logger.info("Scan deleted successfully, task={}".format(task))
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
 
     def _process(self, task):
@@ -158,10 +156,6 @@ class PendingTask(BaseTask):
 
         session = scanner.create()
         task["session"] = json.dumps(session)
-
-        if session is None:
-            self._update(task, next_progress=TaskProgress.PENDING.name)
-            return True
 
         if session["status"] != "CREATED":
             self._update(task, next_progress=TaskProgress.PENDING.name)
@@ -244,12 +238,9 @@ class StoppedTask(BaseTask):
             audit_id=task["audit_id"], scan_id=task["scan_id"], task_uuid=task["uuid"].hex
         )
 
-        report = storage.load(key)
-        if report is None:
-            report = Scanner(json.loads(task["session"])).get_report()
-            storage.store(key, report)
-
-        report = Scanner.parse_report(report)
+        raw_report = Scanner(json.loads(task["session"])).get_report()
+        storage.store(key, raw_report)
+        report = Scanner.parse_report(raw_report)
 
         with db.database.atomic():
 
@@ -292,10 +283,8 @@ class StoppedTask(BaseTask):
             results.append(result)
 
         task["results"] = results
-        task["error_reason"] = "None!"
-        app.logger.info("Scan deleted successfully, task={}".format(task))
+        task["error_reason"] = ""
         self._update(task, next_progress=TaskProgress.DELETED.name)
-
         return True
 
 
@@ -304,28 +293,21 @@ class FailedTask(BaseTask):
         super().__init__(TaskProgress.FAILED.name)
 
     def _process(self, task):
-        try:
-            result = {
-                "error_reason": task["error_reason"],
-                "task_uuid": None,
-                "scheduled": False,
-                "processed": True,
-                "start_at": Utils.get_default_datetime(),
-                "end_at": Utils.get_default_datetime(),
-            }
-            scan_query = ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"])
-            scan_query.execute()
-        except Exception as error:
-            app.logger.exception("Exception, task={}, error={}".format(task, error))
-
-        task["error_reason"] += " (from Failed Task)"
-        app.logger.info("Scan delete, task={task}".format(task=task))
+        result = {
+            "error_reason": task["error_reason"],
+            "task_uuid": None,
+            "scheduled": False,
+            "processed": True,
+            "start_at": Utils.get_default_datetime(),
+            "end_at": Utils.get_default_datetime(),
+        }
+        scan_query = ScanTable.update(result).where(ScanTable.task_uuid == task["uuid"])
+        scan_query.execute()
         self._update(task, next_progress=TaskProgress.DELETED.name)
-        return
+        return True
 
 
 class DeletedTask:
     @staticmethod
     def handle():
-        # TODO
         return {}
