@@ -93,7 +93,7 @@ class BaseTask:
         self._notify_to_slack(task, next_progress)
         task["progress"] = next_progress
         if next_progress == TaskProgress.DELETED.name:
-            if task.get("session") is not None:
+            if task.get("session"):
                 Scanner(json.loads(task["session"])).delete()
                 app.logger.info("Scan deleted successfully, task={}".format(task))
         TaskTable.update(task).where(TaskTable.id == task["id"]).execute()
@@ -149,10 +149,10 @@ class PendingTask(BaseTask):
             return True
 
         scanner = None
-        if task.get("session") == "":
-            scanner = Scanner()
-        else:
+        if task.get("session"):
             scanner = Scanner(json.loads(task["session"]))
+        else:
+            scanner = Scanner()
 
         session = scanner.create()
         task["session"] = json.dumps(session)
@@ -162,10 +162,10 @@ class PendingTask(BaseTask):
             self._update(task, next_progress=TaskProgress.PENDING.name)
             return True
 
-        self._set_scan_started_time(task)
-        session = Scanner(json.loads(task["session"])).launch_scan(task["target"])
+        session = Scanner(session).launch_scan(task["target"])
         task["session"] = json.dumps(session)
         task["started_at"] = now
+        self._set_scan_started_time(task)
         app.logger.info("Scan launched successfully, task={task}".format(task=task))
         self._update(task, next_progress=TaskProgress.RUNNING.name)
         return True
