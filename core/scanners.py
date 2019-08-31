@@ -39,10 +39,10 @@ class OpenVASScanner:
         self.profile = os.getenv("OPENVAS_PROFILE", "Full and very deep")
         self.alive_test = os.getenv("OPENVAS_ALIVE_TEST", "Consider Alive")
         self.deployer_id = None
+        self.session = session
 
         if session:
             # Restore previous scanner session
-            self.session = session
             self.host = session["blob"].get("openvas_host")
             self.port = session["blob"].get("openvas_port")
             self.deployer_id = session["blob"].get("openvas_deployer_id")
@@ -63,18 +63,18 @@ class OpenVASScanner:
                 container_port=OpenVASScanner.OPENVAS_CONTAINER_PORT,
             )
 
-        session = {"status": "", "blob": {"openvas_deployer_id": deployer_status["uuid"]}}
+        self.session = {"status": "", "blob": {"openvas_deployer_id": deployer_status["uuid"]}}
         if deployer_status["status"] == DeployerStatus.RUNNING:
-            session["blob"]["openvas_host"] = deployer_status["ip"]
-            session["blob"]["openvas_port"] = deployer_status["port"]
-            session["status"] = "CREATED"
+            self.session["blob"]["openvas_host"] = deployer_status["ip"]
+            self.session["blob"]["openvas_port"] = deployer_status["port"]
+            self.session["status"] = "CREATED"
         elif deployer_status["status"] == DeployerStatus.WAITING:
-            session["status"] = "WAITING"
+            self.session["status"] = "WAITING"
         elif deployer_status["status"] == DeployerStatus.FAILED:
-            session["status"] = "FAILED"
+            self.session["status"] = "FAILED"
         elif deployer_status["status"] == DeployerStatus.NOT_EXSIT:
-            session["status"] = "FAILED"
-        return session
+            self.session["status"] = "FAILED"
+        return self.session
 
     def delete(self):
         app.logger.info("Trying to delete scanner...")
@@ -84,6 +84,9 @@ class OpenVASScanner:
             self.conn.delete_scan(self.session["blob"]["openvas_scan_id"])
             self.conn.delete_target(self.session["blob"]["openvas_target_id"])
         app.logger.info("Completed to delete scanner.")
+
+    def is_ready(self):
+        return bool(self.session["status"] == "CREATED")
 
     def launch_scan(self, target):
         app.logger.info("Trying to launch new scan...")

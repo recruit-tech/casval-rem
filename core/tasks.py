@@ -157,7 +157,8 @@ class PendingTask(BaseTask):
         session = scanner.create()
         task["session"] = json.dumps(session)
 
-        if session["status"] != "CREATED":
+        if not scanner.is_ready():
+            # Skip the task if scanner is not ready
             self._update(task, next_progress=TaskProgress.PENDING.name)
             return True
 
