@@ -72,27 +72,58 @@ class BaseTask:
         )
         return scan_query.dicts().get()["count"] == 0
 
-    def _notify_to_slack(self, task, next_progress):
-        message_mode = ""
+    def _get_slack_message(self, task, next_progress):
+        title = ""
+        attachments = []
 
         if next_progress == TaskProgress.RUNNING.name:
-            message_mode = SlackIntegrator.MessageMode.STARTED
+            title = "Now scanning *{target}*.".format(target=task["target"])
         elif next_progress == TaskProgress.FAILED.name:
-            message_mode = SlackIntegrator.MessageMode.FAILED
+            title = ":rotating_light: *Scan error at {target}*.".format(target=task["target"])
+
         elif task["progress"] == TaskProgress.STOPPED.name and next_progress == TaskProgress.DELETED.name:
-            message_mode = SlackIntegrator.MessageMode.COMPLETED
+            elapsed_time = task["ended_at"] - task["started_at"]
+            elapsed_minutes = (elapsed_time.days * 24 * 60) + (elapsed_time.seconds / 60)
+            title = "Scan for *{target}* completed ({elapsed} min).".format(
+                target=task["target"], elapsed=int(elapsed_minutes)
+            )
 
-        if message_mode:
+            fix_required = {"REQUIRED": 0, "RECOMMENDED": 0, "OPTIONAL": 0, "UNDEFINED": 0}
+            for result in task["results"]:
+                fix_required[result["fix_required"]] += 1
+
+            if fix_required["REQUIRED"] > 0:
+                heading = "Urgent Response Required ({count})".format(count=fix_required["REQUIRED"])
+                item = {"color": SlackIntegrator.COLOR_DANGER, "fields": [{"title": heading}]}
+                attachments.append(item)
+            if fix_required["RECOMMENDED"] > 0:
+                heading = "Fix Recommended ({count})".format(count=fix_required["RECOMMENDED"])
+                item = {"color": SlackIntegrator.COLOR_WARNING, "fields": [{"title": heading}]}
+                attachments.append(item)
+            if fix_required["UNDEFINED"] > 0:
+                heading = "Severity Unrated ({count})".format(count=fix_required["UNDEFINED"])
+                item = {"color": SlackIntegrator.COLOR_UNRATED, "fields": [{"title": heading}]}
+                attachments.append(item)
+            if len(attachments) == 0:
+                heading = "No Response Required :tada:"
+                item = {"color": SlackIntegrator.COLOR_GOOD, "fields": [{"title": heading}]}
+                attachments.append(item)
+
+        return title, attachments
+
+    def _notify_to_slack(self, task, next_progress):
+
+        title, attachments = self._get_slack_message(task, next_progress)
+        if title:
             webhook_url = task["slack_webhook_url"]
-
             if not webhook_url:
                 audit = AuditResource.get_by_id(task["audit_id"])
                 webhook_url = audit["slack_default_webhook_url"]
             if webhook_url:
                 try:
-                    SlackIntegrator(webhook_url).send(message_mode, task)
+                    SlackIntegrator(webhook_url).send(title, attachments)
                 except Exception as error:
-                    app.logger.warn("Failed to send to Slack. error={}".format(error))
+                    app.logger.warn("Failed to send a message to Slack, error={}".format(error))
 
     def _reset_scan_schedule(self, task):
         scan = {
