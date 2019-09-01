@@ -275,7 +275,7 @@ class StoppedTask(BaseTask):
                     vuln_query = VulnTable.insert(vuln).on_conflict_ignore()
                     vuln_query.execute()
 
-                ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
+                ResultTable.update(scan_id=None).where(ResultTable.scan_id == task["scan_id"]).execute()
 
                 for result in report["results"]:
                     result["scan_id"] = task["scan_id"]
