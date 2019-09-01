@@ -94,7 +94,7 @@ class BaseTask:
                 except Exception as error:
                     app.logger.warn("Failed to send to Slack. error={}".format(error))
 
-    def _reset_scan_schedule(task):
+    def _reset_scan_schedule(self, task):
         scan = {
             "error_reason": task["error_reason"],
             "task_uuid": None,
