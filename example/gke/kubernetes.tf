@@ -2,7 +2,7 @@
 ### Kubernetes Cluster
 ########################
 
-resource "google_container_cluster" "casval-cluster" {
+resource "google_container_cluster" "casval_cluster" {
   addons_config {
     http_load_balancing {
       disabled = false
@@ -41,7 +41,7 @@ resource "google_container_cluster" "casval-cluster" {
 
   monitoring_service = "none"
   name               = "casval-cluster"
-  network            = "${google_compute_network.casval-cluster-nat-network.name}"
+  network            = "${google_compute_network.casval_cluster_nat_network.name}"
 
   network_policy {
     enabled = false
@@ -60,7 +60,7 @@ resource "google_container_cluster" "casval-cluster" {
     master_ipv4_cidr_block  = "172.16.0.0/28"
   }
 
-  subnetwork = "${google_compute_subnetwork.casval-cluster-nat-subnetwork.self_link}"
+  subnetwork = "${google_compute_subnetwork.casval_cluster_nat_subnetwork.self_link}"
   project = "${var.project}"
   location = "${var.region}"
 }

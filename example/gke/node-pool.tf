@@ -3,9 +3,9 @@
 ######################
 
 
-resource "google_container_node_pool" "casval-cluster-master-node-pool" {
+resource "google_container_node_pool" "casval_cluster_master_node_pool" {
   provider = "google-beta"
-  cluster            = "${google_container_cluster.casval-cluster.name}"
+  cluster            = "${google_container_cluster.casval_cluster.name}"
   initial_node_count = "1"
 <<<<<<< HEAD
   location           = "asia-northeast1-a"
@@ -50,9 +50,9 @@ resource "google_container_node_pool" "casval-cluster-master-node-pool" {
 ## Worker Node Pool
 ######################
 
-resource "google_container_node_pool" "casval-cluster-worker-node-pool" {
+resource "google_container_node_pool" "casval_cluster_worker_node_pool" {
   provider = "google-beta"
-  cluster            = "${google_container_cluster.casval-cluster.name}"
+  cluster            = "${google_container_cluster.casval_cluster.name}"
   initial_node_count = "0"
   location = "${var.region}"
 
