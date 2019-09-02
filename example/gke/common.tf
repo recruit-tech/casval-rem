@@ -37,3 +37,7 @@ output "PASSWORD_SALT" {
   value = "${random_string.password_salt.result}"
 }
 
+output "NAT_EXTERNAL_IP" {
+  value = "${google_compute_address.casval_cluster_nat_address.address}"
+}
+

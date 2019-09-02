@@ -2,7 +2,7 @@
 ### Firewall
 ######################
 
-resource "google_compute_firewall" "casval-allow-outboud-traffic" {
+resource "google_compute_firewall" "casval_allow_outboud_traffic" {
   allow {
     protocol = "all"
   }
@@ -11,12 +11,12 @@ resource "google_compute_firewall" "casval-allow-outboud-traffic" {
   direction          = "EGRESS"
   disabled           = false
   name               = "casval-allow-outboud-traffic"
-  network            = "${google_compute_network.casval-cluster-nat-network.name}"
+  network            = "${google_compute_network.casval_cluster_nat_network.name}"
   priority           = "1000"
   project = "${var.project}"
 }
 
-resource "google_compute_firewall" "casval-cluster-master" {
+resource "google_compute_firewall" "casval_cluster_master" {
   allow {
     ports    = ["10250", "443"]
     protocol = "tcp"
@@ -25,13 +25,13 @@ resource "google_compute_firewall" "casval-cluster-master" {
   direction     = "INGRESS"
   disabled      = false
   name          = "casval-cluster-master"
-  network       = "${google_compute_network.casval-cluster-nat-network.name}"
+  network       = "${google_compute_network.casval_cluster_nat_network.name}"
   priority      = "800"
   source_ranges = ["172.16.0.0/28"]
   project = "${var.project}"
 }
 
-resource "google_compute_firewall" "casval-cluster-firewall-vms" {
+resource "google_compute_firewall" "casval_cluster_firewall_vms" {
   allow {
     ports    = ["1-65535"]
     protocol = "tcp"
@@ -49,7 +49,7 @@ resource "google_compute_firewall" "casval-cluster-firewall-vms" {
   direction     = "INGRESS"
   disabled      = false
   name          = "casval-cluster-firewall-vms"
-  network       = "${google_compute_network.casval-cluster-nat-network.name}"
+  network       = "${google_compute_network.casval_cluster_nat_network.name}"
   priority      = "1000"
   source_ranges = ["10.0.1.0/24"]
   project = "${var.project}"
