@@ -37,7 +37,10 @@ output "PASSWORD_SALT" {
   value = "${random_string.password_salt.result}"
 }
 
-output "NAT_EXTERNAL_IP" {
+output "OPENVAS_SCAN_ENDPOINT" {
   value = "${google_compute_address.casval_cluster_nat_address.address}"
 }
 
+output "KUBERNETES_SERVER" {
+  value = "https://${google_container_cluster.casval_cluster.endpoint}"
+}

@@ -7,11 +7,7 @@ resource "google_container_node_pool" "casval_cluster_master_node_pool" {
   provider = "google-beta"
   cluster            = "${google_container_cluster.casval_cluster.name}"
   initial_node_count = "1"
-<<<<<<< HEAD
-  location           = "asia-northeast1-a"
-=======
-  location = "${var.region}"
->>>>>>> 2f8d626... Add terraform
+  location = "${var.region}-a"
 
   management {
     auto_repair  = true
@@ -54,7 +50,7 @@ resource "google_container_node_pool" "casval_cluster_worker_node_pool" {
   provider = "google-beta"
   cluster            = "${google_container_cluster.casval_cluster.name}"
   initial_node_count = "0"
-  location = "${var.region}"
+  location = "${var.region}-a"
 
   management {
     auto_repair  = true
