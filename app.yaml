@@ -1,5 +1,6 @@
 service: rem
 runtime: python37
+entrypoint: gunicorn -b :$PORT -t 90 app:app
 
 env_variables:
   CONFIG_ENV_FILE_PATH: 'config.env'
