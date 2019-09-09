@@ -112,9 +112,19 @@ class BaseTask:
         return title, attachments
 
     def _notify_to_slack(self, task, next_progress):
-
         title, attachments = self._get_slack_message(task, next_progress)
         if title:
+            app.logger.info(
+                "New message, payload={}".format(
+                    {
+                        "title": title,
+                        "attachments": attachments,
+                        "audit_id": task["audit_id"],
+                        "scan_id": task["scan_id"],
+                        "target": task["target"],
+                    }
+                )
+            )
             webhook_url = task["slack_webhook_url"]
             if not webhook_url:
                 audit = AuditResource.get_by_id(task["audit_id"])
