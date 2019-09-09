@@ -292,7 +292,7 @@ class StoppedTask(BaseTask):
             self._reset_scan_schedule(task)
             for vuln in report["vulns"]:
                 VulnTable.insert(vuln).on_conflict_ignore().execute()
-            ResultTable.delete().where(ResultTable.scan_id == task["scan_id"]).execute()
+            ResultTable.update(scan_id=None).where(ResultTable.scan_id == task["scan_id"]).execute()
             results = report["results"]
             for result in results:
                 result["scan_id"] = task["scan_id"]
