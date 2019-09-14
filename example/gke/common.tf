@@ -41,6 +41,6 @@ output "OPENVAS_SCAN_ENDPOINT" {
   value = "${google_compute_address.casval_cluster_nat_address.address}"
 }
 
-output "KUBERNETES_SERVER" {
+output "KUBERNETES_MASTER_SERVER" {
   value = "https://${google_container_cluster.casval_cluster.endpoint}"
 }
