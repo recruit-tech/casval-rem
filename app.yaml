@@ -2,4 +2,8 @@ service: rem
 runtime: python37
 
 env_variables:
+  ADMIN_PASSWORD: 'admin-password'
   CONFIG_ENV_FILE_PATH: 'config.env'
+  PASSWORD_SALT: 'password-salt'
+  JWT_SECRET_KEY: 'super-secret'
+  SCAN_MAX_PARALLEL_SESSION: 1

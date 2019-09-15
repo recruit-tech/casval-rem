@@ -33,10 +33,6 @@ output "GCP_REPORT_STORAGE_NAME" {
   value = "${google_storage_bucket.report_storage.id}"
 }
 
-output "PASSWORD_SALT" {
-  value = "${random_string.password_salt.result}"
-}
-
 output "OPENVAS_SCAN_ENDPOINT" {
   value = "${google_compute_address.casval_cluster_nat_address.address}"
 }

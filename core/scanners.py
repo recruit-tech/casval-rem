@@ -32,8 +32,8 @@ class OpenVASScanner:
         self.ov_deployment_id = None
         self.ov_host = None
         self.ov_port = None
-        self.user = os.getenv("OPENVAS_USERNAME", "admin")
-        self.password = os.getenv("OPENVAS_PASSWORD", "admin")
+        self.user = os.getenv("OPENVAS_OMP_USERNAME", "admin")
+        self.password = os.getenv("OPENVAS_OMP_PASSWORD", "admin")
         self.profile = os.getenv("OPENVAS_PROFILE", "Full and very deep")
         self.alive_test = os.getenv("OPENVAS_ALIVE_TEST", "Consider Alive")
         self.session = session

@@ -38,7 +38,7 @@ class Deployer:
 class LocalDeployer(Deployer):
     def __init__(self, uid):
         super().__init__(uid)
-        self.host = os.getenv("OPENVAS_ENDPOINT", "127.0.0.1")
+        self.host = os.getenv("OPENVAS_OMP_ENDPOINT", "127.0.0.1")
         self.port = os.getenv("OPENVAS_OMP_PORT", 9390)
 
     def create(self):
@@ -122,14 +122,9 @@ class KubernetesDeployer(Deployer):
         return k8s.ApiClient(config)
 
     def _get_credential(self):
-        credential = os.getenv("KUBERNETES_CREDENTIAL", None)
-
-        if credential is None:
-            headers = {"Metadata-Flavor": "Google"}
-            res = requests.get(KubernetesDeployer.GCP_METADATA_API_TOKEN_ENDPOINT, headers=headers)
-            credential = json.loads(res.text)["access_token"]
-
-        return credential
+        headers = {"Metadata-Flavor": "Google"}
+        res = requests.get(KubernetesDeployer.GCP_METADATA_API_TOKEN_ENDPOINT, headers=headers)
+        return json.loads(res.text)["access_token"]
 
     def _create_service(self):
         service_port = k8s.V1ServicePort(
