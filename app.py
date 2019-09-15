@@ -53,7 +53,8 @@ app = Flask(__name__)
 
 if Utils.is_gcp():
     # Use Cloud SQL for Google Cloud Platform
-    Utils.load_env_from_config_file(os.environ["CONFIG_ENV_FILE_PATH"])
+    config_file_path = os.getenv("CONFIG_ENV_FILE_PATH", "config.env")
+    Utils.load_env_from_config_file(config_file_path)
     app.config["DATABASE"] = MySQLDatabase(
         os.environ["DB_NAME"],
         unix_socket=os.path.join("/cloudsql", os.environ["DB_INSTANCE_NAME"]),
