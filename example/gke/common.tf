@@ -9,6 +9,11 @@ provider "google-beta" {
   version = "~> 2.5.0"
 }
 
+data "google_compute_zones" "available" {
+  region = "${var.region}"
+  status = "UP"
+}
+
 output "DB_NAME" {
   value = "${google_sql_database.casval.name}"
 }
