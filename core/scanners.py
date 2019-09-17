@@ -75,7 +75,7 @@ class OpenVASScanner:
     def launch_scan(self, target):
         app.logger.info("Trying to launch new scan...")
         ov_scan_id, ov_target_id = self.conn.launch_scan(
-            target=target, profile=self.profile, alive_test=self.alive_test
+            target=target, profile=self.profile, alive_test=self.alive_test, max_hosts=1, max_checks=3
         )
         self.session["target"] = target
         self.session["ov_scan_id"] = ov_scan_id
