@@ -138,8 +138,6 @@ class VulneravilityListDownload(Resource):
             ResultTable.description,
         ).join(ResultTable, on=(VulnTable.oid == ResultTable.oid))
 
-        
-
         if "fix_required" in params and len(params["fix_required"]) > 0:
             vuln_query = vuln_query.where(VulnTable.fix_required == params["fix_required"])
 
