@@ -84,19 +84,18 @@ class OpenVASScanner:
         return self.session
 
     def check_status(self):
-        try:
-            status = self.conn.get_scan_status(self.session["ov_scan_id"])
-            app.logger.info("Current scan progress={}, session={}".format(status, self.session))
-            # See https://github.com/greenbone/gvmd/blob/577f1b463f5861794bb97066dd0c9c4ab6c223df/src/manage.c#L1482
-            if status in ["New", "Running", "Requested"]:
-                return ScanStatus.RUNNING
-            elif status in ["Done"]:
-                return ScanStatus.STOPPED
-            else:
-                return ScanStatus.FAILED
-        except Exception as error:
-            app.logger.exception("Scan status check error, reason={}".format(error))
+        if not Deployer(self.session["ov_deployment_id"]).is_restarted():
+            return ScanStatus.FAILED
+
+        status = self.conn.get_scan_status(self.session["ov_scan_id"])
+        app.logger.info("Current scan progress={}, session={}".format(status, self.session))
+        # See https://github.com/greenbone/gvmd/blob/577f1b463f5861794bb97066dd0c9c4ab6c223df/src/manage.c#L1482
+        if status in ["New", "Running", "Requested"]:
             return ScanStatus.RUNNING
+        elif status in ["Done"]:
+            return ScanStatus.STOPPED
+        else:
+            return ScanStatus.FAILED
 
     def get_report(self):
         app.logger.info("Trying to get scan report...")

@@ -50,6 +50,9 @@ class LocalDeployer(Deployer):
     def is_ready(self):
         return True
 
+    def is_restarted(self):
+        return False
+
 
 class KubernetesDeployer(Deployer):
 
@@ -88,6 +91,13 @@ class KubernetesDeployer(Deployer):
 
     def is_ready(self):
         return bool(self.host and self.port and self.status == DeploymentStatus.RUNNING)
+
+    def is_restarted(self):
+        pod = self._read_pod()
+        for container_status in pod.status.container_statuses:
+            if container_status.restart_count > 0:
+                return True
+        return False
 
     def _get_status(self):
         status = DeploymentStatus.NOT_READY
@@ -179,3 +189,14 @@ class KubernetesDeployer(Deployer):
 
     def _read_deployment(self):
         return k8s.AppsV1Api(self.client).read_namespaced_deployment(self.uid, self.namespace)
+
+    def _list_pods(self):
+        return k8s.CoreV1Api(self.client).list_namespaced_pod(self.namespace)
+
+    def _read_pod(self):
+        pods = self._list_pods()
+        if len(pods.items) != 0:
+            raise Exception("Multiple pods in this deployment.")
+        for item in pods.items:
+            if item.metadata.name.startswith(self.uid):
+                return k8s.CoreV1Api(self.client).read_namespaced_pod(item.metadata.name, self.namespace)
