@@ -175,7 +175,7 @@ class KubernetesDeployer(Deployer):
             period_seconds=30,
         )
         liveness_probe = k8s.V1Probe(
-            tcp_socket=k8s.V1TCPSocketAction(port=9390),
+            tcp_socket=k8s.V1TCPSocketAction(port=container_port.container_port),
             initial_delay_seconds=180,
             period_seconds=30,
             failure_threshold=3,
