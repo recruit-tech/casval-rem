@@ -34,6 +34,9 @@ class Deployer:
     def is_ready(self):
         raise NotImplementedError()
 
+    def is_restarted(self):
+        raise NotImplementedError()
+
 
 class LocalDeployer(Deployer):
     def __init__(self, uid):
@@ -57,6 +60,11 @@ class LocalDeployer(Deployer):
 class KubernetesDeployer(Deployer):
 
     OPENVAS_CONTAINER_IMAGE = "mikesplain/openvas:9"
+    OPENVAS_HEALTHCHECK_COMMAND = [
+        "bash",
+        "-c",
+        "test tail = $(ps x | grep tail | grep -v grep | awk '{print $5}')",
+    ]
     CONTAINER_USE_CPU_LIMIT = "400m"
     CONTAINER_USE_MEMORY_LIMIT = "4Gi"
     DEFAULT_SERVICE_PORT = 443
@@ -161,16 +169,34 @@ class KubernetesDeployer(Deployer):
                 "memory": KubernetesDeployer.CONTAINER_USE_MEMORY_LIMIT,
             }
         )
+        readiness_probe = k8s.V1Probe(
+            _exec=k8s.V1ExecAction(command=KubernetesDeployer.OPENVAS_HEALTHCHECK_COMMAND),
+            initial_delay_seconds=300,
+            period_seconds=30,
+        )
+        liveness_probe = k8s.V1Probe(
+            tcp_socket=k8s.V1TCPSocketAction(port=9390),
+            initial_delay_seconds=180,
+            period_seconds=30,
+            failure_threshold=3,
+            timeout_seconds=5,
+        )
         container = k8s.V1Container(
             image=KubernetesDeployer.OPENVAS_CONTAINER_IMAGE,
             name=self.uid,
             image_pull_policy="IfNotPresent",
             ports=[container_port],
             resources=resources,
+            readiness_probe=readiness_probe,
+            liveness_probe=liveness_probe,
         )
         toleration = k8s.V1Toleration(effect="NoSchedule", key="Scanners", operator="Exists")
         pod_spec = k8s.V1PodSpec(containers=[container], tolerations=[toleration])
-        pod_metadata = k8s.V1ObjectMeta(name=self.uid, labels={"app.kubernetes.io/name": self.uid})
+        pod_metadata = k8s.V1ObjectMeta(
+            name=self.uid,
+            labels={"app.kubernetes.io/name": self.uid},
+            annotations={"cluster-autoscaler.kubernetes.io/safe-to-evict": "false"},
+        )
         pod_template = k8s.V1PodTemplateSpec(spec=pod_spec, metadata=pod_metadata)
         selector = k8s.V1LabelSelector(match_labels={"app.kubernetes.io/name": self.uid})
         deployment_spec = k8s.V1DeploymentSpec(replicas=REPLICAS, selector=selector, template=pod_template)
@@ -195,8 +221,6 @@ class KubernetesDeployer(Deployer):
 
     def _read_pod(self):
         pods = self._list_pods()
-        if len(pods.items) != 0:
-            raise Exception("Multiple pods in this deployment.")
         for item in pods.items:
             if item.metadata.name.startswith(self.uid):
                 return k8s.CoreV1Api(self.client).read_namespaced_pod(item.metadata.name, self.namespace)

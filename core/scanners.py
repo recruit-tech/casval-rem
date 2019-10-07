@@ -84,7 +84,7 @@ class OpenVASScanner:
         return self.session
 
     def check_status(self):
-        if not Deployer(self.session["ov_deployment_id"]).is_restarted():
+        if Deployer(self.session["ov_deployment_id"]).is_restarted():
             return ScanStatus.FAILED
 
         status = self.conn.get_scan_status(self.session["ov_scan_id"])
