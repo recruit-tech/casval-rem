@@ -270,7 +270,7 @@ class RunningTask(BaseTask):
             app.logger.info("Scan stopped successfully, task={task}".format(task=task))
             self._update(task, next_progress=TaskProgress.STOPPED.name)
         elif status == ScanStatus.FAILED:
-            app.logger.exception("Scan failed, task={task}".format(task=task))
+            app.logger.exception("Exception, task={task}".format(task=task))
             task["error_reason"] = "Scan was terminated due to scanner error."
             self._update(task, next_progress=TaskProgress.FAILED.name)
         else:
